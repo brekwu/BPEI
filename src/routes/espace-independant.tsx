@@ -154,6 +154,7 @@ function IndependentSpace() {
           </div>}
           <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
+          {!registration && <Link to="/reinitialiser-mot-de-passe" className="block text-sm underline">Mot de passe oublié ?</Link>}
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
         </form> :
         <div className="mt-8 space-y-8">
