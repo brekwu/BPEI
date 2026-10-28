@@ -8,6 +8,7 @@ import { validateBpeiInquiry, type BpeiInquiryKind, type BpeiInquiryDraft } from
 
 export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   const [availability,setAvailability] = useState<"loading"|"open"|"closed"|"error">("loading");
+  const [legalVersion,setLegalVersion] = useState<string|null>(null);
   const [draft,setDraft] = useState<BpeiInquiryDraft>({
     kind,client_name:"",email:"",phone:"",city:"",subject:"",description:"",consent_accepted:false
   });
@@ -20,10 +21,11 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
     const db=supabase as any;
     Promise.all([
       db.from("bpei_intake_flags").select("enabled").eq("kind",kind).maybeSingle(),
-      db.from("bpei_launch_controls").select("legal_documents_published").eq("id",true).maybeSingle(),
+      db.from("bpei_launch_controls").select("legal_documents_published,legal_version").eq("id",true).maybeSingle(),
     ]).then(([flag,legal]:any[])=>{
+      if(alive)setLegalVersion(legal.data?.legal_documents_published?legal.data?.legal_version??null:null);
       if(alive)setAvailability(flag.error||legal.error?"error":
-        flag.data?.enabled===true && legal.data?.legal_documents_published===true?"open":"closed");
+        flag.data?.enabled===true && legal.data?.legal_documents_published===true && !!legal.data?.legal_version?"open":"closed");
     }).catch(()=>{if(alive)setAvailability("error")});
     return ()=>{alive=false};
   },[kind]);
@@ -55,7 +57,7 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
     <label className="block text-sm font-medium">Sujet *<Input required minLength={3} maxLength={160} value={draft.subject} onChange={e=>set("subject",e.target.value)} /></label>
     <label className="block text-sm font-medium">Description *<Textarea required minLength={15} maxLength={3000} rows={5} value={draft.description} onChange={e=>set("description",e.target.value)} /></label>
     <div className="absolute -left-[9999px]" aria-hidden="true"><label htmlFor="bpei-hidden-address">Site web</label><input id="bpei-hidden-address" autoComplete="off" tabIndex={-1} value={trap} onChange={e=>setTrap(e.target.value)} /></div>
-    <label className="flex gap-3 text-sm"><input type="checkbox" required checked={draft.consent_accepted} onChange={e=>set("consent_accepted",e.target.checked)}/><span>J'ai pris connaissance des informations relatives à ma demande et de la <Link to="/confidentialite" className="underline">politique de confidentialité</Link>.</span></label>
+    <label className="flex gap-3 text-sm"><input type="checkbox" required checked={draft.consent_accepted} onChange={e=>set("consent_accepted",e.target.checked)}/><span>J'ai pris connaissance des informations relatives à ma demande et de la <Link to="/confidentialite" className="underline">politique de confidentialité</Link> (version {legalVersion}).</span></label>
     {message&&<p role="alert" className="text-sm text-destructive">{message}</p>}
     <Button type="submit" disabled={saving}>{saving?"Envoi…":kind==="contact"?"Envoyer le message":"Envoyer la demande d'intervention"}</Button>
   </form>;
