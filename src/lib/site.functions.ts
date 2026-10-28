@@ -42,7 +42,7 @@ const ContactSchema = z.object({
 });
 
 export const submitContact = createServerFn({ method: "POST" })
-  .inputValidator((i: z.input<typeof ContactSchema>) => ContactSchema.parse(i))
+  .validator((i: z.input<typeof ContactSchema>) => ContactSchema.parse(i))
   .handler(async ({ data }) => {
     await enforceRateLimit({ endpoint: "contact" });
     const supabase = await serverPublicClient();
@@ -93,7 +93,7 @@ const DemoSchema = z.object({
 });
 
 export const submitDemoRequest = createServerFn({ method: "POST" })
-  .inputValidator((i: z.input<typeof DemoSchema>) => DemoSchema.parse(i))
+  .validator((i: z.input<typeof DemoSchema>) => DemoSchema.parse(i))
   .handler(async ({ data }) => {
     await enforceRateLimit({ endpoint: "contact" });
     const supabase = await serverPublicClient();
