@@ -17,8 +17,13 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   const [sent,setSent] = useState(false);
   useEffect(()=>{
     let alive=true;
-    (supabase as any).from("bpei_intake_flags").select("enabled").eq("kind",kind).maybeSingle().then(({data,error}:any)=>{
-      if(alive)setAvailability(error?"error":data?.enabled===true?"open":"closed");
+    const db=supabase as any;
+    Promise.all([
+      db.from("bpei_intake_flags").select("enabled").eq("kind",kind).maybeSingle(),
+      db.from("bpei_launch_controls").select("legal_documents_published").eq("id",true).maybeSingle(),
+    ]).then(([flag,legal]:any[])=>{
+      if(alive)setAvailability(flag.error||legal.error?"error":
+        flag.data?.enabled===true && legal.data?.legal_documents_published===true?"open":"closed");
     }).catch(()=>{if(alive)setAvailability("error")});
     return ()=>{alive=false};
   },[kind]);
