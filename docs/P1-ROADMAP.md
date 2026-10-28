@@ -42,5 +42,15 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Le technicien peut consulter l'historique de ses missions depuis `/espace-independant`.
 - L'administrateur dispose d'un tableau `/gestion-missions` avec recherche, filtres de statuts, dates et historique par mission.
 - La lecture SQL est réservée au technicien désigné et aux administrateurs, et aucun droit direct d'insertion ou de modification n'est accordé aux comptes utilisateurs.
-- Une pagination côté serveur de 50 missions par page est en place, avec total exact et lecture limitée aux profils affichés. Les filtres par statut, leurs compteurs et la recherche restent limités à la page courante ; filtres globaux, exports et recette en conditions réelles restent à réaliser.
+- Le tableau `/gestion-missions` utilise désormais 25 missions par page, recherche par titre de mission ou technicien et filtres exécutés en base. Les tests avec de vrais comptes, les exports et la supervision opérationnelle restent à valider.
 - Les tests navigateur anonymes ne remplacent pas la recette RLS en présence d'utilisateurs réels ; le portail reste fermé tant que les critères d'ouverture P0 ne sont pas validés.
+
+## Lot P1.3 — Recherche globale et supervision des missions (intégré en préproduction)
+
+- Migration `20261028173402` : procédure `bpei_admin_search_missions` contrôlant explicitement le rôle administrateur. L'API renvoie des dossiers paginés et les décomptes calculés sur l'ensemble des données correspondantes, pas seulement sur la page chargée.
+- Filtres par statut et recherche côté serveur sur le titre et le nom du technicien, sans plafond artificiel de 300 missions.
+- Supervision des missions nécessitant une attention : incident en cours, rendez-vous dépassé, proposition sans réponse après 24 heures.
+- Requêtes bornées à 50 résultats et 10 000 lignes de décalage au niveau SQL ; interface utilisant des pages de 25 missions.
+- Les politiques RLS restent appliquées, l'accès anonyme à la fonction est révoqué, et la fonction est SECURITY INVOKER.
+- Le test navigateur utilise une authentification et des réponses RPC simulées. La recette multi-comptes sur de vraies missions reste obligatoire.
+- Aucune fusion dans la branche principale ni ouverture de `bpei.fr`.
