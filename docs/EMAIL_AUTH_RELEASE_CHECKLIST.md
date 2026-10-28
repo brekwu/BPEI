@@ -34,3 +34,20 @@ La base `bpei_launch_controls` bloque l'ouverture des inscriptions via le site e
 - Hébergement conforme à un usage commercial et contrôle de domaine `bpei.fr` terminé.
 
 Documentation : https://supabase.com/docs/guides/auth/auth-smtp ; https://supabase.com/docs/guides/auth/redirect-urls
+
+
+## Verrouillage serveur des comptes Supabase Auth
+
+Une vérification purement frontend ne suffit pas : `/auth/v1/signup` reste directement joignable avec la clé publique, indépendamment de la page BPEI.
+
+La fonction PostgreSQL `bpei_private.before_bpei_user_created(event jsonb)` a été ajoutée et vérifiée : tant que `bpei_launch_controls` n'autorise pas la création de comptes, elle renvoie une erreur 403. **Il reste à activer ce hook dans le tableau de bord Supabase** :
+
+1. [Authentication > Hooks](https://supabase.com/dashboard/project/qmbsfmcotnsxsvbigynz/auth/hooks).
+2. Choisir **Before User Created** puis **Postgres function**.
+3. Sélectionner `bpei_private.before_bpei_user_created` et activer l'intégration.
+4. Vérifier immédiatement qu'un appel direct à l'API Auth est refusé avec le verrou fermé.
+5. Tant que le hook n'est pas activé et testé, utiliser **Authentication > Providers > Email > Allow new users to sign up = disabled** si cette option est compatible avec le premier compte administrateur à créer.
+
+**Attention :** il faut organiser l'inscription du premier administrateur via Auth avant d'activer le refus global, ou le créer au moyen d'une procédure administrative autorisée. Le hook bloque également l'inscription initiale tant que le site n'est pas juridiquement prêt. Il ne doit pas être activé sans plan de bootstrap.
+
+Documentation : https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook
