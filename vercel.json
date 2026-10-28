@@ -1,4 +1,61 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "tanstack-start"
+  "framework": "tanstack-start",
+  "redirects": [
+    {
+      "source": "/boutiques",
+      "destination": "/devenir-partenaire",
+      "permanent": true
+    },
+    {
+      "source": "/catalogue",
+      "destination": "/devenir-partenaire",
+      "permanent": true
+    },
+    {
+      "source": "/professionnels",
+      "destination": "/devenir-partenaire",
+      "permanent": true
+    },
+    {
+      "source": "/rejoindre",
+      "destination": "/devenir-partenaire",
+      "permanent": true
+    },
+    {
+      "source": "/candidature-partenaire",
+      "destination": "/espace-independant",
+      "permanent": true
+    },
+    {
+      "source": "/auth",
+      "destination": "/espace-independant",
+      "permanent": true
+    },
+    {
+      "source": "/annuaire",
+      "destination": "/devenir-partenaire",
+      "permanent": true
+    },
+    {
+      "source": "/b/:shopId",
+      "destination": "/devenir-partenaire",
+      "permanent": true
+    },
+    {
+      "source": "/reserver/:shopId",
+      "destination": "/demander-une-intervention",
+      "permanent": true
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/espace-independant",
+      "permanent": true
+    },
+    {
+      "source": "/owner/:path*",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
 }

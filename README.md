@@ -1,9 +1,22 @@
 # BPEI — réseau de techniciens informatiques indépendants
 
-Dépôt de développement du site BPEI (domaine : https://bpei.fr).
+Branche `feat/reseau-national-2026-10` : application épurée du réseau **indépendants uniquement**. Les modules historiques boutiques ont été retirés. Ancien code sauvegardé dans `backup/avant-nettoyage-boutiques-2026-10-28`.
 
-Le projet d'origine est dans Lovable. Son code est importé sur une branche de travail pour permettre les évolutions sans crédits IA Lovable.
+## Ce qui est disponible
+- Accueil et informations publiques
+- Compte et profil indépendant, connexion par Supabase Auth
+- Candidature indépendante et consultation des demandes attribuées, protégées par RLS
+- Formulaires clients et juridiques non validés **fermés** par défaut
+- Déploiement de **préproduction uniquement** sur Vercel
 
-**Sécurité :** ne jamais versionner de fichiers `.env`, de mots de passe, de clés serveur, de données clients ou de sauvegardes de production.
+## Ce qui bloque l'exploitation commerciale
+- Vérifier le parcours inscription/candidature de bout en bout, les e-mails et l'isolement inter-comptes
+- Mettre en place les flux de demandes clients et l'administration des missions
+- Valider les mentions légales, la politique de confidentialité et les conditions de collaboration
+- Basculer vers un hébergement **autorisé pour l'usage commercial** avant toute mise en production
 
-Les changements ne sont pas automatiquement publiés sur bpei.fr. La migration d'hébergement et des variables d'environnement doit être validée séparément.
+## Tests
+`bun install --frozen-lockfile` puis `bun run build`.
+Après lancement local du serveur : `node scripts/smoke-http.mjs`.
+
+Aucune donnée cliente historique, aucun compte boutique et aucune clé secrète ne sont migrés.

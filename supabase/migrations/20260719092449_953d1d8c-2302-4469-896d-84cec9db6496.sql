@@ -1,2 +1,0 @@
-REVOKE SELECT ON public.service_catalog FROM anon;
-GRANT SELECT (id, shop_id, name, description, category, line_type, default_quantity, unit, unit_price_cents, tax_rate, estimated_duration_minutes, active, archived_at, created_at, updated_at) ON public.service_catalog TO anon;
