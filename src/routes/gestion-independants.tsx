@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
-import { ProfessionalVerificationPanel, isVerificationCurrent, type ProfessionalCheck } from "@/components/admin/ProfessionalVerificationPanel";
+import { ProfessionalVerificationPanel } from "@/components/admin/ProfessionalVerificationPanel";
+import { isVerificationCurrent, type ProfessionalCheck } from "@/lib/bpei-professional-verification";
 
 export const Route = createFileRoute("/gestion-independants")({
   component: IndependentReview,
