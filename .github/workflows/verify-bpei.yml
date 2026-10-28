@@ -26,6 +26,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Tester les règles métier
         run: bun test tests/network-forms.test.ts
+      - name: Tester la vérification de migration des données
+        run: node --test tests/migration-inventory.test.mjs
       - name: Construire le site sans le publier
         run: bun run build
       - name: Vérifier la sortie du serveur Nitro Node
