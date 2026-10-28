@@ -107,3 +107,11 @@ Le fichier versionné `tests/p0-db-role-isolation.sql` a été exécuté **sur l
 - Le formulaire de vérification professionnelle revient en état utilisable après une erreur réseau ; il ne prétend plus qu'un contrôle a été confirmé si la relecture échoue.
 - `scripts/browser-p0-admin-retry-smoke.mjs` est un test de navigateur **simulé** pour un échec initial de vérification des droits puis une nouvelle tentative, sans vrai compte ni envoi.
 - Ces essais n'attestent toujours pas la configuration GoTrue SMTP/hook ni une acceptation juridique humaine. Les portes de production restent fermées.
+
+## Contrôle complémentaire — versions juridiques et preuves de sortie (28/10/2026)
+
+- `tests/p0-db-legal-version-rotation.sql` exécuté sur Supabase avec `ROLLBACK` : publication refusée avec zéro ou seulement deux documents, publication complète autorisée à trois documents, version publiée immuable et non republiable, inscriptions restées fermées. La candidature munie d'un consentement de l'ancienne version est refusée après publication de la nouvelle ; le nouveau consentement autorise ensuite l'approbation avec des vérifications professionnelles fictives conformes.
+- `tests/p0-auth-hook-permissions.sql` exécuté : le faux marqueur d'administrateur dans `user_metadata` ne peut pas ouvrir la création de compte. Seul le chemin privilégié `app_metadata` est traité par la fonction SQL ; cela **ne démontre pas** l'activation du hook côté GoTrue.
+- `tests/p0-readiness-inventory.sql` exécuté sur la base : `first_admin=MISSING`, `legal_documents_published=MISSING`, hook SQL présent mais activation GoTrue non attestée, SMTP externe/retours d'URL/recette de vraies identités et déploiement courant sans preuve de validation. Collecte et inscriptions : `SAFELY_CLOSED`.
+- **Distinction essentielle de périmètre :** les 30 migrations P0 de cette branche ont été testées sur l'instance partagée qui a aussi 7 migrations P1 (total 37) ; il manque encore une reconstruction isolée du P0 pur. Ne pas prétendre que la compilation ou les transactions SQL valident automatiquement la livraison Auth/SMTP.
+- Vercel Hobby refuse actuellement de créer de nouveaux Preview (quota 24 h, erreur 402) ; le dernier commit n'a pas été déployé en Preview. Aucune montée en gamme ni utilisation de production.
