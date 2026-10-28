@@ -99,3 +99,11 @@ Le fichier versionné `tests/p0-db-role-isolation.sql` a été exécuté **sur l
 - Contrôle post-exécution : aucun compte Auth, administrateur, profil, demande ni publication juridique ajouté. Les inscriptions restent fermées et les advisors de sécurité ne signalent aucune alerte.
 
 **Ne pas confondre cette validation PostgreSQL avec une recette de comptes réels.** L'activation du hook dans GoTrue, la confirmation e-mail par SMTP externe, le premier administrateur autorisé, les textes juridiques validés et les essais Auth de bout en bout sont toujours non homologués. La préproduction Vercel doit aussi pointer vers le commit final effectivement testé.
+
+## Lot P0 — Recette métier SQL et disponibilité de l'administration
+
+- `tests/p0-db-workflow-acceptance.sql` a été exécuté dans le Supabase BPEI en une transaction annulée. Le test effectue la publication fictive de trois documents, conserve les inscriptions fermées, puis vérifie l'acceptation juridique, la création de profil, le dépôt et le suivi de candidature ainsi que l'examen par un administrateur. Il confirme que l'autre technicien ne peut rien lire et qu'un candidat ne peut pas s'auto-vérifier.
+- L'écran `/gestion-independants` évite un chargement interminable après une erreur Auth ou PostgREST, distingue les pannes de réseau d'une absence de droits et propose une nouvelle tentative. Les données potentiellement sensibles sont effacées quand les permissions ne sont plus confirmées.
+- Le formulaire de vérification professionnelle revient en état utilisable après une erreur réseau ; il ne prétend plus qu'un contrôle a été confirmé si la relecture échoue.
+- `scripts/browser-p0-admin-retry-smoke.mjs` est un test de navigateur **simulé** pour un échec initial de vérification des droits puis une nouvelle tentative, sans vrai compte ni envoi.
+- Ces essais n'attestent toujours pas la configuration GoTrue SMTP/hook ni une acceptation juridique humaine. Les portes de production restent fermées.

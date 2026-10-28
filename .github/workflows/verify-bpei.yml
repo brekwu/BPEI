@@ -47,3 +47,4 @@ jobs:
           node scripts/browser-p1-auth-prelaunch-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p0-profile-resilience-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p0-customer-intake-retry-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-admin-retry-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }

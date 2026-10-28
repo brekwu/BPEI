@@ -8,7 +8,7 @@ type Source = "annuaire_entreprises" | "rne_inpi" | "repertoire_sirene";
 export function ProfessionalVerificationPanel({
  userId,siret,check,onRecorded
 }:{
- userId:string; siret:string|null;check:ProfessionalCheck|undefined;onRecorded:()=>Promise<void>
+ userId:string; siret:string|null;check:ProfessionalCheck|undefined;onRecorded:()=>Promise<void|boolean>
 }) {
  const [source,setSource]=useState<Source>("annuaire_entreprises");
  const [reference,setReference]=useState("");
@@ -28,20 +28,31 @@ export function ProfessionalVerificationPanel({
   if(!ready || sending || !siret)return;
   if(!window.confirm("Je confirme avoir examiné une source officielle récente, vérifié l'activité de l'entreprise et de l'établissement, et contrôlé le lien entre le candidat et l'entreprise."))return;
   setSending(true);setFeedback("");
-  const {error}=await (supabase as any).rpc("record_independent_verification_with_insurance",{
-    p_user_id:userId,p_siret:siret,
-    p_enterprise_active:enterpriseActive,p_establishment_active:establishmentActive,
-    p_identity_confirmed:identityConfirmed,p_evidence_source:source,
-    p_evidence_reference:reference.trim(),
-    p_insurance_evidence_reference:insuranceReference.trim(),
-    p_insurance_expires_on:insuranceExpiresOn
-  });
-  setSending(false);
-  if(error){setFeedback("Enregistrement refusé. Vérifiez le compte du candidat, le SIRET, les justificatifs et vos droits administrateur.");return;}
-  setFeedback("Contrôle documenté enregistré. L'approbation peut maintenant être examinée.");
-  setEnterpriseActive(false);setEstablishmentActive(false);setIdentityConfirmed(false);setReference("");
-  setInsuranceConfirmed(false);setInsuranceReference("");setInsuranceExpiresOn("");
-  await onRecorded();
+  try{
+    const {error}=await (supabase as any).rpc("record_independent_verification_with_insurance",{
+      p_user_id:userId,p_siret:siret,
+      p_enterprise_active:enterpriseActive,p_establishment_active:establishmentActive,
+      p_identity_confirmed:identityConfirmed,p_evidence_source:source,
+      p_evidence_reference:reference.trim(),
+      p_insurance_evidence_reference:insuranceReference.trim(),
+      p_insurance_expires_on:insuranceExpiresOn
+    });
+    if(error){
+      setFeedback("Enregistrement refusé. Vérifiez le compte du candidat, les justificatifs et vos droits administrateur.");
+      return;
+    }
+    if((await onRecorded())===false){
+      setFeedback("Contrôle envoyé, mais sa relecture a échoué. Actualisez avant toute approbation.");
+      return;
+    }
+    setFeedback("Contrôle documenté confirmé. L'approbation peut maintenant être examinée.");
+    setEnterpriseActive(false);setEstablishmentActive(false);setIdentityConfirmed(false);setReference("");
+    setInsuranceConfirmed(false);setInsuranceReference("");setInsuranceExpiresOn("");
+  }catch{
+    setFeedback("Impossible de confirmer l'enregistrement. Actualisez avant de réessayer.");
+  }finally{
+    setSending(false);
+  }
  }
  return <section className="mt-4 rounded-lg border bg-muted/20 p-4" aria-label="Contrôle du professionnel">
   <h4 className="text-sm font-semibold">Vérification de l'entreprise, de l'identité et de la RC Pro</h4>
