@@ -18,6 +18,7 @@ export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
 
 function ResetPasswordPage() {
   const [email, setEmail] = useState("");
+  const [hydrated, setHydrated] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [recovery, setRecovery] = useState(false);
@@ -25,6 +26,10 @@ function ResetPasswordPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  // Keep SSR controls disabled until React attaches its event listeners.
+  // Otherwise fast WebKit users can type before hydration and submit stale state.
+  useEffect(() => { setHydrated(true); }, []);
 
   useEffect(() => {
     let alive = true;
@@ -119,17 +124,17 @@ function ResetPasswordPage() {
       <Link to="/espace-independant" className="mt-3 inline-block underline">Se connecter</Link>
     </div> : recovery ? <form onSubmit={updatePassword} className="mt-8 space-y-5 rounded-xl border bg-card p-6">
       <label className="block text-sm font-medium">Nouveau mot de passe
-        <Input type="password" autoComplete="new-password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)} />
+        <Input type="password" autoComplete="new-password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)} disabled={!hydrated || busy} />
       </label>
       <label className="block text-sm font-medium">Confirmer le mot de passe
-        <Input type="password" autoComplete="new-password" required minLength={12} value={confirm} onChange={e=>setConfirm(e.target.value)} />
+        <Input type="password" autoComplete="new-password" required minLength={12} value={confirm} onChange={e=>setConfirm(e.target.value)} disabled={!hydrated || busy} />
       </label>
-      <Button type="submit" disabled={busy}>{busy ? "Modification…" : "Enregistrer le mot de passe"}</Button>
+      <Button type="submit" disabled={busy || !hydrated}>{busy ? "Modification…" : "Enregistrer le mot de passe"}</Button>
     </form> : <form onSubmit={requestReset} className="mt-8 space-y-5 rounded-xl border bg-card p-6">
       <label className="block text-sm font-medium">Adresse e-mail du compte
-        <Input type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} />
+        <Input type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} disabled={!hydrated || busy} />
       </label>
-      <Button type="submit" disabled={busy}>{busy ? "Envoi…" : "Recevoir un lien de réinitialisation"}</Button>
+      <Button type="submit" disabled={busy || !hydrated}>{busy ? "Envoi…" : "Recevoir un lien de réinitialisation"}</Button>
     </form>}
     <Link to="/espace-independant" className="mt-6 inline-block text-sm underline">Retour à la connexion</Link>
   </main></PublicShell>;
