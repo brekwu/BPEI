@@ -1,0 +1,31 @@
+name: Vérification BPEI (sans publication)
+on:
+  push:
+    branches:
+      - "feat/reseau-national-2026-10"
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-secret
+      HASH_PEPPER: ci-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Installer les dépendances
+        run: bun install --frozen-lockfile
+      - name: Tester les règles métier
+        run: bun test tests/network-forms.test.ts
+      - name: Construire le site sans le publier
+        run: bun run build
+      - name: Vérifier le lint
+        run: bun run lint
