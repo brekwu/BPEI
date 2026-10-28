@@ -1,6 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
-import {UnpublishedLegalPage} from "@/components/public/UnpublishedLegalPage";
+import {PublishedBpeiLegalPage} from "@/components/public/PublishedBpeiLegalPage";
 export const Route=createFileRoute("/mentions-legales")({
  head:()=>({meta:[{title:"Mentions légales — BPEI"},{name:"robots",content:"noindex,nofollow"}]}),
- component:()=> <UnpublishedLegalPage title="Mentions légales"/>
+ component:()=> <PublishedBpeiLegalPage kind="mentions-legales" title="Mentions légales" />
 });
