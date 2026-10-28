@@ -32,14 +32,27 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   const set=(k:keyof BpeiInquiryDraft,v:string|boolean)=>setDraft(p=>({...p,[k]:v}));
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault();if(saving)return;
+    if(availability!=="open"||!legalVersion){
+      setMessage("La collecte n'est pas ouverte. Réessayez lorsque le service sera disponible.");
+      return;
+    }
     if(trap){setMessage("Votre demande n'a pas pu être reçue.");return}
     const checked=validateBpeiInquiry(draft);
     if(!checked.ok){setMessage(checked.error);return}
     setSaving(true);setMessage("");
-    const {error}=await (supabase as any).from("bpei_inquiries").insert(checked.data);
-    setSaving(false);
-    if(error){setMessage("Envoi impossible. Le service est peut-être encore fermé. Réessayez ultérieurement.");return}
-    setSent(true);setMessage("Votre demande a été enregistrée. BPEI pourra vous contacter si le service est disponible dans votre secteur.");
+    try{
+      const {error}=await (supabase as any).from("bpei_inquiries").insert(checked.data);
+      if(error){
+        setMessage("Envoi impossible. Le service est peut-être encore fermé. Réessayez ultérieurement.");
+        return;
+      }
+      setSent(true);
+      setMessage("Votre demande a été enregistrée. BPEI pourra vous contacter si le service est disponible dans votre secteur.");
+    }catch{
+      setMessage("Le service est temporairement indisponible. Vous pouvez réessayer.");
+    }finally{
+      setSaving(false);
+    }
   }
   if(availability==="loading")return <p role="status" className="mt-8 text-muted-foreground">Vérification de la disponibilité du formulaire…</p>;
   if(availability==="error")return <p role="alert" className="mt-8 rounded-lg border p-5">Le formulaire est temporairement indisponible. Aucune donnée n'est collectée.</p>;

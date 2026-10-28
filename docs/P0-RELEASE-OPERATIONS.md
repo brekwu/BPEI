@@ -74,3 +74,9 @@ Conserver `bpei.fr` sur OVH tant que la recette n'est pas acquise. Avant une exp
 - La création d'un nouveau Preview Vercel pour le dernier code a été refusée par l'API (HTTP 402, limite gratuite de 100 déploiements sur 24 heures). Le site public et l'abonnement n'ont pas été modifiés. Le dernier commit doit encore être effectivement déployé en Preview puis éprouvé avant homologation.
 - État en base au contrôle : `auth.users=0`, `independent_admins=0`, zéro publication juridique et inscriptions fermées. La réception e-mail externe, la configuration du hook Auth et l'acceptation des documents restent non validées.
 - **Décision : P0 non homologué.** N'utiliser « P0 fini » qu'après obtention de preuves réelles pour ces prérequis, avec tests positifs et négatifs sur la même révision déployée.
+
+## P0 — Résilience du formulaire client et publication juridique (28/10/2026)
+- Le formulaire de contact et d'intervention ne reste plus bloqué après une erreur réseau, et refuse l'envoi lorsque l'ouverture de la collecte n'est pas confirmée. Le serveur doit continuer à faire respecter les autorisations et les consentements.
+- L'interface d'administration juridique affiche un état prudent lorsque l'API de validation ou de publication est indisponible : aucun succès n'est annoncé si la relecture des trois documents n'a pas abouti ; les boutons sont à nouveau disponibles après l'erreur.
+- Le test navigateur `scripts/browser-p0-customer-intake-retry-smoke.mjs` est effectué exclusivement avec une API simulée, sans envoi de données clients réelles.
+- L'homologation P0 demeure **non validée** tant que le premier compte admin, le SMTP, le hook Auth et les textes juridiques approuvés ne sont pas testés en réel. Aucun domaine ou abonnement n'est modifié.
