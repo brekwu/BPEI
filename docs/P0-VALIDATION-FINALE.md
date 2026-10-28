@@ -22,10 +22,11 @@ Ce document évite de confondre la réussite des tests SQL transactionnels avec 
 
 ## 4. Recette à trois vrais comptes (manuelle, sans mutation en CI)
 
-GitHub Actions > **BPEI P0 - vraie recette Auth et isolation (manuel)**, uniquement après création de trois comptes consentants :
-- Placer les onze variables `P0_*` documentées dans `scripts/p0-live-auth-acceptance.mjs` dans les **GitHub Actions Secrets** (jamais dans le dépôt, une issue ou un message).
-- Lancer manuellement le workflow. Il échoue si un secret manque, si l'e-mail d'un compte n'est pas confirmé, si les applications ne lui appartiennent pas, si les droits administrateur ne sont pas valides ou si les RLS laissent lire des données tierces.
-- Ce test ne valide pas à lui seul la livraison SMTP ou le hook : conserver les preuves séparées.
+Le test `scripts/p0-live-auth-acceptance.mjs` exige trois comptes consentants, les deux candidatures réelles et la version juridique effectivement approuvée. **Sur la branche P0 actuelle, exécuter directement ce script dans un environnement Node privé** avec les onze variables d'environnement `P0_*` définies et les dépendances installées (`bun install --frozen-lockfile`, puis `node scripts/p0-live-auth-acceptance.mjs`). Ne jamais passer les mots de passe sur la ligne de commande, ni les enregistrer dans le dépôt.
+
+Une version de ce contrôle est préparée dans `.github/workflows/p0-live-acceptance.yml` avec une exécution manuelle protégée et des GitHub Actions Secrets. **Attention : GitHub exige la présence du workflow `workflow_dispatch` sur la branche par défaut `main` pour le proposer dans l'interface.** Or ce fichier est actuellement uniquement sur la branche P0, et la branche `main` ne doit pas être modifiée sans l'autorisation requise. Cette recette n'est donc **pas encore lançable depuis l'onglet Actions**. Dès qu'elle sera activée sur la branche par défaut selon le processus de validation GitHub, lancer le workflow après placement des onze secrets.
+
+Dans les deux modes, le test échoue si l'e-mail d'un compte n'est pas confirmé, si une candidature n'appartient pas au technicien, si les droits administrateur manquent ou si la RLS laisse lire les données de tiers. Il ne vérifie **ni** la réception SMTP **ni** l'activation du hook : conserver ces preuves indépendantes.
 
 ## 5. Vercel, publication et homologation
 
