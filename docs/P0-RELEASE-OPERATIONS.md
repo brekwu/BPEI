@@ -9,14 +9,14 @@ Ce document décrit des **contrôles réels**, pas une déclaration de mise en p
 - `bpei_launch_controls` : `legal_documents_published=false`, `independent_registration_enabled=false`, `legal_version=null`.
 - `bpei_intake_flags` : `contact=false` et `intervention=false`.
 - Les droits SQL sont **scindés par colonne** (notamment INSERT des demandes, candidatures, acceptations, UPDATE du profil). Ne pas se fier à `has_table_privilege` ou `role_table_grants` pour conclure qu'ils sont absents.
-- La fonction `bpei_private.before_bpei_user_created(jsonb)` retourne un refus 403 sur une inscription normale et autorise le marqueur `app_metadata.bpei_admin_bootstrap=true` réservé à l'API Admin. Elle **n'est pas nécessairement activée** dans la configuration Auth.
+- La fonction `bpei_private.before_bpei_user_created(jsonb)` retourne un refus 403 sur une inscription normale et autorise le marqueur `app_metadata.bpei_admin_bootstrap=true` réservé à l'API Admin. Elle vérifie aussi l'accusé de réception de la version juridique côté API, et **n'est pas nécessairement activée** dans la configuration Auth.
 - Vercel `bpei-preview` fournit une préproduction READY, mais cela ne démontre pas la dernière révision ni la recette de bout en bout. Le domaine `bpei.fr` chez OVH n'est pas basculé.
 
 ## 1. Installer le premier administrateur (sans ouvrir les inscriptions)
 
 Depuis un ordinateur de confiance uniquement : configurer les variables d'environnement `BPEI_SUPABASE_URL`, `BPEI_SUPABASE_SERVICE_KEY`, `BPEI_ADMIN_EMAIL`, `BPEI_ADMIN_PASSWORD` (mot de passe fort, 16 caractères minimum) et `BPEI_ADMIN_EMAIL_VERIFIED=true` **uniquement après vérification personnelle** de l'adresse.
 
-Exécuter `node scripts/p0-bootstrap-admin.mjs` pour voir le mode sans modification ; puis `node scripts/p0-bootstrap-admin.mjs --execute` après contrôle des valeurs. Le script refuse tout projet autre que BPEI, crée un seul compte Auth, puis ajoute une ligne dans `independent_admins` et vérifie sa présence. Une seconde création d'un compte déjà existant n'est pas automatique. Ne jamais mettre la clé secrète dans Git, le navigateur, des logs, des messages, ou les variables préfixées `VITE_`.
+Exécuter `node scripts/p0-bootstrap-admin.mjs` pour voir le mode sans modification ; puis `node scripts/p0-bootstrap-admin.mjs --execute` après contrôle des valeurs. Le script refuse tout projet autre que BPEI, crée un seul compte Auth, puis ajoute une ligne dans `independent_admins` et vérifie sa présence. Une seconde création d'un compte déjà existant n'est pas automatique. En cas d'échec de l'attribution du rôle après création du compte, le script peut reprendre avec `--resume-user-id UUID` au lieu de créer un doublon. Ne jamais mettre la clé secrète dans Git, le navigateur, des logs, des messages, ou les variables préfixées `VITE_`.
 
 Un administrateur ainsi confirmé constitue un **bootstrap privilégié**, et **ne prouve PAS** que le parcours public de confirmation e-mail fonctionne.
 
@@ -24,7 +24,7 @@ Un administrateur ainsi confirmé constitue un **bootstrap privilégié**, et **
 
 - Dans Supabase > Authentication > Hooks : activer le hook **Before User Created** et sélectionner la fonction Postgres `bpei_private.before_bpei_user_created`. Confirmer la fonction active par un essai réel d'inscription non privilégiée pendant la fermeture : elle doit être refusée et aucun compte ne doit apparaître.
 - Dans Supabase > Authentication > SMTP : configurer un prestataire SMTP autorisé, l'adresse expéditrice et les identifiants ; vérifier SPF, DKIM et DMARC du domaine d'envoi. Ne pas compter sur le SMTP Supabase par défaut pour les destinataires extérieurs à l'équipe.
-- Dans Supabase > Authentication > URL Configuration : définir `SITE_URL` et les URL de retour explicitement autorisées pour la préproduction, puis pour `https://bpei.fr` au moment du basculement. Valider la confirmation et la réinitialisation de mot de passe depuis une vraie boîte externe.
+- Dans Supabase > Authentication > URL Configuration : définir `SITE_URL` et les URL de retour explicitement autorisées pour la préproduction, puis pour `https://bpei.fr` au moment du basculement. Valider la confirmation et la réinitialisation de mot de passe depuis une vraie boîte externe via `/reinitialiser-mot-de-passe`. Tester aussi le refus d'une inscription API sans `bpei_legal_version_acknowledged` ou avec une ancienne version.
 - Garder les inscriptions fermées tant que cette recette n'est pas probante.
 
 ## 3. Documents juridiques réels
