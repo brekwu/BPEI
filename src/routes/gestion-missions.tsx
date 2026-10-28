@@ -2,7 +2,7 @@ import {createFileRoute,Link} from "@tanstack/react-router";
 import {useEffect,useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {PublicShell} from "@/components/public/PublicShell";
-import {AdminMissionBoard} from "@/components/admin/AdminMissionBoard";
+import {AdminMissionBoardServer} from "@/components/admin/AdminMissionBoardServer";
 export const Route=createFileRoute("/gestion-missions")({
  component:MissionManagement,
  head:()=>({meta:[{title:"Suivi des missions — BPEI"},{name:"robots",content:"noindex,nofollow"}]})
@@ -26,6 +26,6 @@ function MissionManagement(){
   <Link to="/gestion-independants" className="mt-3 inline-block text-sm underline">Revenir à l'administration</Link>
   {access==="loading"?<p className="mt-8" role="status">Vérification de l'accès…</p>:
    access==="denied"?<p className="mt-8" role="alert">Accès administrateur non autorisé.</p>:
-   <div className="mt-8"><AdminMissionBoard/></div>}
+   <div className="mt-8"><AdminMissionBoardServer/></div>}
  </main></PublicShell>;
 }
