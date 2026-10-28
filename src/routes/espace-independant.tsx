@@ -34,19 +34,29 @@ function IndependentSpace() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
-  const [requests, setRequests] = useState<Array<{ id: string; title: string; status: string; created_at: string }>>([]);
+  const [requests, setRequests] = useState<Array<{ id: string; title: string; status: string; created_at: string; inquiry_id: string | null }>>([]);
+  const [clientContacts, setClientContacts] = useState<Record<string,{ client_name:string; email:string; phone:string|null; city:string|null }>>({});
   const [application, setApplication] = useState<{ id: string; status: string; created_at: string; message: string } | null>(null);
 
   async function load(id: string) {
     const db = supabase as any;
     const [p, r, a] = await Promise.all([
       db.from("independent_profiles").select("*").eq("user_id", id).maybeSingle(),
-      db.from("independent_requests").select("id,title,status,created_at").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
+      db.from("independent_requests").select("id,title,status,created_at,inquiry_id").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
       db.from("independent_applications").select("id,status,created_at,message").eq("user_id", id).maybeSingle(),
     ]);
     if (p.error || r.error || a.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
     setProfile(p.data ?? null);
     setRequests(r.data ?? []);
+    setClientContacts({});
+    const eligibleIds = (r.data ?? []).filter((item:{status:string;inquiry_id:string|null})=>
+      ["accepted","in_progress","completed"].includes(item.status) && item.inquiry_id
+    ).map((item:{inquiry_id:string})=>item.inquiry_id);
+    if(eligibleIds.length>0){
+      const contacts=await db.from("bpei_inquiries").select("id,client_name,email,phone,city").in("id",eligibleIds);
+      if(contacts.error)setError("Coordonnées du client indisponibles. Contactez l'administration BPEI.");
+      else setClientContacts(Object.fromEntries((contacts.data??[]).map((x:{id:string;client_name:string;email:string;phone:string|null;city:string|null})=>[x.id,x])));
+    }
     setApplication(a.data ?? null);
     setLoading(false);
   }
@@ -120,7 +130,7 @@ function IndependentSpace() {
         <div className="mt-8 space-y-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Mon profil</h2>
-            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setApplication(null); setRequests([]); }}>Se déconnecter</Button>
+            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setApplication(null); setRequests([]); setClientContacts({}); }}>Se déconnecter</Button>
           </div>
           {!profile ? <form className="rounded-xl border p-6 space-y-4" onSubmit={async (event) => {
             event.preventDefault();
@@ -174,6 +184,23 @@ function IndependentSpace() {
             <h2 className="text-xl font-semibold">Mes demandes</h2>
             {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4">
               <strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{({new:"Nouvelle mission",accepted:"Acceptée",in_progress:"En cours",completed:"Terminée",cancelled:"Refusée / annulée"} as Record<string,string>)[r.status]??r.status}</span>
+              {r.inquiry_id && ["accepted","in_progress","completed"].includes(r.status) && clientContacts[r.inquiry_id] && <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
+                <p className="font-medium">Contact du client — mission acceptée</p>
+                <p>{clientContacts[r.inquiry_id].client_name} — {clientContacts[r.inquiry_id].city||"ville non indiquée"}</p>
+                <p><a className="underline" href={"mailto:"+clientContacts[r.inquiry_id].email}>{clientContacts[r.inquiry_id].email}</a></p>
+                {clientContacts[r.inquiry_id].phone && <p><a className="underline" href={"tel:"+clientContacts[r.inquiry_id].phone}>{clientContacts[r.inquiry_id].phone}</a></p>}
+              </div>}
+              {(r.status==="accepted" || r.status==="in_progress") && <div className="mt-3">
+                <Button size="sm" disabled={saving} onClick={async()=>{
+                  if(!userId)return;
+                  setSaving(true);setError("");
+                  const {error:e}=await (supabase as any).rpc("advance_independent_request",{
+                    p_request_id:r.id,p_next_status:r.status==="accepted"?"in_progress":"completed"
+                  });
+                  if(e)setError("Changement de statut impossible.");else await load(userId);
+                  setSaving(false);
+                }}>{r.status==="accepted"?"Démarrer l'intervention":"Marquer l'intervention terminée"}</Button>
+              </div>}
               {r.status==="new" && <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" disabled={saving} onClick={async()=>{
                   if(!userId)return;setSaving(true);setError("");const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"accepted"});
