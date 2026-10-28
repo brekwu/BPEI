@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { missionStatusLabel, nextMissionStatus, canReadMissionClientContact } from "@/lib/bpei-mission-status";
 import { canRegisterIndependent, isPublishedLegalVersion } from "@/lib/bpei-launch-policy";
+import { bpeiAuthRedirect } from "@/lib/bpei-auth-redirect";
 
 export const Route = createFileRoute("/espace-independant")({
   component: IndependentSpace,
@@ -106,7 +107,7 @@ function IndependentSpace() {
       return;
     }
     setLoading(true);
-    const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/espace-independant`, data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
+    const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
     setPasswordConfirm("");
     if (result.error || !result.data.user) {
