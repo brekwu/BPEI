@@ -38,6 +38,8 @@ jobs:
           bun-version: "1.4.4"
       - name: Install frozen dependencies
         run: bun install --frozen-lockfile
+      - name: Isolated first-admin bootstrap integration cases (no external network)
+        run: node scripts/test-p0-bootstrap-admin.mjs
       - name: Dry-run first-admin bootstrap without credentials
         run: node scripts/p0-bootstrap-admin.mjs
       - name: Guard check (must refuse execution without private credentials)

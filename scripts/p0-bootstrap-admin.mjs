@@ -28,9 +28,9 @@ if (!execute) {
   fail("Wrong Supabase project. Refusing to modify any other database.");
 } else if (!key || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
   fail("Provide BPEI_SUPABASE_SERVICE_KEY and a valid BPEI_ADMIN_EMAIL.");
-} else if (password.length < 16 || !/[a-z]/.test(password) ||
+} else if (!resumeId && (password.length < 16 || !/[a-z]/.test(password) ||
            !/[A-Z]/.test(password) || !/[0-9]/.test(password) ||
-           !/[^a-zA-Z0-9]/.test(password)) {
+           !/[^a-zA-Z0-9]/.test(password))) {
   fail("Provide BPEI_ADMIN_PASSWORD: at least 16 chars, upper/lowercase, digit and symbol.");
 } else if (!emailVerified) {
   fail("Set BPEI_ADMIN_EMAIL_VERIFIED=true only after personally verifying ownership of the chosen email.");
