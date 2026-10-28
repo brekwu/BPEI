@@ -34,7 +34,7 @@ jobs:
           PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-ssr.log 2>&1 &
           BPEI_PID=$!
           trap 'kill "$BPEI_PID" 2>/dev/null || true' EXIT
-          node scripts/smoke-http.mjs
+          node scripts/smoke-http.mjs || { echo 'SSR server startup logs:'; tail -80 /tmp/bpei-ssr.log; exit 1; }
       - name: Lint ciblé du code réseau BPEI
         run: |
           bunx eslint src/lib/network-forms.ts src/lib/network.functions.ts \
