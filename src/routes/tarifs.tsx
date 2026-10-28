@@ -24,7 +24,7 @@ function TarifsPage() {
     <PublicShell>
       <section className="mx-auto max-w-4xl px-4 py-20 md:px-6">
         <h1 className="text-3xl font-bold md:text-5xl">Conditions commerciales BPEI</h1>
-        <p className="mt-6 text-lg text-muted-foreground">BPEI développe son réseau de techniciens indépendants. Les modalités financières des partenariats et les éventuels tarifs des outils destinés aux boutiques sont en cours de révision.</p>
+        <p className="mt-6 text-lg text-muted-foreground">BPEI développe son réseau de techniciens indépendants. Les modalités financières des partenariats et les éventuels tarifs de prestations sont en cours de définition.</p>
         <div className="mt-8 rounded-xl border bg-secondary/30 p-6">
           <h2 className="text-xl font-semibold">Avant tout engagement</h2>
           <p className="mt-3 text-sm text-muted-foreground">Les conditions applicables seront communiquées par écrit, et devront être acceptées, avant toute collaboration ou prestation payante. Une candidature ne déclenche aucun abonnement ni prélèvement.</p>
