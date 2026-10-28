@@ -35,3 +35,12 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Migration `20261028172500` : rejet des doublons identiques pendant 10 minutes et limitation à 5 demandes par e-mail sur une fenêtre de 24 heures.
 - Ce garde-fou est un premier contrôle côté serveur et ne constitue pas une solution complète contre le spam (adresses e-mail jetables, robots distribués).
 - Aucune réouverture de `bpei_intake_flags` n'a été effectuée.
+
+## Lot P1.2 — Suivi détaillé des missions (développé)
+
+- Migration `20261028172750` : table append-only `bpei_mission_events`, historisation automatique des transitions et état initial des missions existantes (sans inventer de transitions antérieures).
+- Le technicien peut consulter l'historique de ses missions depuis `/espace-independant`.
+- L'administrateur dispose d'un tableau `/gestion-missions` avec recherche, filtres de statuts, dates et historique par mission.
+- La lecture SQL est réservée au technicien désigné et aux administrateurs, et aucun droit direct d'insertion ou de modification n'est accordé aux comptes utilisateurs.
+- La page est volontairement limitée aux 300 dernières missions : pagination et exports restent à réaliser pour une exploitation à grande échelle.
+- Les tests navigateur anonymes ne remplacent pas la recette RLS en présence d'utilisateurs réels ; le portail reste fermé tant que les critères d'ouverture P0 ne sont pas validés.
