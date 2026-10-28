@@ -2,6 +2,7 @@ import {useEffect,useState,type FormEvent} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
 import {Textarea} from "@/components/ui/textarea";
+import {IncidentResolutionReportButton} from "@/components/admin/IncidentResolutionReportButton";
 import {canReviewIncident,incidentCategoryLabel,incidentStatusLabel} from "@/lib/bpei-p1-operations";
 import {
  incidentPriorities,incidentPriorityLabel,incidentPriorityIsValid,
@@ -11,7 +12,7 @@ import {
 
 type Incident={
  id:string;request_id:string;category:string;description:string;
- status:string;resolution_note:string|null;priority:string;
+ status:string;resolution_note:string|null;reviewed_at:string|null;priority:string;
  assigned_admin_id:string|null;target_at:string;created_at:string;
  escalation_reason:string|null
 };
@@ -101,7 +102,7 @@ export function AdminIncidentEscalations(){
   setLoading(true);
   (async()=>{
    let query=(supabase as any).from("bpei_mission_incidents")
-    .select("id,request_id,category,description,status,resolution_note,priority,assigned_admin_id,target_at,created_at,escalation_reason",{count:"exact"});
+    .select("id,request_id,category,description,status,resolution_note,reviewed_at,priority,assigned_admin_id,target_at,created_at,escalation_reason",{count:"exact"});
    if(filter==="active")query=query.in("status",["open","under_review"]);
    if(filter==="unassigned")query=query.in("status",["open","under_review"]).is("assigned_admin_id",null);
    if(filter==="overdue")query=query.in("status",["open","under_review"]).lt("target_at",new Date().toISOString());
@@ -217,6 +218,7 @@ export function AdminIncidentEscalations(){
        </div>
       </div>}
       {x.status==="resolved"&&x.resolution_note&&<p className="rounded-md border p-3 text-sm">Résolution : {x.resolution_note}</p>}
+      <IncidentResolutionReportButton incident={x}/>
       <IncidentHistory incidentId={x.id}/>
      </article>;
    })}

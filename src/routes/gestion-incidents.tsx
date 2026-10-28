@@ -3,6 +3,7 @@ import {useEffect,useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {PublicShell} from "@/components/public/PublicShell";
 import {AdminIncidentEscalations} from "@/components/admin/AdminIncidentEscalations";
+import {AdminIncidentStatistics} from "@/components/admin/AdminIncidentStatistics";
 import {BpeiInbox} from "@/components/shared/BpeiInbox";
 export const Route=createFileRoute("/gestion-incidents")({
  component:IncidentManagement,
@@ -27,6 +28,6 @@ function IncidentManagement(){
   <Link to="/gestion-independants" className="mt-3 inline-block text-sm underline">Revenir à l'administration</Link>
   {access==="loading"?<p role="status" className="mt-8">Vérification de l'accès…</p>:
    access==="denied"?<p role="alert" className="mt-8">Accès administrateur non autorisé.</p>:
-   <div className="mt-8 space-y-4"><BpeiInbox/><AdminIncidentEscalations/></div>}
+   <div className="mt-8 space-y-4"><BpeiInbox/><AdminIncidentStatistics/><AdminIncidentEscalations/></div>}
  </main></PublicShell>;
 }
