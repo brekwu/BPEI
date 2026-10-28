@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/bpei-independent-release-clean
+      - feat/p1-mission-operations
       - feat/independants-sans-boutiques-2026-10
   pull_request:
     branches:
@@ -44,3 +45,6 @@ jobs:
           node scripts/smoke-http.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-admin-missions-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-role-isolation-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-auth-prelaunch-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }

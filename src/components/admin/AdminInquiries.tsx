@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
@@ -58,6 +59,8 @@ export function AdminInquiries() {
  return <section className="mt-12 space-y-4" aria-label="Demandes clients">
   <div className="flex flex-wrap items-center justify-between gap-3">
     <h2 className="text-xl font-semibold">Demandes clients et messages</h2>
+    <Link className="text-sm underline" to="/gestion-missions">Suivi des missions</Link>
+    <Link className="text-sm underline" to="/gestion-incidents">Gérer les incidents des missions</Link>
     <Button variant="outline" onClick={()=>void refresh()} disabled={loading||!!busy}>Actualiser</Button>
   </div>
   <p className="text-sm text-muted-foreground">Ces coordonnées personnelles sont réservées à l'équipe BPEI. Seuls les indépendants approuvés et vérifiés peuvent recevoir une mission.</p>

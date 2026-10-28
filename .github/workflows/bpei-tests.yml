@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/bpei-independent-release-clean
+      - feat/p1-mission-operations
   pull_request:
     branches:
       - main
@@ -22,6 +23,8 @@ jobs:
           node-version: "22"
       - name: Check first-admin bootstrap script syntax
         run: node --check scripts/p0-bootstrap-admin.mjs
+      - name: Verify live RLS smoke script syntax without using secrets
+        run: node --check scripts/p1-live-rls-smoke.mjs
       - name: Tests du projet (sans données externes)
         run: npm test
 

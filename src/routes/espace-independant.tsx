@@ -2,11 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
+import { MissionIncidentPanel } from "@/components/independent/MissionIncidentPanel";
+import { MissionTimeline } from "@/components/shared/MissionTimeline";
+import { BpeiInbox } from "@/components/shared/BpeiInbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { missionStatusLabel, nextMissionStatus, canReadMissionClientContact } from "@/lib/bpei-mission-status";
 import { canRegisterIndependent, isPublishedLegalVersion } from "@/lib/bpei-launch-policy";
+import { bpeiAuthRedirect } from "@/lib/bpei-auth-redirect";
 
 export const Route = createFileRoute("/espace-independant")({
   component: IndependentSpace,
@@ -103,17 +107,26 @@ function IndependentSpace() {
       return;
     }
     setLoading(true);
-    const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/espace-independant`, data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
-    setPassword("");
-    setPasswordConfirm("");
-    if (result.error || !result.data.user) {
-      setError("Connexion impossible. Vérifiez vos identifiants.");
+    setNotice("");
+    try {
+      const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
+      if (result.error || !result.data.user) {
+        setError("Connexion impossible. Vérifiez vos identifiants et le service d'authentification.");
+        return;
+      }
+      setPassword("");
+      setPasswordConfirm("");
+      if (!result.data.session) {
+        setNotice("Vérifiez votre e-mail pour confirmer le compte.");
+        return;
+      }
+      setUserId(result.data.user.id);
+      await load(result.data.user.id);
+    } catch {
+      setError("Service d'authentification indisponible. Réessayez.");
+    } finally {
       setLoading(false);
-      return;
     }
-    if (!result.data.session) { setNotice("Vérifiez votre e-mail pour confirmer le compte."); setLoading(false); return; }
-    setUserId(result.data.user.id);
-    await load(result.data.user.id);
   }
 
   async function save(e: FormEvent<HTMLFormElement>) {
@@ -240,10 +253,13 @@ function IndependentSpace() {
               <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
             </form>}
           </section>
+          <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
             {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4">
               <strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{missionStatusLabel(r.status)}</span>
+              <MissionIncidentPanel requestId={r.id} status={r.status} />
+              <MissionTimeline missionId={r.id} />
               {r.inquiry_id && canReadMissionClientContact(r.status) && clientContacts[r.inquiry_id] && <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
                 <p className="font-medium">Contact du client — mission acceptée</p>
                 <p>{clientContacts[r.inquiry_id].client_name} — {clientContacts[r.inquiry_id].city||"ville non indiquée"}</p>
