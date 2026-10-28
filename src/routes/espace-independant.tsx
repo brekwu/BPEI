@@ -32,6 +32,10 @@ function IndependentSpace() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [registration, setRegistration] = useState(false);
+  const [launch, setLaunch] = useState<{legal_documents_published:boolean;independent_registration_enabled:boolean;legal_version:string|null}|null>(null);
+  const [privacyChecked,setPrivacyChecked] = useState(false);
+  const [legalAccepted,setLegalAccepted] = useState(false);
+  const [acceptChecked,setAcceptChecked] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
@@ -41,12 +45,20 @@ function IndependentSpace() {
 
   async function load(id: string) {
     const db = supabase as any;
-    const [p, r, a] = await Promise.all([
+    const [p, r, a, gate] = await Promise.all([
       db.from("independent_profiles").select("*").eq("user_id", id).maybeSingle(),
       db.from("independent_requests").select("id,title,status,created_at,inquiry_id").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
       db.from("independent_applications").select("id,status,created_at,message").eq("user_id", id).maybeSingle(),
+      db.from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle(),
     ]);
-    if (p.error || r.error || a.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
+    if (p.error || r.error || a.error || gate.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
+    const currentGate=gate.data ?? null;
+    setLaunch(currentGate);
+    const legalVersion=currentGate?.legal_documents_published ? currentGate.legal_version : null;
+    if(legalVersion){
+      const acceptance=await db.from("bpei_legal_acceptances").select("legal_version").eq("user_id",id).eq("legal_version",legalVersion).maybeSingle();
+      setLegalAccepted(!acceptance.error && !!acceptance.data);
+    } else setLegalAccepted(false);
     setProfile(p.data ?? null);
     setRequests(r.data ?? []);
     setClientContacts({});
@@ -64,6 +76,9 @@ function IndependentSpace() {
 
   useEffect(() => {
     let active = true;
+    (supabase as any).from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle().then(({data}:any)=>{
+      if(active)setLaunch(data ?? null);
+    }).catch(()=>{if(active)setLaunch(null)});
     supabase.auth.getUser().then(async ({ data }) => {
       if (!active) return;
       setUserId(data.user?.id ?? null);
@@ -76,8 +91,12 @@ function IndependentSpace() {
   async function signIn(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    if(registration && (!launch?.legal_documents_published || !launch?.independent_registration_enabled || !launch.legal_version || !privacyChecked)){
+      setError("L'inscription n'est pas ouverte ou les informations juridiques n'ont pas été acceptées.");
+      return;
+    }
     setLoading(true);
-    const result = registration ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
+    const result = registration ? await supabase.auth.signUp({ email, password, options: { data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
     if (result.error || !result.data.user) {
       setError("Connexion impossible. Vérifiez vos identifiants.");
@@ -124,7 +143,15 @@ function IndependentSpace() {
           <h2 className="font-semibold">{registration ? "Inscription indépendant" : "Connexion"}</h2>
           <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
           <Input type="password" autoComplete={registration ? "new-password" : "current-password"} minLength={6} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
-          <Button type="submit">{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
+          {registration && <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-sm">
+            {launch?.legal_documents_published && launch.independent_registration_enabled && launch.legal_version ?
+              <label className="flex items-start gap-2">
+                <input type="checkbox" checked={privacyChecked} onChange={e=>setPrivacyChecked(e.target.checked)} required />
+                <span>J'ai pris connaissance de la <Link className="underline" to="/confidentialite">politique de confidentialité</Link> et des <Link className="underline" to="/cgu">conditions d'utilisation</Link> (version {launch.legal_version}).</span>
+              </label> :
+              <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
+          </div>}
+          <Button type="submit" disabled={registration && (!launch?.legal_documents_published || !launch?.independent_registration_enabled || !privacyChecked)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
         </form> :
@@ -164,7 +191,22 @@ function IndependentSpace() {
           <section className="rounded-xl border bg-card p-6">
             <div className="flex flex-wrap justify-between gap-2"><h2 className="text-xl font-semibold">Candidature au réseau BPEI</h2><Button variant="outline" size="sm" onClick={() => userId && void load(userId)}>Actualiser</Button></div>
             <p className="mt-2 text-sm text-muted-foreground">Votre candidature sera examinée avant toute mission. La candidature est gratuite et ne garantit aucune attribution.</p>
-            {!profile ? <p className="mt-4 text-sm">Créez votre profil professionnel ci-dessus avant de candidater.</p> : application ? <div role="status" className="mt-4 rounded-lg border bg-muted/30 p-4 text-sm"><p><strong>Statut :</strong> {({pending:"En attente d’examen",under_review:"En cours d’examen",approved:"Candidature approuvée",rejected:"Candidature refusée"} as Record<string,string>)[application.status] ?? application.status}</p><p className="mt-2 text-muted-foreground">Candidature déposée le {new Date(application.created_at).toLocaleDateString("fr-FR")}. Vous pouvez modifier votre profil pendant l’examen.</p></div> : <form className="mt-4 space-y-3" onSubmit={async event => {
+            {!launch?.legal_documents_published || !launch?.legal_version ?
+              <p className="mt-4 rounded-lg border bg-muted/20 p-4 text-sm">Le dépôt de candidature est suspendu en attendant la publication des informations juridiques BPEI.</p>
+              : !legalAccepted ?
+              <div className="mt-4 space-y-3 rounded-lg border p-4 text-sm">
+                <p>Avant de candidater, prenez connaissance de la <Link to="/confidentialite" className="underline">politique de confidentialité</Link> et des <Link to="/cgu" className="underline">conditions d'utilisation</Link> (version {launch.legal_version}).</p>
+                <label className="flex items-start gap-2"><input type="checkbox" checked={acceptChecked} onChange={e=>setAcceptChecked(e.target.checked)} /><span>J'ai pris connaissance de ces documents et j'accepte les conditions d'utilisation applicables à ma candidature.</span></label>
+                <Button type="button" disabled={!acceptChecked || saving} onClick={async()=>{
+                  if(!userId || !launch.legal_version)return;
+                  setSaving(true);setError("");
+                  const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch.legal_version});
+                  if(e)setError("Acceptation non enregistrée. Réessayez.");
+                  else {setLegalAccepted(true);setNotice("Informations juridiques acceptées.");}
+                  setSaving(false);
+                }}>Enregistrer mon acceptation</Button>
+              </div>
+              : !profile ? <p className="mt-4 text-sm">Créez votre profil professionnel ci-dessus avant de candidater.</p> : application ? <div role="status" className="mt-4 rounded-lg border bg-muted/30 p-4 text-sm"><p><strong>Statut :</strong> {({pending:"En attente d’examen",under_review:"En cours d’examen",approved:"Candidature approuvée",rejected:"Candidature refusée"} as Record<string,string>)[application.status] ?? application.status}</p><p className="mt-2 text-muted-foreground">Candidature déposée le {new Date(application.created_at).toLocaleDateString("fr-FR")}. Vous pouvez modifier votre profil pendant l’examen.</p></div> : <form className="mt-4 space-y-3" onSubmit={async event => {
               event.preventDefault();
               if (!userId || saving) return;
               const message = (new FormData(event.currentTarget).get("message") ?? "").toString().trim();
