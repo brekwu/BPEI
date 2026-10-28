@@ -10,7 +10,7 @@ const browser=await chromium.launch({headless:true});
 const id="88888888-8888-4888-8888-888888888888";
 const user={id,email:"authorized-test@example.invalid",aud:"authenticated",role:"authenticated",
  app_metadata:{provider:"email",providers:["email"]},user_metadata:{},email_confirmed_at:"2026-10-28T11:00:00Z"};
-let consentAttempts=0,profileAttempts=0,profile=null,accepted=false;
+let consentAttempts=0,profileAttempts=0,profileReadAttempts=0,profile=null,accepted=false;
 const errors=[];
 const json=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
 const context=await browser.newContext();
@@ -27,6 +27,9 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
   return route.fulfill(json({legal_documents_published:true,independent_registration_enabled:false,
    legal_version:"bpei-test-v1"}));
  if(path==="/rest/v1/independent_profiles"){
+  if(method==="GET"&&++profileReadAttempts===1){
+   return route.fulfill(json({message:"Simulated profile fetch failure",code:"503"},503));
+  }
   if(method==="POST"){
    profileAttempts++;
    if(profileAttempts===1)return route.fulfill(json({message:"Temporary outage",code:"503"},503));
@@ -57,7 +60,12 @@ try{
  await page.getByPlaceholder("Adresse e-mail").fill(user.email);
  await page.getByPlaceholder("Mot de passe",{exact:true}).fill("Test-password-2026!");
  await page.getByRole("button",{name:"Se connecter",exact:true}).click();
+ await page.getByText("Impossible de récupérer votre espace. Réessayez ultérieurement.").waitFor({timeout:15000});
+ assert.equal(await page.getByRole("button",{name:"Créer mon profil"}).count(),0,
+  "Failed private data read must not allow mutation using partial state");
+ await page.getByRole("button",{name:"Actualiser mon espace"}).click();
  await page.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
+ assert.ok(profileReadAttempts>=2,"Recovery must re-fetch profile after initial failure");
  // Signed-in users must not be able to treat arbitrary ?type=recovery as a valid recovery.
  await page.goto(base+"/reinitialiser-mot-de-passe?type=recovery",{waitUntil:"domcontentloaded"});
  await page.getByRole("button",{name:"Recevoir un lien de réinitialisation"}).waitFor({timeout:15000});

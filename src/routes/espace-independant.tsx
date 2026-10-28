@@ -47,35 +47,77 @@ function IndependentSpace() {
   const [clientContacts, setClientContacts] = useState<Record<string,{ client_name:string; email:string; phone:string|null; city:string|null }>>({});
   const [application, setApplication] = useState<{ id: string; status: string; created_at: string; message: string } | null>(null);
 
-  async function load(id: string) {
-    const db = supabase as any;
-    const [p, r, a, gate] = await Promise.all([
-      db.from("independent_profiles").select("*").eq("user_id", id).maybeSingle(),
-      db.from("independent_requests").select("id,title,status,created_at,inquiry_id").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
-      db.from("independent_applications").select("id,status,created_at,message").eq("user_id", id).maybeSingle(),
-      db.from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle(),
-    ]);
-    if (p.error || r.error || a.error || gate.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
-    const currentGate=gate.data ?? null;
-    setLaunch(currentGate);
-    const legalVersion=currentGate?.legal_documents_published ? currentGate.legal_version : null;
-    if(legalVersion){
-      const acceptance=await db.from("bpei_legal_acceptances").select("legal_version").eq("user_id",id).eq("legal_version",legalVersion).maybeSingle();
-      setLegalAccepted(!acceptance.error && !!acceptance.data);
-    } else setLegalAccepted(false);
-    setProfile(p.data ?? null);
-    setRequests(r.data ?? []);
+  function clearPrivateState() {
+    setLaunch(null);
+    setLegalAccepted(false);
+    setProfile(null);
+    setRequests([]);
+    setApplication(null);
     setClientContacts({});
-    const eligibleIds = (r.data ?? []).filter((item:{status:string;inquiry_id:string|null})=>
-      canReadMissionClientContact(item.status) && item.inquiry_id
-    ).map((item:{inquiry_id:string})=>item.inquiry_id);
-    if(eligibleIds.length>0){
-      const contacts=await db.from("bpei_inquiries").select("id,client_name,email,phone,city").in("id",eligibleIds);
-      if(contacts.error)setError("Coordonnées du client indisponibles. Contactez l'administration BPEI.");
-      else setClientContacts(Object.fromEntries((contacts.data??[]).map((x:{id:string;client_name:string;email:string;phone:string|null;city:string|null})=>[x.id,x])));
+  }
+
+  async function load(id: string): Promise<boolean> {
+    setLoading(true);
+    try {
+      const db = supabase as any;
+      const [p, r, a, gate] = await Promise.all([
+        db.from("independent_profiles").select("*").eq("user_id", id).maybeSingle(),
+        db.from("independent_requests").select("id,title,status,created_at,inquiry_id").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
+        db.from("independent_applications").select("id,status,created_at,message").eq("user_id", id).maybeSingle(),
+        db.from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle(),
+      ]);
+      if (p.error || r.error || a.error || gate.error || !gate.data) {
+        clearPrivateState();
+        setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
+        return false;
+      }
+
+      const currentGate = gate.data;
+      const legalVersion = currentGate.legal_documents_published ? currentGate.legal_version : null;
+      let accepted = false;
+      if (legalVersion) {
+        const acceptance = await db.from("bpei_legal_acceptances").select("legal_version")
+          .eq("user_id",id).eq("legal_version",legalVersion).maybeSingle();
+        if (acceptance.error) {
+          clearPrivateState();
+          setError("Impossible de vérifier votre acceptation juridique. Réessayez.");
+          return false;
+        }
+        accepted = !!acceptance.data;
+      }
+
+      const eligibleIds = (r.data ?? []).filter((item:{status:string;inquiry_id:string|null})=>
+        canReadMissionClientContact(item.status) && item.inquiry_id
+      ).map((item:{inquiry_id:string})=>item.inquiry_id);
+
+      let contacts: Record<string,{client_name:string;email:string;phone:string|null;city:string|null}> = {};
+      let contactError = false;
+      if (eligibleIds.length > 0) {
+        const result = await db.from("bpei_inquiries").select("id,client_name,email,phone,city").in("id",eligibleIds);
+        if (result.error) {
+          contactError = true;
+        } else {
+          contacts = Object.fromEntries((result.data??[]).map((x:{id:string;client_name:string;email:string;phone:string|null;city:string|null})=>[x.id,x]));
+        }
+      }
+
+      setLaunch(currentGate);
+      setLegalAccepted(accepted);
+      setProfile(p.data ?? null);
+      setRequests(r.data ?? []);
+      setApplication(a.data ?? null);
+      setClientContacts(contacts);
+      setError(contactError
+        ? "Coordonnées du client indisponibles. Contactez l'administration BPEI."
+        : "");
+      return true;
+    } catch {
+      clearPrivateState();
+      setError("Service temporairement indisponible. Actualisez votre espace pour réessayer.");
+      return false;
+    } finally {
+      setLoading(false);
     }
-    setApplication(a.data ?? null);
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -83,12 +125,20 @@ function IndependentSpace() {
     (supabase as any).from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle().then(({data}:any)=>{
       if(active)setLaunch(data ?? null);
     }).catch(()=>{if(active)setLaunch(null)});
-    supabase.auth.getUser().then(async ({ data }) => {
+    supabase.auth.getUser().then(async ({ data, error }) => {
       if (!active) return;
+      if (error) throw error;
       setUserId(data.user?.id ?? null);
       if (data.user) await load(data.user.id);
       else setLoading(false);
-    }).catch(() => { if (active) setLoading(false); });
+    }).catch(() => {
+      if (active) {
+        clearPrivateState();
+        setUserId(null);
+        setError("Impossible de vérifier votre session. Réessayez.");
+        setLoading(false);
+      }
+    });
     return () => { active = false; };
   }, []);
 
@@ -191,7 +241,23 @@ function IndependentSpace() {
         <div className="mt-8 space-y-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Mon profil</h2>
-            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setApplication(null); setRequests([]); setClientContacts({}); }}>Se déconnecter</Button>
+            <div className="flex gap-2">
+              <Button variant="outline" disabled={saving} onClick={() => void load(userId)}>Actualiser mon espace</Button>
+              <Button variant="outline" onClick={async () => {
+                try {
+                  const result = await supabase.auth.signOut();
+                  if (result.error) {
+                    setError("Déconnexion non confirmée. Réessayez.");
+                    return;
+                  }
+                  setUserId(null);
+                  clearPrivateState();
+                  setError("");
+                } catch {
+                  setError("Déconnexion indisponible. Réessayez.");
+                }
+              }}>Se déconnecter</Button>
+            </div>
           </div>
           {!profile ? <form className="rounded-xl border p-6 space-y-4" onSubmit={async (event) => {
             event.preventDefault();
