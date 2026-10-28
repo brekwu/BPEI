@@ -20,7 +20,7 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - La nouvelle branche ne doit pas être fusionnée ni mise sur `bpei.fr` avant la recette P0/P1.
 
 ## Lots suivants
-1. P1.2 — Protection des demandes client contre les abus (limites serveur et modération), tableau de bord complet des missions et incidents.
+1. P1.2 — Protection anti-doublon et plafond de cinq demandes par adresse e-mail sur 24 h : **développés en base**. La modération, l’analyse des abus par adresse réseau et les tests réels restent à faire. Tableau de bord des demandes déjà disponible.
 2. P1.3 — Livraison e-mail transactionnelle, modèles et retries, uniquement après SMTP validé.
 3. P1.4 — Recette de bout en bout, performance mobile, accessibilité, supervision et promotion de la version vérifiée.
 
@@ -29,3 +29,9 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Tables avec RLS, accès anonyme interdit, transitions strictement autorisées.
 - Compilation et tests automatisés réussis.
 - Test avec vrais utilisateurs et notifications effectivement reçues dans l'application : **à faire avant de considérer le lot complètement homologué**.
+
+## Mise à jour du 28/10/2026
+
+- Migration `20261028172500` : rejet des doublons identiques pendant 10 minutes et limitation à 5 demandes par e-mail sur une fenêtre de 24 heures.
+- Ce garde-fou est un premier contrôle côté serveur et ne constitue pas une solution complète contre le spam (adresses e-mail jetables, robots distribués).
+- Aucune réouverture de `bpei_intake_flags` n'a été effectuée.
