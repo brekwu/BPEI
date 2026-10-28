@@ -14,6 +14,7 @@ const user={
 };
 const calls=[];
 const escalationCalls=[];
+const statisticsCalls=[];
 const incidentId="b0000000-0000-4000-8000-000000000001";
 const errors=[];
 const ok=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
@@ -45,6 +46,16 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
  if(p.includes("/rest/v1/independent_admins")){
    const single=(req.headers().accept||"").includes("application/vnd.pgrst.object+json");
    return route.fulfill(ok(single?{user_id:id}:[{user_id:id}]));
+ }
+ if(p.includes("/rest/v1/rpc/bpei_admin_incident_statistics")){
+   const params=req.postDataJSON();
+   statisticsCalls.push(params);
+   return route.fulfill(ok({
+     period_days:params.p_days,calculated_at:"2026-10-28T18:00:00Z",
+     total:5,open:2,under_review:1,resolved:2,unassigned:1,
+     overdue:1,critical_active:1,low:0,normal:3,high:1,critical:1,
+     average_resolution_hours:3.5
+   }));
  }
  if(p.includes("/rest/v1/bpei_mission_incidents")){
    return route.fulfill({
@@ -105,6 +116,12 @@ try{
  const incidentRoute=await page.goto(base+"/gestion-incidents",{waitUntil:"domcontentloaded"});
  assert.equal(incidentRoute?.status(),200);
  await page.getByRole("heading",{name:"Suivi des incidents BPEI"}).waitFor();
+ await page.getByRole("heading",{name:"Statistiques des incidents"}).waitFor();
+ await page.getByRole("button",{name:"7 jours"}).click();
+ await page.getByText("Délai moyen de résolution").waitFor({timeout:15000});
+ assert.equal(statisticsCalls.at(-1)?.p_days,7);
+ await page.getByRole("button",{name:"30 jours"}).click();
+ assert.equal(statisticsCalls.at(-1)?.p_days,30);
  await page.getByText("Priorité : Normale").waitFor({timeout:15000});
  await page.locator('section[aria-label="Escalades administratives"] select').first().selectOption("high");
  await page.getByLabel(/Justification de l.escalade/).fill("Incident client prioritaire, risque de retard confirmé.");
@@ -120,7 +137,7 @@ try{
  assert.equal(escalationCalls[1]?.p_action,"assign");
  assert.equal(escalationCalls[1]?.p_assigned_admin_id,id);
  assert.deepEqual(errors,[],"No uncaught JS errors in mocked admin board and incident escalations");
- console.log(JSON.stringify({ok:true,mode:"mocked-admin-rpc",requests:calls.length,escalations:escalationCalls.length,errors:errors.length}));
+ console.log(JSON.stringify({ok:true,mode:"mocked-admin-rpc",requests:calls.length,escalations:escalationCalls.length,statistics:statisticsCalls.length,errors:errors.length}));
 }finally{
  await browser.close();
 }
