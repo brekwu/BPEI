@@ -126,26 +126,33 @@ function IndependentSpace() {
     }
   }
 
+  async function withSaveGuard(action:()=>Promise<void>,fallbackMessage:string) {
+    if(saving)return;
+    setSaving(true);
+    setError("");
+    try{await action();}
+    catch{setError(fallbackMessage);}
+    finally{setSaving(false);}
+  }
+
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!userId || !profile || saving) return;
-    setSaving(true);
-    setError("");
-    setNotice("");
-    const payload = {
-      display_name: profile.display_name.trim(),
-      business_name: profile.business_name?.trim() || null,
-      siret: profile.siret?.trim() || null,
-      city: profile.city?.trim() || null,
-      postal_code: profile.postal_code?.trim() || null,
-      service_radius_km: profile.service_radius_km,
-      bio: profile.bio?.trim() || null,
-      skills: profile.skills,
-    };
-    const { error: saveError } = await (supabase as any).from("independent_profiles").update(payload).eq("user_id", userId);
-    if (saveError) setError("Enregistrement impossible. Vérifiez les champs et vos autorisations.");
-    else { setNotice("Profil enregistré."); await load(userId); }
-    setSaving(false);
+    await withSaveGuard(async()=>{
+      const payload={
+        display_name:profile.display_name.trim(),
+        business_name:profile.business_name?.trim()||null,
+        siret:profile.siret?.trim()||null,
+        city:profile.city?.trim()||null,
+        postal_code:profile.postal_code?.trim()||null,
+        service_radius_km:profile.service_radius_km,
+        bio:profile.bio?.trim()||null,
+        skills:profile.skills,
+      };
+      const {error:saveError}=await (supabase as any).from("independent_profiles").update(payload).eq("user_id",userId);
+      if(saveError){setError("Enregistrement impossible. Vérifiez les champs et vos autorisations.");return;}
+      setNotice("Profil enregistré.");await load(userId);
+    },"Service indisponible pendant l'enregistrement. Réessayez.");
   }
 
   const update = <K extends keyof Profile>(key: K, value: Profile[K]) => setProfile(p => p ? { ...p, [key]: value } : p);
@@ -193,11 +200,11 @@ function IndependentSpace() {
             const form = event.currentTarget;
             const name = (new FormData(form).get("display_name") ?? "").toString().trim();
             if (name.length < 2 || name.length > 120) { setError("Nom professionnel invalide."); return; }
-            setSaving(true); setError("");
-            const { error: insertError } = await (supabase as any).from("independent_profiles").insert({ user_id: userId, display_name: name });
-            if (insertError) setError("La création du profil a échoué.");
-            else await load(userId);
-            setSaving(false);
+            await withSaveGuard(async()=>{
+              const {error:insertError}=await (supabase as any).from("independent_profiles").insert({user_id:userId,display_name:name});
+              if(insertError){setError("La création du profil a échoué.");return;}
+              await load(userId);
+            },"Service indisponible pendant la création du profil.");
           }}>
             <h3 className="font-semibold">Créer mon profil indépendant</h3>
             <p className="text-sm text-muted-foreground">Aucune mission ne sera accessible sans vérification professionnelle. Avant de créer votre profil, validez les informations juridiques dans la section Candidature ci-dessous.</p>
@@ -226,11 +233,11 @@ function IndependentSpace() {
                 <label className="flex items-start gap-2"><input type="checkbox" checked={acceptChecked} onChange={e=>setAcceptChecked(e.target.checked)} /><span>J'ai pris connaissance de ces documents et j'accepte les conditions d'utilisation applicables à ma candidature.</span></label>
                 <Button type="button" disabled={!acceptChecked || saving} onClick={async()=>{
                   if(!userId || !launch?.legal_version)return;
-                  setSaving(true);setError("");
-                  const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch?.legal_version});
-                  if(e)setError("Acceptation non enregistrée. Réessayez.");
-                  else {setLegalAccepted(true);setNotice("Informations juridiques acceptées.");}
-                  setSaving(false);
+                  await withSaveGuard(async()=>{
+                    const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch.legal_version});
+                    if(e){setError("Acceptation non enregistrée. Réessayez.");return;}
+                    setLegalAccepted(true);setNotice("Informations juridiques acceptées.");
+                  },"Service indisponible pendant l'acceptation juridique.");
                 }}>Enregistrer mon acceptation</Button>
               </div>
               : !profile ? <p className="mt-4 text-sm">Créez votre profil professionnel ci-dessus avant de candidater.</p> : application ? <div role="status" className="mt-4 rounded-lg border bg-muted/30 p-4 text-sm"><p><strong>Statut :</strong> {({pending:"En attente d’examen",under_review:"En cours d’examen",approved:"Candidature approuvée",rejected:"Candidature refusée"} as Record<string,string>)[application.status] ?? application.status}</p><p className="mt-2 text-muted-foreground">Candidature déposée le {new Date(application.created_at).toLocaleDateString("fr-FR")}. Vous pouvez modifier votre profil pendant l’examen.</p></div> : <form className="mt-4 space-y-3" onSubmit={async event => {
@@ -238,11 +245,11 @@ function IndependentSpace() {
               if (!userId || saving) return;
               const message = (new FormData(event.currentTarget).get("message") ?? "").toString().trim();
               if (message.length < 10 || message.length > 3000) { setError("Décrivez votre expérience en 10 à 3000 caractères."); return; }
-              setSaving(true); setError(""); setNotice("");
-              const { error: applicationError } = await (supabase as any).from("independent_applications").insert({ user_id: userId, message });
-              if (applicationError) setError("Candidature déjà déposée ou impossible à enregistrer.");
-              else { setNotice("Candidature reçue. Elle reste en attente d'examen."); await load(userId); }
-              setSaving(false);
+              await withSaveGuard(async()=>{
+                const {error:applicationError}=await (supabase as any).from("independent_applications").insert({user_id:userId,message});
+                if(applicationError){setError("Candidature déjà déposée ou impossible à enregistrer.");return;}
+                setNotice("Candidature reçue. Elle reste en attente d'examen.");await load(userId);
+              },"Service indisponible pendant l'envoi de la candidature.");
             }}>
               <label className="block text-sm">Votre expérience et vos compétences
                 <Textarea name="message" required minLength={10} maxLength={3000} rows={4} />
@@ -263,23 +270,28 @@ function IndependentSpace() {
               {nextMissionStatus(r.status) !== null && <div className="mt-3">
                 <Button size="sm" disabled={saving} onClick={async()=>{
                   if(!userId)return;
-                  setSaving(true);setError("");
-                  const {error:e}=await (supabase as any).rpc("advance_independent_request",{
-                    p_request_id:r.id,p_next_status:nextMissionStatus(r.status)
-                  });
-                  if(e)setError("Changement de statut impossible.");else await load(userId);
-                  setSaving(false);
+                  await withSaveGuard(async()=>{
+                    const {error:e}=await (supabase as any).rpc("advance_independent_request",{p_request_id:r.id,p_next_status:nextMissionStatus(r.status)});
+                    if(e){setError("Changement de statut impossible.");return;}
+                    await load(userId);
+                  },"Service indisponible pendant le changement de statut.");
                 }}>{r.status==="accepted"?"Démarrer l'intervention":"Marquer l'intervention terminée"}</Button>
               </div>}
               {r.status==="new" && <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" disabled={saving} onClick={async()=>{
-                  if(!userId)return;setSaving(true);setError("");const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"accepted"});
-                  if(e)setError("Impossible d'accepter cette mission.");else await load(userId);setSaving(false);
+                  if(!userId)return;await withSaveGuard(async()=>{
+                    const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"accepted"});
+                    if(e){setError("Impossible d'accepter cette mission.");return;}
+                    await load(userId);
+                  },"Service indisponible pendant l'acceptation de la mission.");
                 }}>Accepter</Button>
                 <Button variant="outline" size="sm" disabled={saving} onClick={async()=>{
                   if(!userId||!window.confirm("Refuser cette mission ? Elle pourra être réattribuée."))return;
-                  setSaving(true);setError("");const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"declined"});
-                  if(e)setError("Impossible de refuser cette mission.");else await load(userId);setSaving(false);
+                  await withSaveGuard(async()=>{
+                    const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"declined"});
+                    if(e){setError("Impossible de refuser cette mission.");return;}
+                    await load(userId);
+                  },"Service indisponible pendant le refus de la mission.");
                 }}>Refuser</Button>
               </div>}
             </li>)}</ul> : <p className="mt-3 text-muted-foreground">Aucune demande attribuée pour l'instant.</p>}
