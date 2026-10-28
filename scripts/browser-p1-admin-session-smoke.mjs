@@ -65,19 +65,27 @@ try {
   await incidents.goto(base + "/gestion-incidents", { waitUntil: "domcontentloaded" });
   await incidents.getByRole("heading", { name: "Statistiques des incidents" }).waitFor({ timeout: 15000 });
 
+  const applications = await context.newPage();
+  applications.on("pageerror", e => errors.push(e.message));
+  await applications.goto(base + "/gestion-independants", { waitUntil: "domcontentloaded" });
+  await applications.getByRole("heading", { name: "Candidatures (0)" }).waitFor({ timeout: 15000 });
+
   // The Supabase browser session is shared across tabs in this context.
   await login.getByRole("button", { name: "Se déconnecter" }).click();
   await login.getByRole("button", { name: "Se connecter", exact: true }).waitFor({ timeout: 15000 });
   for (const page of [missions, incidents]) {
     await page.getByText("Accès administrateur non autorisé.").waitFor({ timeout: 15000 });
   }
+  await applications.getByText("Accès administrateur non autorisé pour ce compte.").waitFor({ timeout: 15000 });
   assert.equal(await missions.getByText("Missions trouvées").count(), 0,
     "Mission metrics must be removed when the admin session ends");
   assert.equal(await incidents.getByRole("heading", { name: "Statistiques des incidents" }).count(), 0,
     "Incident metrics must be removed when the admin session ends");
+  assert.equal(await applications.getByRole("heading", { name: "Candidatures (0)" }).count(), 0,
+    "Candidate information must be removed when the admin session ends");
   assert.deepEqual(errors, [], "Unexpected JavaScript errors");
   console.log(JSON.stringify({ ok: true, mode: "mocked-admin-cross-tab-signout",
-    deniedAdminRoutes: 2, stalePrivatePanels: 0 }));
+    deniedAdminRoutes: 3, stalePrivatePanels: 0 }));
 } finally {
   await context.close();
   await browser.close();
