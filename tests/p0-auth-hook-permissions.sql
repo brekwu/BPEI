@@ -34,6 +34,18 @@ BEGIN
   END IF;
 END $p0$;
 
-SELECT has_schema_privilege('supabase_auth_admin','bpei_private','USAGE') AS hook_schema_usable,
-       has_function_privilege('supabase_auth_admin','bpei_private.before_bpei_user_created(jsonb)','EXECUTE') AS hook_executable,
-       has_function_privilege('anon','bpei_private.before_bpei_user_created(jsonb)','EXECUTE') AS anonymous_cannot_execute_directly;
+DO $permissions$
+BEGIN
+ IF NOT has_schema_privilege('supabase_auth_admin','bpei_private','USAGE') THEN
+  RAISE EXCEPTION 'P0 FAIL: Supabase Auth cannot use hook schema';
+ END IF;
+ IF NOT has_function_privilege('supabase_auth_admin','bpei_private.before_bpei_user_created(jsonb)','EXECUTE') THEN
+  RAISE EXCEPTION 'P0 FAIL: Supabase Auth cannot execute the hook';
+ END IF;
+ IF has_function_privilege('anon','bpei_private.before_bpei_user_created(jsonb)','EXECUTE') THEN
+  RAISE EXCEPTION 'P0 FAIL: anonymous role may execute private auth hook';
+ END IF;
+ IF has_function_privilege('authenticated','bpei_private.before_bpei_user_created(jsonb)','EXECUTE') THEN
+  RAISE EXCEPTION 'P0 FAIL: signed-in users may execute private auth hook';
+ END IF;
+END $permissions$;
