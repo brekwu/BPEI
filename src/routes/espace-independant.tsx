@@ -148,7 +148,7 @@ function IndependentSpace() {
             {canRegisterIndependent(launch) ?
               <label className="flex items-start gap-2">
                 <input type="checkbox" checked={privacyChecked} onChange={e=>setPrivacyChecked(e.target.checked)} required />
-                <span>J'ai pris connaissance de la <Link className="underline" to="/confidentialite">politique de confidentialité</Link> et des <Link className="underline" to="/cgu">conditions d'utilisation</Link> (version {launch.legal_version}).</span>
+                <span>J'ai pris connaissance de la <Link className="underline" to="/confidentialite">politique de confidentialité</Link> et des <Link className="underline" to="/cgu">conditions d'utilisation</Link> (version {launch?.legal_version}).</span>
               </label> :
               <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
           </div>}
@@ -196,12 +196,12 @@ function IndependentSpace() {
               <p className="mt-4 rounded-lg border bg-muted/20 p-4 text-sm">Le dépôt de candidature est suspendu en attendant la publication des informations juridiques BPEI.</p>
               : !legalAccepted ?
               <div className="mt-4 space-y-3 rounded-lg border p-4 text-sm">
-                <p>Avant de candidater, prenez connaissance de la <Link to="/confidentialite" className="underline">politique de confidentialité</Link> et des <Link to="/cgu" className="underline">conditions d'utilisation</Link> (version {launch.legal_version}).</p>
+                <p>Avant de candidater, prenez connaissance de la <Link to="/confidentialite" className="underline">politique de confidentialité</Link> et des <Link to="/cgu" className="underline">conditions d'utilisation</Link> (version {launch?.legal_version}).</p>
                 <label className="flex items-start gap-2"><input type="checkbox" checked={acceptChecked} onChange={e=>setAcceptChecked(e.target.checked)} /><span>J'ai pris connaissance de ces documents et j'accepte les conditions d'utilisation applicables à ma candidature.</span></label>
                 <Button type="button" disabled={!acceptChecked || saving} onClick={async()=>{
-                  if(!userId || !launch.legal_version)return;
+                  if(!userId || !launch?.legal_version)return;
                   setSaving(true);setError("");
-                  const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch.legal_version});
+                  const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch?.legal_version});
                   if(e)setError("Acceptation non enregistrée. Réessayez.");
                   else {setLegalAccepted(true);setNotice("Informations juridiques acceptées.");}
                   setSaving(false);
