@@ -30,6 +30,7 @@ function IndependentSpace() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [registration, setRegistration] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
@@ -62,13 +63,14 @@ function IndependentSpace() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await supabase.auth.signInWithPassword({ email, password });
+    const result = registration ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
     if (result.error || !result.data.user) {
       setError("Connexion impossible. Vérifiez vos identifiants.");
       setLoading(false);
       return;
     }
+    if (!result.data.session) { setNotice("Vérifiez votre e-mail pour confirmer le compte."); setLoading(false); return; }
     setUserId(result.data.user.id);
     await load(result.data.user.id);
   }
@@ -106,11 +108,11 @@ function IndependentSpace() {
       {notice && <p role="status" className="mt-4 text-sm">{notice}</p>}
       {loading ? <p className="mt-8">Chargement…</p> : !userId ?
         <form onSubmit={signIn} className="mt-8 space-y-4 rounded-xl border bg-card p-6">
-          <h2 className="font-semibold">Connexion</h2>
+          <h2 className="font-semibold">{registration ? "Inscription indépendant" : "Connexion"}</h2>
           <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
           <Input type="password" autoComplete="current-password" required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
-          <Button type="submit">Se connecter</Button>
-          <p className="text-sm text-muted-foreground">Les nouvelles inscriptions seront ouvertes après vérification des conditions légales et du processus de validation.</p>
+          <Button type="submit">{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
+          <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
         </form> :
         <div className="mt-8 space-y-8">
