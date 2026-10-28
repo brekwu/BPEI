@@ -54,3 +54,13 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Les politiques RLS restent appliquées, l'accès anonyme à la fonction est révoqué, et la fonction est SECURITY INVOKER.
 - Le test navigateur utilise une authentification et des réponses RPC simulées. La recette multi-comptes sur de vraies missions reste obligatoire.
 - Aucune fusion dans la branche principale ni ouverture de `bpei.fr`.
+
+## Lot P1.4 — Escalades et affectation des incidents (développé)
+
+- Migration Supabase `20261028174135` : priorité basse/normale/haute/critique, responsable administrateur autorisé, échéance **indicative** de suivi, journal des changements immuable côté application.
+- Le tableau `/gestion-incidents` permet de filtrer les dossiers actifs, non attribués, en retard, personnels ou résolus.
+- Un administrateur peut justifier un changement de priorité (10 à 500 caractères), affecter l'incident à lui-même ou à un autre administrateur, et retirer une affectation.
+- Une escalade critique et une nouvelle affectation génèrent des notifications dans l'application. L'historique conserve l'état de chaque modification.
+- Aucune modification directe des priorités et affectations depuis les clients : les changements passent par des fonctions SQL vérifiant l'appartenance à `independent_admins`.
+- Les échéances sont des objectifs de traitement internes, sans promesse contractuelle de délai de réponse.
+- Limites : recettes avec deux administrateurs et un technicien réel à exécuter, aucun envoi d'e-mail ni SMS, et absence de publication de la branche P1 sur le domaine public.
