@@ -42,6 +42,9 @@ try {
   assert.equal(await page.getByRole("button", { name: "Créer mon compte" }).isDisabled(), true);
 
   await open("/gestion-independants", "Gestion des indépendants BPEI");
+  await open("/gestion-missions", "Gestion des missions BPEI");
+  await page.getByText("Accès administrateur non autorisé.").waitFor({timeout:12000});
+
   await open("/gestion-incidents", "Suivi des incidents BPEI");
   await page.getByText("Accès administrateur non autorisé.").waitFor({timeout:12000});
   await page.getByText(/Accès administrateur non autorisé/).waitFor({ timeout: 12000 });
