@@ -12,6 +12,28 @@ BEGIN
   IF result->'error'->>'http_code' <> '403' THEN
     RAISE EXCEPTION 'P0 FAIL: normal signup allowed with launch closed';
   END IF;
+  -- A visitor can edit user_metadata, NOT app_metadata. A forged user field
+  -- must never activate the privileged first-admin bypass.
+  SELECT bpei_private.before_bpei_user_created(
+    jsonb_build_object('user',jsonb_build_object(
+      'email','forged-bootstrap@example.invalid',
+      'user_metadata',jsonb_build_object('bpei_admin_bootstrap',true),
+      'app_metadata',jsonb_build_object('provider','email')
+    ))
+  ) INTO result;
+  IF result->'error'->>'http_code' <> '403' THEN
+    RAISE EXCEPTION 'P0 FAIL: user_metadata spoofing activated admin bootstrap';
+  END IF;
+  SELECT bpei_private.before_bpei_user_created(
+    jsonb_build_object('user',jsonb_build_object(
+      'email','forged-admin@example.invalid',
+      'user_metadata',jsonb_build_object('user_role','admin'),
+      'app_metadata',jsonb_build_object('provider','email')
+    ))
+  ) INTO result;
+  IF result->'error'->>'http_code' <> '403' THEN
+    RAISE EXCEPTION 'P0 FAIL: user-controlled administrator role bypassed gates';
+  END IF;
   SELECT bpei_private.before_bpei_user_created(
     jsonb_build_object('user',jsonb_build_object('email','bootstrap@example.invalid',
       'app_metadata',jsonb_build_object('bpei_admin_bootstrap',true)))
