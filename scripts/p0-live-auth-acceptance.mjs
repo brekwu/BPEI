@@ -82,10 +82,17 @@ if(missing.length){
     "Admin cannot review the two existing applications");
   }
   const {data:gate,error:gateError}=await admin.from("bpei_launch_controls")
-    .select("legal_documents_published,legal_version").eq("id",true).maybeSingle();
+    .select("legal_documents_published,legal_version,independent_registration_enabled").eq("id",true).maybeSingle();
   if(gateError)throw Error("Legal release status inaccessible");
   assert.equal(gate?.legal_documents_published,true,"Real test requires legally published documents");
   assert.equal(gate?.legal_version,env.P0_LEGAL_VERSION,"Release version mismatch");
+  assert.equal(gate?.independent_registration_enabled,false,
+    "P0 live acceptance must NOT run with new public registrations enabled");
+  const {data:intakeFlags,error:intakeError}=await admin.from("bpei_intake_flags")
+    .select("kind,enabled");
+  if(intakeError)throw Error("Cannot verify real public inquiry intake flags");
+  assert.equal((intakeFlags??[]).some(x=>x.enabled===true),false,
+    "P0 live acceptance must NOT run with public intake enabled");
   const {data:docs,error:docsError}=await admin.from("bpei_legal_documents")
     .select("kind,approved_at").eq("version",env.P0_LEGAL_VERSION);
   if(docsError)throw Error("Published legal documents unreadable");
