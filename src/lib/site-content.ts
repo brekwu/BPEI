@@ -5,7 +5,7 @@ export const SITE = {
   name: "BPEI",
   fullName: "Boutiques Professionnelles d'Experts Informatiques",
   tagline: "Le réseau des boutiques informatiques indépendantes.",
-  betaBanner: "BPEI est actuellement en phase bêta pilote. Certaines fonctionnalités peuvent encore évoluer.",
+  betaBanner: "BPEI constitue son réseau de partenaires indépendants. La disponibilité des interventions varie selon la zone.",
   legalUpdatedAt: "16 juillet 2026",
   contact: {
     // These are configured by the platform admin. Leave null until known — pages will hide the row.
@@ -78,7 +78,7 @@ export const PLANS: PricingPlan[] = [
       "Portail client & suivi public",
       "Support par e-mail",
     ],
-    cta: "Demander un accès bêta",
+    cta: "Demander une présentation",
   },
   {
     key: "pro",
@@ -97,7 +97,7 @@ export const PLANS: PricingPlan[] = [
       "Quarantaine, écarts de prix",
       "Support prioritaire",
     ],
-    cta: "Demander un accès bêta",
+    cta: "Demander une présentation",
     highlight: true,
   },
   {

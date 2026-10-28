@@ -1,9 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { z } from "zod";
+import { zodValidator } from "@tanstack/zod-adapter";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 
+const searchSchema = z.object({ profil: z.string().optional() });
+
 export const Route = createFileRoute("/tarifs")({
-  validateSearch: (search) => ({ profil: typeof search.profil === "string" ? search.profil : "" }),
+  validateSearch: zodValidator(searchSchema),
   head: () => ({
     meta: [
       { title: "Conditions commerciales — BPEI" },

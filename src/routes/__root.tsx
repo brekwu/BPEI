@@ -78,9 +78,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 import { getPublicSeoSnapshotFn } from "@/lib/platform-public.functions";
 
 // Repli technique sobre — jamais marketing, jamais juridique, jamais inventé.
-const FALLBACK_TITLE = "BPEI — Boutiques Professionnelles d'Experts Informatiques";
+const FALLBACK_TITLE = "BPEI — Réseau de techniciens informatiques indépendants";
 const FALLBACK_DESCRIPTION =
-  "BPEI constitue un réseau de techniciens informatiques indépendants en France. Demandez une intervention ou candidatez comme partenaire freelance.";
+  "BPEI construit un réseau de techniciens indépendants en France. Demandez une intervention ou candidatez comme partenaire freelance.";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async ({ context }) =>
