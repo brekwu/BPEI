@@ -86,3 +86,16 @@ Conserver `bpei.fr` sur OVH tant que la recette n'est pas acquise. Avant une exp
 - La page de réinitialisation n'autorise plus le formulaire de changement de mot de passe sur simple présence d'une session déjà ouverte et d'un paramètre d'URL `type=recovery`. Seul l'événement `PASSWORD_RECOVERY` émis par Supabase avec une session valide déverrouille ce parcours. Un test navigateur vérifie le refus avec une session préexistante et un faux contexte de récupération.
 - L'éditeur juridique ignore les réponses réseau d'une ancienne version lorsque l'administrateur a changé de version. La validation et la publication restent bloquées tant que les documents de la version courante n'ont pas été chargés et confirmés.
 - Ces corrections ne valident pas les e-mails réels, les paramètres Auth et les approbations juridiques humaines. Garder le portail fermé jusqu'à la recette de production.
+
+## Vérification réelle des règles SQL P0 — 28 octobre 2026
+
+Le fichier versionné `tests/p0-db-role-isolation.sql` a été exécuté **sur la base Supabase BPEI** et a réussi. Contrairement aux simulations du navigateur, cette recette appelle les vraies tables, règles RLS et fonctions PostgreSQL. Elle contient des transactions annulées avec `ROLLBACK` et n'utilise aucun compte personnel ni e-mail réel.
+
+- Rôle `anon` : contrôle du portail fermé, absence d'accès à la liste administrateur, refus d'insertion de demande client quand la collecte est fermée.
+- Identité authentifiée sans droit administrateur : aucune lecture des profils, candidatures, acceptations juridiques ou comptes administrateurs de tiers ; refus des fonctions d'approbation de documents, publication et validation de candidature.
+- Deux techniciens temporaires : chacun lit exclusivement son profil, avec possibilité de mettre à jour son nom professionnel ; les informations du second technicien restent isolées.
+- Un administrateur temporaire : lecture des deux profils et de la liste administrateur, accès au document juridique de test encore inédit.
+- Un document juridiquement inédit inséré pour la recette : **invisible au visiteur anonyme**, accessible à l'administrateur seulement, non publié ; annulé avec la transaction.
+- Contrôle post-exécution : aucun compte Auth, administrateur, profil, demande ni publication juridique ajouté. Les inscriptions restent fermées et les advisors de sécurité ne signalent aucune alerte.
+
+**Ne pas confondre cette validation PostgreSQL avec une recette de comptes réels.** L'activation du hook dans GoTrue, la confirmation e-mail par SMTP externe, le premier administrateur autorisé, les textes juridiques validés et les essais Auth de bout en bout sont toujours non homologués. La préproduction Vercel doit aussi pointer vers le commit final effectivement testé.
