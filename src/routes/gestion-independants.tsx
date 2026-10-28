@@ -175,7 +175,7 @@ function IndependentReview() {
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm">{a.message}</p>
               <p className="mt-3 text-xs text-muted-foreground">Déposée le {new Date(a.created_at).toLocaleDateString("fr-FR")}</p>
-              <ProfessionalVerificationPanel userId={a.user_id} siret={p?.siret??null} check={checks[a.user_id]} onRecorded={load}/>
+              <ProfessionalVerificationPanel userId={a.user_id} siret={p?.siret??null} check={checks[a.user_id]} onRecorded={async () => { await load(); }}/>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="outline" disabled={!!busyId || a.status === "under_review"} onClick={() => void review(a.id, "under_review")}>Examiner</Button>
                 <Button disabled={!!busyId || a.status === "approved" || !isVerificationCurrent(checks[a.user_id],p?.siret)} onClick={() => void review(a.id, "approved")}>Approuver</Button>
