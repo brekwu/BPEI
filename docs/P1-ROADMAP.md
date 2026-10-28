@@ -64,3 +64,12 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Aucune modification directe des priorités et affectations depuis les clients : les changements passent par des fonctions SQL vérifiant l'appartenance à `independent_admins`.
 - Les échéances sont des objectifs de traitement internes, sans promesse contractuelle de délai de réponse.
 - Limites : recettes avec deux administrateurs et un technicien réel à exécuter, aucun envoi d'e-mail ni SMS, et absence de publication de la branche P1 sur le domaine public.
+
+## Lot P1.5 — Statistiques et rapports des incidents (développement intégré)
+
+- Migration `20261028175007` : agrégats SQL pour 7, 30 ou 90 jours par **date de création** des incidents : volumes par statut/priorité, dossiers sans responsable, échéances dépassées, incidents critiques et moyenne des heures jusqu'à la résolution.
+- L'API de statistiques nécessite un compte présent dans `independent_admins`, reste SECURITY INVOKER et sans permission d'exécution pour `anon`. Aucun tableau public n'expose ces données.
+- Le tableau `/gestion-incidents` présente les chiffres agrégés et les changements de période, puis un export CSV déclenché par l'administrateur connecté. Export limité à 1 000 lignes, par paquets de 250, sans envoi serveur externe.
+- Les cellules CSV sont protégées contre l'injection de formules de tableur. Les exports contiennent des données professionnelles confidentielles et doivent être conservés/partagés avec précaution.
+- Chaque incident résolu dispose d'un rapport texte téléchargeable : description, résolution, priorité, échéance interne et chronologie des décisions (jusqu'à 499 événements).
+- Limites : tests réels Auth/RLS avec comptes distincts et validation opérationnelle des rapports encore nécessaires ; aucun SMTP, aucune publication `bpei.fr`, aucune mise en production P1.
