@@ -20,3 +20,18 @@ export function isExplicitBpeiRecoveryLink(search:string,hash:string):boolean{
  const fragments=new URLSearchParams(hash.replace(/^#/,""));
  return query.get("type")==="recovery"||fragments.get("type")==="recovery";
 }
+
+/**
+ * Restore a valid implicit recovery URL only if Supabase's current session
+ * contains the exact access token supplied by that recovery email link.
+ * An unrelated signed-in user plus ?type=recovery does not qualify.
+ */
+export function isMatchingBpeiImplicitRecoverySession(hash:string,sessionToken:string|null|undefined):boolean{
+ const fragments=new URLSearchParams(hash.replace(/^#/,""));
+ const token=fragments.get("access_token");
+ return fragments.get("type")==="recovery"
+   && !!fragments.get("refresh_token")
+   && !!token
+   && !!sessionToken
+   && sessionToken===token;
+}

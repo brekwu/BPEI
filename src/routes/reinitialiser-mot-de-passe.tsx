@@ -4,7 +4,7 @@ import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { bpeiAuthRedirect, isExplicitBpeiRecoveryLink } from "@/lib/bpei-auth-redirect";
+import { bpeiAuthRedirect, isExplicitBpeiRecoveryLink, isMatchingBpeiImplicitRecoverySession } from "@/lib/bpei-auth-redirect";
 
 export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
   component: ResetPasswordPage,
@@ -41,6 +41,21 @@ function ResetPasswordPage() {
     // The password update form is unlocked only by Supabase's PASSWORD_RECOVERY event.
     if (isExplicitBpeiRecoveryLink(window.location.search,window.location.hash)) {
       setNotice("Vérification du lien en cours. Si le formulaire n'apparaît pas, demandez un nouveau lien.");
+      // The SDK may process implicit recovery before this component mounts.
+      // A stale, unrelated session must NOT permit changing its password.
+      const hash=window.location.hash;
+      const fragment=new URLSearchParams(hash.replace(/^#/,""));
+      if(fragment.get("type")==="recovery"&&fragment.get("access_token")&&fragment.get("refresh_token")){
+        void supabase.auth.getSession().then(({data,error})=>{
+          if(alive&&!error&&isMatchingBpeiImplicitRecoverySession(hash,data.session?.access_token)){
+            setRecovery(true);
+            setNotice("");
+            setError("");
+          }
+        }).catch(()=>{
+          if(alive)setError("Lien de récupération invalide ou expiré. Demandez un nouveau lien.");
+        });
+      }
     }
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);
