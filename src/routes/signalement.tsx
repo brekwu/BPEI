@@ -11,7 +11,7 @@ export const Route = createFileRoute("/signalement")({
       { title: "Signaler un contenu — BPEI" },
       { name: "description", content: "Formulaire de signalement conforme au règlement européen sur les services numériques." },
       { property: "og:title", content: "Signaler un contenu — BPEI" },
-      { property: "og:description", content: "Signalez un contenu illicite, une boutique ou un avis." },
+      { property: "og:description", content: "Signalez un problème relatif au réseau BPEI ou à un contenu publié." },
     ],
   }),
   component: ReportPage,
@@ -63,7 +63,7 @@ function ReportPage() {
   return (
     <PublicShell>
       <div className="mx-auto max-w-3xl px-4 py-12 md:px-6">
-        <h1 className="text-3xl font-bold tracking-tight">Signaler un contenu ou une boutique</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Signaler un problème ou un contenu</h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Ce formulaire respecte les exigences du règlement européen sur les services numériques
           (mécanisme de notification). Les signalements de mauvaise foi peuvent engager la
@@ -87,7 +87,7 @@ function ReportPage() {
               </select>
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Type de cible"><input name="target_type" placeholder="boutique, avis, page…" className="input" /></Field>
+              <Field label="Type de cible"><input name="target_type" placeholder="profil, page, contenu…" className="input" /></Field>
               <Field label="Identifiant / URL"><input name="target_url" placeholder="https://…" className="input" /></Field>
             </div>
             <Field label="Description précise *">
