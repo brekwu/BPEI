@@ -31,6 +31,9 @@ function newReference(prefix: string) {
 export const submitTechnicianApplication = createServerFn({ method: "POST" })
   .inputValidator((input: TechnicianApplicationInput) => TechnicianApplicationSchema.parse(input))
   .handler(async ({ data }) => {
+    if (process.env.BPEI_FORMS_ENABLED !== "true") {
+      throw new Error("Les formulaires BPEI ne sont pas encore ouverts.");
+    }
     await enforceRateLimit({ endpoint: "network_form" });
     const validated = TechnicianApplicationSchema.parse(data);
     const db = await serverWriter();
@@ -63,6 +66,9 @@ export const submitTechnicianApplication = createServerFn({ method: "POST" })
 export const submitInterventionRequest = createServerFn({ method: "POST" })
   .inputValidator((input: InterventionRequestInput) => InterventionRequestSchema.parse(input))
   .handler(async ({ data }) => {
+    if (process.env.BPEI_FORMS_ENABLED !== "true") {
+      throw new Error("Les formulaires BPEI ne sont pas encore ouverts.");
+    }
     await enforceRateLimit({ endpoint: "network_form" });
     const validated = InterventionRequestSchema.parse(data);
     const db = await serverWriter();
