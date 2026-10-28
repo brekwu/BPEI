@@ -10,6 +10,8 @@ services:
     startCommand: node .output/server/index.mjs
     healthCheckPath: /health
     envVars:
+      - key: BPEI_STAGING
+        value: "true"
       - key: NODE_ENV
         value: production
       - key: NITRO_PRESET
