@@ -22,6 +22,7 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
   expires_in:3600,token_type:"bearer"
  }));
  if(path==="/auth/v1/user")return route.fulfill(json(user));
+ if(path==="/auth/v1/logout")return route.fulfill({status:204,body:""});
  if(path.startsWith("/auth/v1/"))return route.fulfill(json({message:"Unauthorized"},401));
  const single=(req.headers().accept||"").includes("application/vnd.pgrst.object+json");
  if(path==="/rest/v1/bpei_launch_controls")
@@ -95,7 +96,19 @@ try{
  assert.equal(consentAttempts,2);
  assert.equal(profileAttempts,2);
  assert.deepEqual(errors,[],"No uncaught errors during network failure retries");
- console.log(JSON.stringify({ok:true,mode:"mocked-p0-resilience",consentAttempts,profileAttempts}));
+ // Logout in a second browser tab must clear the first tab's private technician view.
+ const second=await context.newPage();
+ second.on("pageerror",e=>errors.push(e.message));
+ await second.goto(base+"/espace-independant",{waitUntil:"domcontentloaded"});
+ await second.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
+ await second.getByRole("button",{name:"Se déconnecter"}).click();
+ await second.getByRole("button",{name:"Se connecter",exact:true}).waitFor({timeout:15000});
+ await page.getByRole("button",{name:"Se connecter",exact:true}).waitFor({timeout:15000});
+ assert.equal(await page.getByRole("heading",{name:"Mon profil",exact:true}).count(),0,
+   "Cross-tab signout must remove the first tab's private profile view");
+ assert.deepEqual(errors,[],"No uncaught browser errors after cross-tab signout");
+ await second.close();
+ console.log(JSON.stringify({ok:true,mode:"mocked-p0-resilience",consentAttempts,profileAttempts,crossTabLogout:true}));
 }finally{
  await context.close();await browser.close();
 }
