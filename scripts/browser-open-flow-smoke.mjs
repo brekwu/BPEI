@@ -12,6 +12,8 @@ const checked = [];
 let signupBody;
 let signupRedirect;
 let inquiryBody;
+let resetBody;
+let resetRedirect;
 
 const gate = {
   id: true,
@@ -37,6 +39,11 @@ async function testPage(path) {
         user: { id: "41414141-4141-4141-8141-414141414141", email: signupBody.email },
         session: null
       }));
+    }
+    if (path.startsWith("/auth/v1/recover")) {
+      resetBody = request.postDataJSON();
+      resetRedirect = url.searchParams.get("redirect_to");
+      return route.fulfill(asJson({}));
     }
     if (path.startsWith("/auth/v1/")) {
       return route.fulfill(asJson({ code: "unauthenticated", message: "Browser smoke" }, 401));
@@ -90,6 +97,17 @@ try {
     assert.equal(inquiryBody?.kind, "contact");
     assert.equal(inquiryBody?.consent_accepted, true);
     assert.equal(inquiryBody?.email, "client@example.test");
+    await context.close();
+  }
+
+  {
+    const { context, page } = await testPage("/reinitialiser-mot-de-passe");
+    await page.getByRole("heading", { name: "Réinitialiser mon mot de passe" }).waitFor();
+    await page.getByLabel("Adresse e-mail du compte").fill("p0-ui@example.test");
+    await page.getByRole("button", { name: "Recevoir un lien de réinitialisation" }).click();
+    await page.getByText(/Si un compte existe avec cette adresse/).waitFor();
+    assert.equal(resetBody?.email, "p0-ui@example.test");
+    assert.match(resetRedirect ?? "", /\\/reinitialiser-mot-de-passe$/);
     await context.close();
   }
 
