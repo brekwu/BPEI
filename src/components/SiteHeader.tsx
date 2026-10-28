@@ -12,8 +12,7 @@ const NAV = [
   { to: "/", label: "Accueil" },
   { to: "/demander-une-intervention", label: "Demander une intervention" },
   { to: "/devenir-partenaire", label: "Devenir partenaire" },
-  { to: "/catalogue", label: "Catalogue" },
-  { to: "/professionnels", label: "Pour les professionnels" },
+  { to: "/espace-independant", label: "Espace indépendant" },
   { to: "/contact", label: "Contact" },
 ] as const;
 
@@ -60,7 +59,7 @@ export function SiteHeader() {
             <SpaceSwitcher />
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm"><Link to="/auth">Se connecter</Link></Button>
+              <Button asChild variant="ghost" size="sm"><Link to="/espace-independant">Se connecter</Link></Button>
               <Button asChild size="sm" className="bg-electric text-electric-foreground hover:bg-electric/90">
                 <Link to="/demander-une-intervention">Demander une intervention</Link>
               </Button>
@@ -104,12 +103,12 @@ export function SiteHeader() {
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-3">
               {session ? (
                 <Button asChild className="col-span-2" onClick={() => setOpen(false)}>
-                  <Link to="/app">Mon espace</Link>
+                  <Link to="/espace-independant">Mon espace</Link>
                 </Button>
               ) : (
                 <>
                   <Button asChild variant="outline" onClick={() => setOpen(false)}>
-                    <Link to="/auth">Se connecter</Link>
+                    <Link to="/espace-independant">Se connecter</Link>
                   </Button>
                   <Button asChild className="bg-electric text-electric-foreground hover:bg-electric/90" onClick={() => setOpen(false)}>
                     <Link to="/demander-une-intervention">Demander une intervention</Link>
@@ -187,16 +186,14 @@ export function SiteFooter() {
           <div className="grid gap-8 md:col-span-8 md:grid-cols-4">
             <FooterCol title="Particuliers">
               <FooterLink to="/demander-une-intervention">Demander une intervention</FooterLink>
-              <FooterLink to="/catalogue">Catalogue</FooterLink>
               <FooterLink to="/annuaire">Annuaire vérifié</FooterLink>
               <FooterLink to="/avis/politique">Politique des avis</FooterLink>
             </FooterCol>
             <FooterCol title="Professionnels">
-              <FooterLink to="/professionnels">Rejoindre BPEI</FooterLink>
+              <FooterLink to="/devenir-partenaire">Rejoindre BPEI</FooterLink>
               <FooterLink to="/comment-ca-marche">Comment ça marche</FooterLink>
               <FooterLink to="/candidature-partenaire">Candidater</FooterLink>
-              <FooterLink to="/vendeurs/regles">Règles vendeurs</FooterLink>
-              <FooterLink to="/auth">Connexion boutique</FooterLink>
+              <FooterLink to="/espace-independant">Connexion indépendant</FooterLink>
             </FooterCol>
             <FooterCol title="Ressources">
               <FooterLink to="/juridique">Centre juridique</FooterLink>
