@@ -43,7 +43,7 @@ function PartnerPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg" className="bg-electric text-electric-foreground hover:bg-electric/90">
-                <Link to="/candidature-partenaire">Je candidate (5 min) <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link to="/espace-independant">Je candidate (5 min) <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white">
                 <a href="#faq">Questions fréquentes</a>
@@ -144,7 +144,7 @@ function PartnerPage() {
             <h3 className="text-lg font-semibold">Prêt(e) à rejoindre le réseau ?</h3>
             <p className="mt-2 text-sm text-muted-foreground">Candidature gratuite, sans engagement. Réponse de l'équipe BPEI après examen.</p>
             <Button asChild size="lg" className="mt-5 bg-electric text-electric-foreground hover:bg-electric/90">
-              <Link to="/candidature-partenaire">Je candidate <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link to="/espace-independant">Je candidate <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
             <p className="mt-4 text-xs text-muted-foreground">
               Une question avant de candidater ? <Link to="/contact" search={{ subject: "rejoindre" }} className="underline">Contactez-nous</Link>.
