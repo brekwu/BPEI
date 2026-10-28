@@ -1,0 +1,1 @@
+Préproduction BPEI : la base Lovable Cloud nécessite une migration indépendante. Ne pas changer le DNS avant une sauvegarde et des tests. Le dépôt GitHub est public ; préserver les secrets et données privées.
