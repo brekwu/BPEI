@@ -1,0 +1,117 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { PublicShell } from "@/components/public/PublicShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+
+export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
+  component: ResetPasswordPage,
+  head: () => ({
+    meta: [
+      { title: "Réinitialiser mon mot de passe — BPEI" },
+      { name: "robots", content: "noindex,nofollow" }
+    ]
+  })
+});
+
+function ResetPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [recovery, setRecovery] = useState(false);
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    // Both implicit and PKCE recovery links are handled by supabase-js.
+    // Only show the password update form when a valid session is available.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (alive && event === "PASSWORD_RECOVERY" && session) setRecovery(true);
+    });
+    const query = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const isRecoveryLink = query.get("type") === "recovery" ||
+      hash.get("type") === "recovery" || query.has("code");
+    if (isRecoveryLink) {
+      void supabase.auth.getSession().then(({ data }) => {
+        if (alive && data.session) setRecovery(true);
+      }).catch(() => {
+        if (alive) setError("Lien expiré ou invalide. Vous pouvez demander un nouveau lien.");
+      });
+    }
+    return () => { alive = false; subscription.unsubscribe(); };
+  }, []);
+
+  async function requestReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const redirectTo = new URL("/reinitialiser-mot-de-passe", window.location.origin).toString();
+      const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
+      if (authError) {
+        setError("La demande n'a pas pu être envoyée. Vérifiez le service e-mail et réessayez.");
+      } else {
+        // Avoid disclosing whether the email belongs to an account.
+        setNotice("Si un compte existe avec cette adresse, un lien de réinitialisation sera envoyé.");
+      }
+    } catch {
+      setError("Service temporairement indisponible.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updatePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy) return;
+    if (password.length < 12 || password !== confirm) {
+      setError("Utilisez au moins 12 caractères et deux mots de passe identiques.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    const { error: updateError } = await supabase.auth.updateUser({ password });
+    if (updateError) {
+      setError("Modification impossible. Ce lien peut être expiré. Demandez un nouveau lien.");
+    } else {
+      await supabase.auth.signOut();
+      setPassword("");
+      setConfirm("");
+      setDone(true);
+      setRecovery(false);
+    }
+    setBusy(false);
+  }
+
+  return <PublicShell><main className="mx-auto max-w-md px-4 py-16">
+    <h1 className="text-3xl font-bold">Réinitialiser mon mot de passe</h1>
+    <p className="mt-3 text-sm text-muted-foreground">Accès réservé aux comptes déjà créés. L'inscription publique peut rester fermée.</p>
+    {error && <p role="alert" className="mt-5 text-sm text-destructive">{error}</p>}
+    {notice && <p role="status" className="mt-5 text-sm">{notice}</p>}
+    {done ? <div className="mt-8 rounded-lg border p-5">
+      <p role="status">Votre mot de passe a été modifié.</p>
+      <Link to="/espace-independant" className="mt-3 inline-block underline">Se connecter</Link>
+    </div> : recovery ? <form onSubmit={updatePassword} className="mt-8 space-y-5 rounded-xl border bg-card p-6">
+      <label className="block text-sm font-medium">Nouveau mot de passe
+        <Input type="password" autoComplete="new-password" required minLength={12} value={password} onChange={e=>setPassword(e.target.value)} />
+      </label>
+      <label className="block text-sm font-medium">Confirmer le mot de passe
+        <Input type="password" autoComplete="new-password" required minLength={12} value={confirm} onChange={e=>setConfirm(e.target.value)} />
+      </label>
+      <Button type="submit" disabled={busy}>{busy ? "Modification…" : "Enregistrer le mot de passe"}</Button>
+    </form> : <form onSubmit={requestReset} className="mt-8 space-y-5 rounded-xl border bg-card p-6">
+      <label className="block text-sm font-medium">Adresse e-mail du compte
+        <Input type="email" autoComplete="email" required value={email} onChange={e=>setEmail(e.target.value)} />
+      </label>
+      <Button type="submit" disabled={busy}>{busy ? "Envoi…" : "Recevoir un lien de réinitialisation"}</Button>
+    </form>}
+    <Link to="/espace-independant" className="mt-6 inline-block text-sm underline">Retour à la connexion</Link>
+  </main></PublicShell>;
+}
