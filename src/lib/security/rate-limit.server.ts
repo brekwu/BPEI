@@ -117,11 +117,18 @@ async function serviceRoleClient() {
 }
 
 export async function enforceRateLimit(args: EnforceArgs): Promise<{ ip: string; ipHash: string }> {
+  if (args.endpoint === "network_form" && process.env.NODE_ENV === "production" && !process.env.HASH_PEPPER) {
+    throw new RateLimitError("Protection anti-abus indisponible.", "rate_limit_unavailable", 503);
+  }
   const ctx = readRequestMeta();
   const supa = await serviceRoleClient();
 
   // 1. Check IP block
-  const { data: blocked } = await supa.rpc("is_ip_blocked", { _ip_hash: ctx.ipHash });
+  const { data: blocked, error: blockError } = await supa.rpc("is_ip_blocked", { _ip_hash: ctx.ipHash });
+  if (blockError && args.endpoint === "network_form") {
+    console.error("[rate-limit] IP block check unavailable", blockError.code ?? "unknown");
+    throw new RateLimitError("Protection anti-abus indisponible.", "rate_limit_unavailable", 503);
+  }
   if (blocked) {
     await supa.rpc("record_abuse", {
       _ip: ctx.ip, _ip_hash: ctx.ipHash, _fingerprint: args.fingerprint ?? null,
