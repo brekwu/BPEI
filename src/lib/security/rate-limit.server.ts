@@ -1,6 +1,7 @@
 // Server-only: rate limiting + IP block enforcement + abuse logging.
 import { getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 import { createHash } from "node:crypto";
+import { isIP } from "node:net";
 import { verifyTurnstile } from "./turnstile.server";
 
 export class RateLimitError extends Error {
@@ -76,20 +77,22 @@ function readRequestMeta(): EnforceContext {
   // X-Forwarded-For n'est jamais consulté (facilement falsifiable côté client).
   let ip = "0.0.0.0";
   try {
-    const cf = getRequestHeader("cf-connecting-ip");
-    if (cf) {
-      ip = cf.trim();
-    } else if (process.env.NODE_ENV !== "production") {
-      // Dev / preview : pas de reverse proxy Cloudflare, on tolère
-      // l'IP socket. En production, l'absence de CF-Connecting-IP
-      // signifie que la requête n'est pas passée par le proxy attendu :
-      // on laisse "0.0.0.0" pour agréger et déclencher les seuils IP.
-      const rip = getRequestIP({ xForwardedFor: false });
-      if (rip) ip = rip;
+    // Render sets the client IP in the trusted first X-Forwarded-For entry.
+    // Do not trust arbitrary CF-Connecting-IP headers on Render's public endpoint.
+    if (process.env.RENDER === "true") {
+      const forwarded = getRequestHeader("x-forwarded-for");
+      const candidate = forwarded?.split(",")[0]?.trim() ?? "";
+      if (isIP(candidate)) ip = candidate;
     } else {
-      console.warn(
-        "[rate-limit] PRODUCTION: en-tête cf-connecting-ip absent — requête non issue de Cloudflare ?",
-      );
+      const cf = getRequestHeader("cf-connecting-ip");
+      if (cf && isIP(cf.trim())) {
+        ip = cf.trim();
+      } else if (process.env.NODE_ENV !== "production") {
+        const rip = getRequestIP({ xForwardedFor: false });
+        if (rip) ip = rip;
+      } else {
+        console.warn("[rate-limit] Production proxy did not supply a trusted client IP");
+      }
     }
   } catch { /* ignore */ }
   let ua: string | null = null;
@@ -154,7 +157,13 @@ export async function enforceRateLimit(args: EnforceArgs): Promise<{ ip: string;
     const { data: cnt, error } = await supa.rpc("rate_limit_hit", {
       _scope_type: s.type, _scope_key: scopeKey, _endpoint: args.endpoint, _window_start: ws,
     });
-    if (error) { console.error("[rate-limit] hit error", error); continue; }
+    if (error) {
+      console.error("[rate-limit] counter unavailable", error.code ?? "unknown");
+      if (args.endpoint === "network_form") {
+        throw new RateLimitError("Protection anti-abus indisponible. Réessayez plus tard.", "rate_limit_unavailable", 503);
+      }
+      continue;
+    }
     if ((cnt as number) > s.max) {
       await supa.rpc("record_abuse", {
         _ip: ctx.ip, _ip_hash: ctx.ipHash, _fingerprint: args.fingerprint ?? null,
