@@ -1,6 +1,6 @@
 import {createFileRoute} from "@tanstack/react-router";
-import {UnpublishedLegalPage} from "@/components/public/UnpublishedLegalPage";
+import {PublishedBpeiLegalPage} from "@/components/public/PublishedBpeiLegalPage";
 export const Route=createFileRoute("/confidentialite")({
  head:()=>({meta:[{title:"Politique de confidentialité — BPEI"},{name:"robots",content:"noindex,nofollow"}]}),
- component:()=> <UnpublishedLegalPage title="Politique de confidentialité"/>
+ component:()=> <PublishedBpeiLegalPage kind="confidentialite" title="Politique de confidentialité" />
 });
