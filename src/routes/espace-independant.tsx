@@ -96,7 +96,7 @@ function IndependentSpace() {
       return;
     }
     setLoading(true);
-    const result = registration ? await supabase.auth.signUp({ email, password, options: { data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
+    const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/espace-independant`, data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
     if (result.error || !result.data.user) {
       setError("Connexion impossible. Vérifiez vos identifiants.");
