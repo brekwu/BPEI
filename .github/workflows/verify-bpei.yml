@@ -28,6 +28,10 @@ jobs:
         run: bun run build
       - name: Verify Nitro server output
         run: test -f .output/server/index.mjs
+      - name: Install Chromium smoke test tooling
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
       - name: Public SSR smoke tests
         run: |
           PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-ssr.log 2>&1 &
@@ -38,3 +42,4 @@ jobs:
             sleep 1
           done
           node scripts/smoke-http.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
