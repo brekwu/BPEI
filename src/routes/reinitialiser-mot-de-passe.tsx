@@ -31,15 +31,16 @@ function ResetPasswordPage() {
     // Both implicit and PKCE recovery links are handled by supabase-js.
     // Only show the password update form when a valid session is available.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (alive && event === "PASSWORD_RECOVERY" && session) setRecovery(true);
+      if (alive && event === "PASSWORD_RECOVERY" && session) {
+        setRecovery(true);
+        setNotice("");
+        setError("");
+      }
     });
-    const isRecoveryLink = isExplicitBpeiRecoveryLink(window.location.search,window.location.hash);
-    if (isRecoveryLink) {
-      void supabase.auth.getSession().then(({ data }) => {
-        if (alive && data.session) setRecovery(true);
-      }).catch(() => {
-        if (alive) setError("Lien expiré ou invalide. Vous pouvez demander un nouveau lien.");
-      });
+    // A pre-existing signed-in session is NOT evidence of a recovery link.
+    // The password update form is unlocked only by Supabase's PASSWORD_RECOVERY event.
+    if (isExplicitBpeiRecoveryLink(window.location.search,window.location.hash)) {
+      setNotice("Vérification du lien en cours. Si le formulaire n'apparaît pas, demandez un nouveau lien.");
     }
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);

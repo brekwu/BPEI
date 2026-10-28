@@ -58,6 +58,13 @@ try{
  await page.getByPlaceholder("Mot de passe",{exact:true}).fill("Test-password-2026!");
  await page.getByRole("button",{name:"Se connecter",exact:true}).click();
  await page.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
+ // Signed-in users must not be able to treat arbitrary ?type=recovery as a valid recovery.
+ await page.goto(base+"/reinitialiser-mot-de-passe?type=recovery",{waitUntil:"domcontentloaded"});
+ await page.getByRole("button",{name:"Recevoir un lien de réinitialisation"}).waitFor({timeout:15000});
+ assert.equal(await page.getByRole("button",{name:"Enregistrer le mot de passe"}).count(),0,
+   "Existing session must not authorize an unverified password recovery link");
+ await page.goto(base+"/espace-independant",{waitUntil:"domcontentloaded"});
+ await page.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
  const check=page.getByRole("checkbox",{name:/J'ai pris connaissance de ces documents/});
  await check.check();
  const consent=page.getByRole("button",{name:"Enregistrer mon acceptation"});

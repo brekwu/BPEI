@@ -80,3 +80,9 @@ Conserver `bpei.fr` sur OVH tant que la recette n'est pas acquise. Avant une exp
 - L'interface d'administration juridique affiche un état prudent lorsque l'API de validation ou de publication est indisponible : aucun succès n'est annoncé si la relecture des trois documents n'a pas abouti ; les boutons sont à nouveau disponibles après l'erreur.
 - Le test navigateur `scripts/browser-p0-customer-intake-retry-smoke.mjs` est effectué exclusivement avec une API simulée, sans envoi de données clients réelles.
 - L'homologation P0 demeure **non validée** tant que le premier compte admin, le SMTP, le hook Auth et les textes juridiques approuvés ne sont pas testés en réel. Aucun domaine ou abonnement n'est modifié.
+
+## Contrôle P0 — rappel d'identité et concurrence des versions juridiques (28/10/2026)
+
+- La page de réinitialisation n'autorise plus le formulaire de changement de mot de passe sur simple présence d'une session déjà ouverte et d'un paramètre d'URL `type=recovery`. Seul l'événement `PASSWORD_RECOVERY` émis par Supabase avec une session valide déverrouille ce parcours. Un test navigateur vérifie le refus avec une session préexistante et un faux contexte de récupération.
+- L'éditeur juridique ignore les réponses réseau d'une ancienne version lorsque l'administrateur a changé de version. La validation et la publication restent bloquées tant que les documents de la version courante n'ont pas été chargés et confirmés.
+- Ces corrections ne valident pas les e-mails réels, les paramètres Auth et les approbations juridiques humaines. Garder le portail fermé jusqu'à la recette de production.
