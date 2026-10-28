@@ -234,7 +234,7 @@ function IndependentSpace() {
                 <Button type="button" disabled={!acceptChecked || saving} onClick={async()=>{
                   if(!userId || !launch?.legal_version)return;
                   await withSaveGuard(async()=>{
-                    const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch.legal_version});
+                    const {error:e}=await (supabase as any).from("bpei_legal_acceptances").insert({user_id:userId,legal_version:launch?.legal_version});
                     if(e){setError("Acceptation non enregistrée. Réessayez.");return;}
                     setLegalAccepted(true);setNotice("Informations juridiques acceptées.");
                   },"Service indisponible pendant l'acceptation juridique.");
