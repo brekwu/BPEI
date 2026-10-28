@@ -18,6 +18,11 @@ for (let attempt = 0; attempt < 45; attempt++) {
 }
 
 assert.ok(healthy, "GET /health must return status 200 and status=ok");
+if (process.env.BPEI_STAGING === "true") {
+  const response = await fetch(origin + "/health");
+  assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/i,
+    "Staging must never be indexed");
+}
 
 const routes = [
   ["/", "BPEI"],
@@ -35,4 +40,12 @@ for (const [path, expectedText] of routes) {
   console.log("SSR OK:", path);
 }
 
+const unauthenticatedEmail = await fetch(origin + "/lovable/email/auth/webhook", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: "{}",
+});
+assert.equal(unauthenticatedEmail.status, 503,
+  "Missing Lovable configuration must disable the old email webhook");
+console.log("Old Lovable email webhook is disabled on independent hosting.");
 console.log("BPEI production-mode HTTP smoke checks passed.");
