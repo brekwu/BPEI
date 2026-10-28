@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Ce dossier reproduit **dans l'ordre** les 37 migrations effectivement appliquées au projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) le 28 octobre 2026. Il sert de base à une reconstruction et à des revues de code.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **37 migrations appliquées** au 28 octobre 2026, mais cette branche contient encore **36 fichiers SQL versionnés**. La migration `20261028175736_p1_admin_roster_secure_cross_admin_visibility` est appliquée dans Supabase et doit être synchronisée dans le dépôt avant toute reconstruction depuis zéro.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -9,3 +9,5 @@ Ce dossier reproduit **dans l'ordre** les 37 migrations effectivement appliquée
 - Toujours tester les politiques RLS, les fonctions privilégiées et le parcours client avant l'ouverture publique.
 
 - P1 : une migration ajoute le suivi des incidents de mission et les notifications internes. Les formulaires publics restent fermés tant que les critères d'ouverture P0 ne sont pas vérifiés.
+
+- Ne pas affirmer que la reconstruction depuis ce dépôt est reproductible jusqu'à la migration 37 tant que son fichier SQL n'est pas présent. Garder les précédents contrôles de production fermés.
