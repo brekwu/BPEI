@@ -43,7 +43,7 @@ function IndependentReview() {
     const [a, p, v] = await Promise.all([
       db.from("independent_applications").select("id,user_id,status,message,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
       db.from("independent_profiles").select("user_id,display_name,business_name,siret,city,verified_at").limit(200),
-      db.from("independent_verification_checks").select("user_id,siret,checked_at,evidence_source,evidence_reference").limit(200),
+      db.from("independent_verification_checks").select("user_id,siret,checked_at,evidence_source,evidence_reference,insurance_confirmed,insurance_expires_on,insurance_evidence_reference").limit(200),
     ]);
     if (a.error || p.error || v.error) setMessage("Lecture impossible. Vérifiez vos autorisations et réessayez.");
     else {

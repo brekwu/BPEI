@@ -15,28 +15,36 @@ export function ProfessionalVerificationPanel({
  const [enterpriseActive,setEnterpriseActive]=useState(false);
  const [establishmentActive,setEstablishmentActive]=useState(false);
  const [identityConfirmed,setIdentityConfirmed]=useState(false);
+ const [insuranceConfirmed,setInsuranceConfirmed]=useState(false);
+ const [insuranceReference,setInsuranceReference]=useState("");
+ const [insuranceExpiresOn,setInsuranceExpiresOn]=useState("");
  const [sending,setSending]=useState(false);
  const [feedback,setFeedback]=useState("");
  const current=isVerificationCurrent(check,siret);
- const ready=!!siret&&/^[0-9]{14}$/.test(siret)&&enterpriseActive&&establishmentActive&&identityConfirmed&&reference.trim().length>=20&&reference.trim().length<=700;
+ const ready=!!siret&&/^[0-9]{14}$/.test(siret)&&enterpriseActive&&establishmentActive&&identityConfirmed&&reference.trim().length>=20&&reference.trim().length<=700
+ && insuranceConfirmed && insuranceReference.trim().length>=20 && insuranceReference.trim().length<=700
+ && !!insuranceExpiresOn && insuranceExpiresOn>=new Date().toISOString().slice(0,10);
  async function save() {
   if(!ready || sending || !siret)return;
   if(!window.confirm("Je confirme avoir examiné une source officielle récente, vérifié l'activité de l'entreprise et de l'établissement, et contrôlé le lien entre le candidat et l'entreprise."))return;
   setSending(true);setFeedback("");
-  const {error}=await (supabase as any).rpc("record_independent_verification",{
+  const {error}=await (supabase as any).rpc("record_independent_verification_with_insurance",{
     p_user_id:userId,p_siret:siret,
     p_enterprise_active:enterpriseActive,p_establishment_active:establishmentActive,
     p_identity_confirmed:identityConfirmed,p_evidence_source:source,
-    p_evidence_reference:reference.trim()
+    p_evidence_reference:reference.trim(),
+    p_insurance_evidence_reference:insuranceReference.trim(),
+    p_insurance_expires_on:insuranceExpiresOn
   });
   setSending(false);
   if(error){setFeedback("Enregistrement refusé. Vérifiez le compte du candidat, le SIRET, les justificatifs et vos droits administrateur.");return;}
   setFeedback("Contrôle documenté enregistré. L'approbation peut maintenant être examinée.");
   setEnterpriseActive(false);setEstablishmentActive(false);setIdentityConfirmed(false);setReference("");
+  setInsuranceConfirmed(false);setInsuranceReference("");setInsuranceExpiresOn("");
   await onRecorded();
  }
  return <section className="mt-4 rounded-lg border bg-muted/20 p-4" aria-label="Contrôle du professionnel">
-  <h4 className="text-sm font-semibold">Vérification de l'entreprise et de l'identité</h4>
+  <h4 className="text-sm font-semibold">Vérification de l'entreprise, de l'identité et de la RC Pro</h4>
   {current && check ? <p className="mt-2 text-sm" role="status">Contrôle enregistré le {new Date(check.checked_at).toLocaleDateString("fr-FR")} — SIRET correspondant. Validité maximale : 30 jours.</p> :
    <p className="mt-2 text-sm text-muted-foreground">Aucune vérification récente valable pour le SIRET actuel. Impossible d'approuver sans justificatifs.</p>}
   {!siret || !/^[0-9]{14}$/.test(siret) ? <p className="mt-2 text-sm text-destructive">Le candidat doit d'abord renseigner un SIRET à 14 chiffres.</p> :
@@ -61,6 +69,17 @@ export function ProfessionalVerificationPanel({
     <label className="flex gap-2"><input type="checkbox" checked={enterpriseActive} onChange={e=>setEnterpriseActive(e.target.checked)}/>Entreprise active confirmée dans une source officielle</label>
     <label className="flex gap-2"><input type="checkbox" checked={establishmentActive} onChange={e=>setEstablishmentActive(e.target.checked)}/>Établissement correspondant au SIRET actif</label>
     <label className="flex gap-2"><input type="checkbox" checked={identityConfirmed} onChange={e=>setIdentityConfirmed(e.target.checked)}/>Lien entre le candidat et l'entreprise vérifié sur justificatifs</label>
+   </div>
+   <div className="mt-4 rounded-lg border p-3 space-y-3 text-sm">
+     <h5 className="font-semibold">Attestation d'assurance RC Pro</h5>
+     <p className="text-muted-foreground">Vérifiez l'attestation et sa validité. Indiquez une référence non sensible, sans copier la pièce ni le numéro de contrat.</p>
+     <label className="block">Référence de l'attestation (20 à 700 caractères)
+       <textarea required rows={2} minLength={20} maxLength={700} className="mt-1 block w-full rounded-md border bg-background p-2 text-sm" value={insuranceReference} onChange={e=>setInsuranceReference(e.target.value)} />
+     </label>
+     <label className="block">Date de fin de validité
+       <input type="date" required min={new Date().toISOString().slice(0,10)} value={insuranceExpiresOn} onChange={e=>setInsuranceExpiresOn(e.target.value)} className="mt-1 block w-full rounded-md border bg-background p-2" />
+     </label>
+     <label className="flex gap-2"><input type="checkbox" checked={insuranceConfirmed} onChange={e=>setInsuranceConfirmed(e.target.checked)} />J'ai vérifié une attestation RC Pro en cours de validité</label>
    </div>
    <Button className="mt-4" size="sm" disabled={!ready||sending} variant="outline" onClick={()=>void save()}>{sending?"Enregistrement…":"Enregistrer la vérification"}</Button>
   </>}
