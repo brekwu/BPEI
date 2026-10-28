@@ -19,7 +19,7 @@ jobs:
         run: bun install
       - name: Contrôler la version corrigée
         run: |
-          node -e 'const p=require("./node_modules/@tanstack/react-start/package.json"); if (Number(p.version.split(".")[2]) < 60 || p.version.split(".")[1] !== "168") { console.error("Version TanStack non vérifiée",p.version); process.exit(1) } console.log("Version corrigée:",p.version)'
+          node -e 'const p=require("./node_modules/@tanstack/react-start/package.json"); const [major,minor,patch]=p.version.split(".").map(Number); if (major !== 1 || minor < 168 || (minor === 168 && patch < 60)) { console.error("Version TanStack non vérifiée",p.version); process.exit(1) } console.log("Version corrigée:",p.version)'
       - name: Enregistrer uniquement le lockfile
         run: |
           git config user.name 'github-actions[bot]'
