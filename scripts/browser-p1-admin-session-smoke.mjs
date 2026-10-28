@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 /**
  * P1 admin UI privacy regression. All Auth and database calls are mocked.
  * A second-tab sign-out must remove cached administrative data immediately.
  * This does not replace live multi-account Supabase/RLS acceptance.
  */
-const browser = await chromium.launch({ headless: true });
+const engine = process.env.BPEI_BROWSER_ENGINE ?? "chromium";
+assert.ok(["chromium", "webkit"].includes(engine), "Unsupported browser engine");
+const browser = await (engine === "webkit" ? webkit : chromium).launch({ headless: true });
 const base = process.env.BPEI_SMOKE_ORIGIN || "http://127.0.0.1:3000";
 const id = "12345678-1234-4234-8234-123456789012";
 const user = { id, email: "admin-p1@example.invalid", role: "authenticated",
