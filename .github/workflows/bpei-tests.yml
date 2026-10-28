@@ -22,6 +22,8 @@ jobs:
           node-version: "22"
       - name: Check first-admin bootstrap script syntax
         run: node --check scripts/p0-bootstrap-admin.mjs
+      - name: Validate P0 live acceptance suite syntax without credentials
+        run: node --check scripts/p0-live-auth-acceptance.mjs
       - name: Tests du projet (sans données externes)
         run: npm test
 
@@ -42,6 +44,14 @@ jobs:
         run: |
           if node scripts/p0-bootstrap-admin.mjs --execute; then
             echo "Critical: admin bootstrap executed without configuration."
+            exit 1
+          fi
+      - name: Guard check (live acceptance must not claim a PASS without accounts)
+        run: |
+          status=0
+          node scripts/p0-live-auth-acceptance.mjs || status=$?
+          if [ "$status" -ne 2 ]; then
+            echo "Critical: live P0 acceptance did not report missing credentials."
             exit 1
           fi
       - name: Build then TypeScript check
