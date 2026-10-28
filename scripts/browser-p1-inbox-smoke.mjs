@@ -63,10 +63,11 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
    return route.fulfill({status:200,headers:countHeader});
   }
   readCalls++;
-  const range=request.headers().range??"0-19";
-  const match=range.match(/^(\d+)-(\d+)$/);
-  const start=match?Number(match[1]):0;
-  const end=match?Number(match[2]):filtered.length-1;
+  // postgrest-js .range(from,to) uses offset/limit URL query parameters.
+  const start=Number(url.searchParams.get("offset")??"0");
+  const limit=Number(url.searchParams.get("limit")??"20");
+  assert.ok(Number.isInteger(start)&&start>=0&&Number.isInteger(limit)&&limit>=1);
+  const end=start+limit-1;
   const page=filtered.slice(start,end+1).map(({recipient_id,...item})=>item);
   return route.fulfill(json(page,200,{"content-range":start+"-"+Math.max(start,start+page.length-1)+"/"+filtered.length,"access-control-expose-headers":"content-range"}));
  }
