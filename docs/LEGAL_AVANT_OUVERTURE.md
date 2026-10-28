@@ -1,38 +1,21 @@
-# BPEI — vérifications légales AVANT ouverture des formulaires
+# BPEI — conformité avant ouverture du réseau d'indépendants
 
-## Audit de la base existante (28 octobre 2026)
-Les documents enregistrés dans Lovable Cloud ne sont pas tous publiés :
-- `privacy_policy` : **archivé**, aucune version actuellement publiée.
-- `legal_notice` : **brouillon**, aucune version actuellement publiée.
-- `website_terms` : publié, mais contient les conditions du site existant et doit être relu pour le nouveau réseau d'indépendants.
-- `platform_legal_settings.hosting_provider_name` : **non renseigné** (la base sera migrée vers un hébergeur indépendant).
-- `network_charter`, `shop_independent_framework` : brouillons. Aucun contrat de partenariat national validé sur cette base.
+État au 28 octobre 2026 : **non validé pour publicité ni collecte publique de demandes**.
 
-Ces constats viennent des **statuts** des documents ; ils ne valident pas la conformité ou les contenus juridiques.
+Le nouveau site est destiné aux techniciens informatiques **indépendants**. Les contrats historiques de boutiques et les textes issus de l'ancien outil ne doivent pas être réutilisés sans validation.
 
-## Barrières de mise en service intégrées dans le code
-Deux conditions distinctes :
-- `VITE_BPEI_PUBLIC_FORMS_ENABLED=true` **au build** : affiche les formulaires au navigateur ;
-- `BPEI_FORMS_ENABLED=true` **au runtime du serveur** : autorise effectivement leur traitement.
-Si une variable reste absente ou différente de `true`, l'ouverture du formulaire n'est pas effective. En préproduction, les deux doivent rester `false` par défaut. Ne jamais utiliser ces flags pour compenser l'absence de contrôles RLS.
+## Documents à vérifier puis publier
+- Mentions légales : identité de l'éditeur, immatriculation, coordonnées, directeur de publication, hébergeur actuel.
+- Politique de confidentialité : responsables de traitement, finalités, bases légales, données, destinataires, durées, droits RGPD et contact.
+- CGU du réseau, conditions de candidatures et vérification professionnelle.
+- Convention de collaboration des indépendants, assurance RC Pro, SIRET, responsabilités, modalités de missions et rémunération sans garantie de volume.
+- Information au moment de la collecte et mécanisme de demandes RGPD.
+- Cookies : confirmer l'absence de suivi optionnel ou recueillir le consentement adapté si des traceurs sont ajoutés.
 
-## Mentions légales à compléter et publier (sans information fictive)
-- Identité de l'éditeur, statut juridique et immatriculation, adresse et contact, responsable de publication ;
-- Hébergeur réel de bpei.fr (nom et coordonnées de l'hébergeur finalement retenu) ;
-- Politique de confidentialité : responsable de traitement, finalités candidatures et demandes d'intervention, base légale, destinataires, sous-traitants, hébergement, éventuels transferts, durée réelle de conservation, modalités des droits et contact, réclamations CNIL ;
-- Cookies/tracking : uniquement selon l'implémentation réelle et le régime de consentement applicable ;
-- Information sur le rôle d'intermédiaire de BPEI par rapport aux indépendants, devis et facturation ;
-- Convention de partenariat technicien : indépendance, liberté d'accepter/refuser les demandes, critères de sélection, information tarifaire, commissions éventuelles, responsabilités, assurance, résiliation, gestion des litiges ;
-- Information consommateurs et médiation quand applicable, conforme à la structure contractuelle réelle ;
-- Conservation et suppression sécurisée des candidatures refusées ou des demandes sans suite.
+## Sécurité et recette
+- Vérifier l'inscription, la confirmation e-mail et le droit de supprimer son compte.
+- Tester avec deux comptes réels l'isolation RLS, la consultation des candidatures et le refus de mise à jour des champs d'administration.
+- Mettre en place le traitement opérationnel des demandes de dépannage avant la publicité clients.
+- Choisir un hébergement autorisant l'utilisation commerciale avant de pointer bpei.fr sur le nouveau site.
 
-## Critères avant de passer les flags à true
-1. Politique de confidentialité publiée et accessible sans connexion à `/confidentialite` ;
-2. Mentions légales publiées et hébergeur exact renseigné ;
-3. CGU/CGV et convention d'indépendants relues et validées ;
-4. Base distincte provisionnée, droits RLS et authentification testés ;
-5. Candidature et demande client testées avec valeurs factices, accès administrateur contrôlé ;
-6. Anti-spam/rate-limit actif, sans secret côté navigateur ;
-7. Suppression des dossiers de test et vérification du rollback.
-
-**Ces documents sont une checklist technique et non un avis juridique.**
+**Les pages provisoires ne constituent pas des documents juridiques publiés.**
