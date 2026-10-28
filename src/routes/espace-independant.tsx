@@ -120,7 +120,23 @@ function IndependentSpace() {
             <h2 className="text-xl font-semibold">Mon profil</h2>
             <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setRequests([]); }}>Se déconnecter</Button>
           </div>
-          {!profile ? <p>Aucun profil indépendant n'est encore associé à ce compte. La création de profil est réservée aux comptes autorisés.</p> :
+          {!profile ? <form className="rounded-xl border p-6 space-y-4" onSubmit={async (event) => {
+            event.preventDefault();
+            if (!userId || saving) return;
+            const form = event.currentTarget;
+            const name = (new FormData(form).get("display_name") ?? "").toString().trim();
+            if (name.length < 2 || name.length > 120) { setError("Nom professionnel invalide."); return; }
+            setSaving(true); setError("");
+            const { error: insertError } = await (supabase as any).from("independent_profiles").insert({ user_id: userId, display_name: name });
+            if (insertError) setError("La création du profil a échoué.");
+            else await load(userId);
+            setSaving(false);
+          }}>
+            <h3 className="font-semibold">Créer mon profil indépendant</h3>
+            <p className="text-sm text-muted-foreground">Aucune mission ne sera accessible sans vérification professionnelle.</p>
+            <label className="block text-sm">Nom professionnel<Input name="display_name" required minLength={2} maxLength={120}/></label>
+            <Button type="submit" disabled={saving}>Créer mon profil</Button>
+          </form> :
           <form onSubmit={save} className="space-y-4 rounded-xl border bg-card p-6">
             <p className="text-sm">{profile.verified_at ? "Profil vérifié par BPEI" : "Profil non encore vérifié"}</p>
             <label className="block text-sm">Nom affiché <Input required minLength={2} maxLength={120} value={profile.display_name} onChange={e => update("display_name", e.target.value)} /></label>
