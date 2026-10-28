@@ -135,12 +135,12 @@ export function BpeiInbox(){
   {identity&&visible&&<div className="mt-3 space-y-2">
    {loading&&<p role="status" className="text-sm">Chargement des notifications…</p>}
    {!loading&&!error&&items.length===0&&<p className="text-sm">Aucune notification.</p>}
-   {!loading&&!error&&items.map(n=><div key={n.id} className="flex flex-wrap justify-between gap-2 rounded-md border p-3 text-sm">
+   {!loading&&items.map(n=><div key={n.id} className="flex flex-wrap justify-between gap-2 rounded-md border p-3 text-sm">
     <div><strong>{n.title}</strong><p className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString("fr-FR")}</p></div>
     {!n.read_at&&<Button type="button" size="sm" variant="outline" disabled={!!busyId||loading}
      onClick={()=>void mark(n.id)}>{busyId===n.id?"Enregistrement…":"Marquer lue"}</Button>}
    </div>)}
-   {!loading&&!error&&total>0&&<div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+   {!loading&&total>0&&<div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
     <p role="status" className="text-xs text-muted-foreground">Notifications {page*PAGE_SIZE+1}–{page*PAGE_SIZE+items.length} sur {total} · page {page+1} sur {pageCount}</p>
     <div className="flex gap-2">
      <Button type="button" size="sm" variant="outline" disabled={!!busyId||page===0} onClick={()=>setPage(p=>p-1)}>Précédent</Button>
