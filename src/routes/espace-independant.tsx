@@ -5,6 +5,7 @@ import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { missionStatusLabel, nextMissionStatus, canReadMissionClientContact } from "@/lib/bpei-mission-status";
 
 export const Route = createFileRoute("/espace-independant")({
   component: IndependentSpace,
@@ -50,7 +51,7 @@ function IndependentSpace() {
     setRequests(r.data ?? []);
     setClientContacts({});
     const eligibleIds = (r.data ?? []).filter((item:{status:string;inquiry_id:string|null})=>
-      ["accepted","in_progress","completed"].includes(item.status) && item.inquiry_id
+      canReadMissionClientContact(item.status) && item.inquiry_id
     ).map((item:{inquiry_id:string})=>item.inquiry_id);
     if(eligibleIds.length>0){
       const contacts=await db.from("bpei_inquiries").select("id,client_name,email,phone,city").in("id",eligibleIds);
@@ -183,19 +184,19 @@ function IndependentSpace() {
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
             {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4">
-              <strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{({new:"Nouvelle mission",accepted:"Acceptée",in_progress:"En cours",completed:"Terminée",cancelled:"Refusée / annulée"} as Record<string,string>)[r.status]??r.status}</span>
-              {r.inquiry_id && ["accepted","in_progress","completed"].includes(r.status) && clientContacts[r.inquiry_id] && <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
+              <strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{missionStatusLabel(r.status)}</span>
+              {r.inquiry_id && canReadMissionClientContact(r.status) && clientContacts[r.inquiry_id] && <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
                 <p className="font-medium">Contact du client — mission acceptée</p>
                 <p>{clientContacts[r.inquiry_id].client_name} — {clientContacts[r.inquiry_id].city||"ville non indiquée"}</p>
                 <p><a className="underline" href={"mailto:"+clientContacts[r.inquiry_id].email}>{clientContacts[r.inquiry_id].email}</a></p>
                 {clientContacts[r.inquiry_id].phone && <p><a className="underline" href={"tel:"+clientContacts[r.inquiry_id].phone}>{clientContacts[r.inquiry_id].phone}</a></p>}
               </div>}
-              {(r.status==="accepted" || r.status==="in_progress") && <div className="mt-3">
+              {nextMissionStatus(r.status) !== null && <div className="mt-3">
                 <Button size="sm" disabled={saving} onClick={async()=>{
                   if(!userId)return;
                   setSaving(true);setError("");
                   const {error:e}=await (supabase as any).rpc("advance_independent_request",{
-                    p_request_id:r.id,p_next_status:r.status==="accepted"?"in_progress":"completed"
+                    p_request_id:r.id,p_next_status:nextMissionStatus(r.status)
                   });
                   if(e)setError("Changement de statut impossible.");else await load(userId);
                   setSaving(false);
