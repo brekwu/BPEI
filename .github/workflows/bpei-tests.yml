@@ -36,6 +36,14 @@ jobs:
           bun-version: "1.4.4"
       - name: Install frozen dependencies
         run: bun install --frozen-lockfile
+      - name: Dry-run first-admin bootstrap without credentials
+        run: node scripts/p0-bootstrap-admin.mjs
+      - name: Guard check (must refuse execution without private credentials)
+        run: |
+          if node scripts/p0-bootstrap-admin.mjs --execute; then
+            echo "Critical: admin bootstrap executed without configuration."
+            exit 1
+          fi
       - name: Build then TypeScript check
         run: bun run typecheck
         env:
