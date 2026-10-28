@@ -1,21 +1,9 @@
 import {useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
+import {isVerificationCurrent,type ProfessionalCheck} from "@/lib/bpei-professional-verification";
 
-export type ProfessionalCheck = {
-  user_id:string;
-  siret:string;
-  checked_at:string;
-  evidence_source:string;
-  evidence_reference:string;
-};
 type Source = "annuaire_entreprises" | "rne_inpi" | "repertoire_sirene";
-
-export function isVerificationCurrent(check:ProfessionalCheck|undefined,siret:string|null|undefined,at=Date.now()):boolean {
-  if(!check || !siret || check.siret!==siret)return false;
-  const date=new Date(check.checked_at).getTime();
-  return Number.isFinite(date)&&date<=at&&at-date<=30*24*60*60*1000;
-}
 
 export function ProfessionalVerificationPanel({
  userId,siret,check,onRecorded
