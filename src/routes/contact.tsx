@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Children, cloneElement, isValidElement, useEffect, useId, useState, type ReactElement } from "react";
+import { Children, cloneElement, isValidElement, useId, useState, type ReactElement } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,14 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { submitContact } from "@/lib/site.functions";
-import { supabase } from "@/integrations/supabase/client";
 import { getPublicLegalIdentityFn } from "@/lib/platform-public.functions";
 import { getPublicPlatformSettingsFn } from "@/lib/platform-public.functions";
-import { Mail, Phone, MapPin, CheckCircle2, Store } from "lucide-react";
+import { Mail, Phone, MapPin, CheckCircle2 } from "lucide-react";
 
 const searchSchema = z.object({
-  shop: z.string().uuid().optional(),
-  subject: z.enum(["particulier","boutique","rejoindre","support","commercial","reclamation","autre"]).optional(),
+  subject: z.enum(["particulier","rejoindre","support","commercial","reclamation","autre"]).optional(),
 });
 
 export const Route = createFileRoute("/contact")({
@@ -44,7 +42,7 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact — BPEI" },
       { name: "description", content: "Contactez l'équipe BPEI : questions, adhésion, support technique, réclamations. Réponse par référence de dossier." },
       { property: "og:title", content: "Contacter BPEI" },
-      { property: "og:description", content: "Un formulaire unique pour toutes vos demandes : particulier, boutique, réclamation, technique ou commercial." },
+      { property: "og:description", content: "Contact BPEI : particuliers, techniciens indépendants, réclamations et assistance." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://bpei.fr/contact" },
     ],
@@ -56,7 +54,6 @@ export const Route = createFileRoute("/contact")({
 
 const SUBJECTS = [
   { value: "particulier", label: "Je suis un particulier" },
-  { value: "boutique", label: "Je représente une boutique" },
   { value: "rejoindre", label: "Je souhaite rejoindre BPEI" },
   { value: "support", label: "J'ai un problème technique" },
   { value: "commercial", label: "J'ai une question commerciale" },
@@ -65,12 +62,11 @@ const SUBJECTS = [
 ] as const;
 
 const schema = z.object({
-  subject_kind: z.enum(["particulier","boutique","rejoindre","support","commercial","reclamation","autre"]),
+  subject_kind: z.enum(["particulier","rejoindre","support","commercial","reclamation","autre"]),
   first_name: z.string().trim().min(1, "Requis").max(80),
   last_name: z.string().trim().min(1, "Requis").max(80),
   email: z.string().trim().email("E-mail invalide").max(255),
   phone: z.string().trim().max(30).optional().or(z.literal("")),
-  shop_name: z.string().trim().max(160).optional().or(z.literal("")),
   city: z.string().trim().max(120).optional().or(z.literal("")),
   message: z.string().trim().min(10, "Minimum 10 caractères").max(4000),
   consent: z.boolean().refine((v) => v === true, { message: "Consentement requis" }),
@@ -78,42 +74,24 @@ const schema = z.object({
 type Form = z.infer<typeof schema>;
 
 function ContactPage() {
-  const search = Route.useSearch() as { shop?: string; subject?: string };
+  const search = Route.useSearch() as { subject?: string };
   const contactInfo = Route.useLoaderData();
   const submit = useServerFn(submitContact);
   const [reference, setReference] = useState<string | null>(null);
-  const [prefillShop, setPrefillShop] = useState<{ id: string; name: string; city: string | null } | null>(null);
 
   const form = useForm<Form>({
     resolver: zodResolver(schema),
     defaultValues: { subject_kind: (search.subject as any) ?? "particulier", consent: false as any },
   });
 
-  useEffect(() => {
-    if (!search.shop) return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("shops_public")
-        .select("id, name, city")
-        .eq("id", search.shop!)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      setPrefillShop(data as any);
-      form.setValue("shop_name", data.name ?? "");
-      if (data.city) form.setValue("city", data.city);
-      form.setValue("subject_kind", "particulier");
-    })();
-    return () => { cancelled = true; };
-  }, [search.shop]);
 
   async function onSubmit(v: Form) {
     try {
       const res = await submit({ data: {
         subject_kind: v.subject_kind,
         first_name: v.first_name, last_name: v.last_name, email: v.email,
-        phone: v.phone || null, shop_name: v.shop_name || null, city: v.city || null,
-        shop_id: prefillShop?.id ?? null,
+        phone: v.phone || null, shop_name: null, city: v.city || null,
+        shop_id: null,
         origin_path: typeof window !== "undefined" ? window.location.pathname + window.location.search : null,
         message: v.message, consent: true,
       } });
@@ -131,19 +109,10 @@ function ContactPage() {
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-3xl font-bold md:text-4xl">Contactez BPEI</h1>
           <p className="mt-3 text-muted-foreground">
-            Un formulaire unique pour toutes vos demandes. Vous recevrez une référence de suivi.
+            Informations de contact du réseau de techniciens indépendants BPEI.
           </p>
         </div>
 
-        {prefillShop && (
-          <div className="mx-auto mt-6 max-w-2xl rounded-lg border border-electric/40 bg-electric/5 p-4 text-sm">
-            <div className="flex items-center gap-2 font-medium">
-              <Store className="h-4 w-4 text-electric" />
-              Votre demande concerne : <span className="text-electric">{prefillShop.name}</span>
-              {prefillShop.city && <span className="text-muted-foreground">— {prefillShop.city}</span>}
-            </div>
-          </div>
-        )}
 
         <div className="mt-8 grid gap-6 md:grid-cols-[1fr_1.4fr]">
           <div className="space-y-6">
@@ -182,6 +151,8 @@ function ContactPage() {
                   </p>
                   <Button className="mt-6" variant="outline" onClick={() => setReference(null)}>Nouvelle demande</Button>
                 </div>
+              ) : import.meta.env.VITE_BPEI_PUBLIC_FORMS_ENABLED !== "true" ? (
+                <p role="status" className="rounded-lg border bg-muted/30 p-5 text-sm text-muted-foreground">Le formulaire de contact sera ouvert après validation de la politique de confidentialité et des traitements de données.</p>
               ) : (
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="space-y-1.5">
@@ -202,13 +173,10 @@ function ContactPage() {
                     <Field label="Téléphone" error={form.formState.errors.phone?.message as string | undefined}><Input type="tel" {...form.register("phone")} /></Field>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label={prefillShop ? "Boutique concernée" : "Boutique"} error={form.formState.errors.shop_name?.message as string | undefined}>
-                      <Input {...form.register("shop_name")} readOnly={!!prefillShop} className={prefillShop ? "bg-muted" : ""} />
-                    </Field>
                     <Field label="Ville" error={form.formState.errors.city?.message as string | undefined}><Input {...form.register("city")} /></Field>
                   </div>
                   <Field label="Message *" error={form.formState.errors.message?.message}>
-                    <Textarea rows={5} {...form.register("message")} placeholder={prefillShop ? `Votre question à propos de ${prefillShop.name}…` : ""} />
+                    <Textarea rows={5} {...form.register("message")} placeholder="Décrivez votre demande concernant le réseau de techniciens indépendants." />
                   </Field>
                   <label className="flex items-start gap-2 text-xs text-muted-foreground">
                     <Checkbox
