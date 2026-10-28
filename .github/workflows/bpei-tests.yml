@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/bpei-independent-release-clean
+      - feat/p1-mission-operations
   pull_request:
     branches:
       - main
