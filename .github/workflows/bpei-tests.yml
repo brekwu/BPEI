@@ -56,3 +56,54 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: bpei-ci-publishable-key
           BPEI_STAGING: "true"
           VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+
+  macos-webkit-smoke:
+    # Apple WebKit engine on macOS; user devices and real Auth/RLS need separate acceptance.
+    runs-on: macos-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      NITRO_PRESET: node-server
+      BPEI_STAGING: "true"
+      VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+      BPEI_BROWSER_ENGINE: webkit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Unit tests on macOS
+        run: npm test
+      - name: Build P1 SSR on macOS
+        run: bun run build
+      - name: Install WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install webkit
+      - name: Prelaunch WebKit and cross-tab admin privacy
+        shell: bash
+        run: |
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-p1-webkit.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000/health >/dev/null; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then tail -80 /tmp/bpei-p1-webkit.log; exit 1; fi
+          node scripts/smoke-http.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p1-admin-session-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
