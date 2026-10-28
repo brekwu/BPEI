@@ -146,7 +146,7 @@ function AppHome() {
                       </div>
                       <Badge variant={STATUS_VARIANT[s.status] ?? "outline"}>{STATUS_LABEL[s.status] ?? s.status}</Badge>
                       {s.status === "validated" && (
-                        <Button asChild size="sm" variant="outline"><Link to={`/app/shop/${s.id}/dashboard`}>Ouvrir<ArrowRight className="ml-1 h-3 w-3" /></Link></Button>
+                        <Button asChild size="sm" variant="outline"><Link to="/app/shop/$shopId/dashboard" params={{ shopId: s.id }}>Ouvrir<ArrowRight className="ml-1 h-3 w-3" /></Link></Button>
                       )}
                     </li>
                   ))}
@@ -179,7 +179,7 @@ function AppHome() {
                         <div className="text-xs text-muted-foreground capitalize">{m.role}</div>
                       </div>
                       {m.shops?.status === "validated" && (
-                        <Button asChild size="sm" variant="outline"><Link to={`/app/shop/${m.shop_id}/dashboard`}>Ouvrir<ArrowRight className="ml-1 h-3 w-3" /></Link></Button>
+                        <Button asChild size="sm" variant="outline"><Link to="/app/shop/$shopId/dashboard" params={{ shopId: m.shop_id }}>Ouvrir<ArrowRight className="ml-1 h-3 w-3" /></Link></Button>
                       )}
                     </li>
                   ))}

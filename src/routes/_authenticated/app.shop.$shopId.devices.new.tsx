@@ -88,7 +88,7 @@ function NewDevice() {
   return (
     <PageContainer>
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link to={`${base}/devices`}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
+        <Link to="/app/shop/$shopId/devices" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
       </Button>
       <PageHeader
         title="Nouvel appareil"
@@ -145,7 +145,7 @@ function NewDevice() {
         </SectionCard>
 
         <FormActions sticky>
-          <Button type="button" variant="ghost" asChild><Link to={`${base}/devices`}>Annuler</Link></Button>
+          <Button type="button" variant="ghost" asChild><Link to="/app/shop/$shopId/devices" params={{ shopId }}>Annuler</Link></Button>
           <Button type="submit" disabled={mutation.isPending} className="bg-electric text-electric-foreground hover:bg-electric/90">
             {mutation.isPending ? "Création…" : "Créer l'appareil"}
           </Button>

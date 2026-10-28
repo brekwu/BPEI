@@ -71,7 +71,7 @@ function DeviceDetail() {
   if (!data?.device) {
     return (
       <PageContainer>
-        <EmptyState icon={<Smartphone className="h-6 w-6" />} title="Appareil introuvable" action={<Button asChild variant="outline"><Link to={`${base}/devices`}>Retour</Link></Button>} />
+        <EmptyState icon={<Smartphone className="h-6 w-6" />} title="Appareil introuvable" action={<Button asChild variant="outline"><Link to="/app/shop/$shopId/devices" params={{ shopId }}>Retour</Link></Button>} />
       </PageContainer>
     );
   }
@@ -82,7 +82,7 @@ function DeviceDetail() {
   return (
     <PageContainer size="wide">
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link to={`${base}/devices`}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux appareils</Link>
+        <Link to="/app/shop/$shopId/devices" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux appareils</Link>
       </Button>
 
       <div className="flex flex-wrap items-start gap-5">
@@ -98,7 +98,7 @@ function DeviceDetail() {
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             {d.customers && (
-              <Link to={`${base}/clients/${d.customers.id}`} className="text-electric hover:underline">
+              <Link to="/app/shop/$shopId/clients/$clientId" params={{ shopId, clientId: d.customers.id }} className="text-electric hover:underline">
                 {customerDisplayName(d.customers)}
               </Link>
             )}
@@ -108,7 +108,7 @@ function DeviceDetail() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild className="bg-electric text-electric-foreground hover:bg-electric/90" size="sm">
-            <Link to={`${base}/repairs/new`} search={{ deviceId: d.id, customerId: d.customer_id } as never}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
+            <Link to="/app/shop/$shopId/repairs/new" params={{ shopId }} search={{ deviceId: d.id, customerId: d.customer_id } as never}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -157,7 +157,7 @@ function DeviceDetail() {
           <ul className="divide-y divide-border">
             {data.repairs.map((r) => (
               <li key={r.id}>
-                <Link to={`${base}/repairs/${r.id}`} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:bg-secondary/60 focus-visible:outline-none">
+                <Link to="/app/shop/$shopId/repairs/$repairId" params={{ shopId, repairId: r.id }} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:bg-secondary/60 focus-visible:outline-none">
                   <span className="font-mono text-xs">{r.repair_number}</span>
                   <span className="flex-1 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("fr-FR")}</span>
                   <StatusBadge status={r.status} />

@@ -49,7 +49,7 @@ function CataloguePage() {
     return () => clearTimeout(t);
   }, [text]);
   useEffect(() => {
-    if (debounced !== q) navigate({ search: (p: Record<string, string>) => ({ ...p, q: debounced }), replace: true });
+    if (debounced !== q) navigate({ search: (p) => ({ ...p, q: debounced }), replace: true });
   }, [debounced]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchFn = useServerFn(publicBrowseCatalog);
@@ -93,7 +93,7 @@ function CataloguePage() {
               </div>
               <Select
                 value={city || "all"}
-                onValueChange={(v) => navigate({ search: (p: Record<string, string>) => ({ ...p, city: v === "all" ? "" : v }), replace: true })}
+                onValueChange={(v) => navigate({ search: (p) => ({ ...p, city: v === "all" ? "" : v }), replace: true })}
               >
                 <SelectTrigger className="h-11" aria-label="Filtrer par ville"><SelectValue placeholder="Toutes les villes" /></SelectTrigger>
                 <SelectContent>
@@ -103,7 +103,7 @@ function CataloguePage() {
               </Select>
               <Select
                 value={category || "all"}
-                onValueChange={(v) => navigate({ search: (p: Record<string, string>) => ({ ...p, category: v === "all" ? "" : v }), replace: true })}
+                onValueChange={(v) => navigate({ search: (p) => ({ ...p, category: v === "all" ? "" : v }), replace: true })}
               >
                 <SelectTrigger className="h-11" aria-label="Filtrer par catégorie"><SelectValue placeholder="Toutes catégories" /></SelectTrigger>
                 <SelectContent>
@@ -121,7 +121,7 @@ function CataloguePage() {
           <div className="mx-auto max-w-5xl px-4 md:px-6">
             <Tabs
               value={safeKind}
-              onValueChange={(v) => navigate({ search: (p: Record<string, string>) => ({ ...p, kind: v, category: "" }), replace: true })}
+              onValueChange={(v) => navigate({ search: (p) => ({ ...p, kind: v, category: "" }), replace: true })}
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 sm:w-auto">

@@ -113,7 +113,7 @@ function NewRepair() {
   return (
     <PageContainer>
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link to={`${base}/repairs`}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
+        <Link to="/app/shop/$shopId/repairs" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
       </Button>
       <PageHeader
         title="Nouveau dossier de réparation"
@@ -131,7 +131,7 @@ function NewRepair() {
                 </SelectContent>
               </Select>
               <div className="mt-1 text-xs">
-                <Link to={`${base}/clients/new`} className="text-electric hover:underline">+ Créer un client</Link>
+                <Link to="/app/shop/$shopId/clients/new" params={{ shopId }} className="text-electric hover:underline">+ Créer un client</Link>
               </div>
               {form.formState.errors.customer_id && <p className="mt-1 text-xs text-destructive">{form.formState.errors.customer_id.message}</p>}
             </div>
@@ -145,7 +145,7 @@ function NewRepair() {
               </Select>
               {customerId && (
                 <div className="mt-1 text-xs">
-                  <Link to={`${base}/devices/new`} search={{ customerId } as never} className="text-electric hover:underline">+ Créer un appareil</Link>
+                  <Link to="/app/shop/$shopId/devices/new" params={{ shopId }} search={{ customerId } as never} className="text-electric hover:underline">+ Créer un appareil</Link>
                 </div>
               )}
               {form.formState.errors.device_id && <p className="mt-1 text-xs text-destructive">{form.formState.errors.device_id.message}</p>}
@@ -201,7 +201,7 @@ function NewRepair() {
         </SectionCard>
 
         <FormActions sticky>
-          <Button type="button" variant="ghost" asChild><Link to={`${base}/repairs`}>Annuler</Link></Button>
+          <Button type="button" variant="ghost" asChild><Link to="/app/shop/$shopId/repairs" params={{ shopId }}>Annuler</Link></Button>
           <Button type="submit" disabled={mutation.isPending} className="bg-electric text-electric-foreground hover:bg-electric/90">
             {mutation.isPending ? "Création…" : "Créer le dossier"}
           </Button>

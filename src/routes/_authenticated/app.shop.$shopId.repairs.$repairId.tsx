@@ -103,7 +103,7 @@ function RepairDetail() {
   if (!repair) {
     return (
       <PageContainer>
-        <EmptyState icon={<Wrench className="h-6 w-6" />} title="Dossier introuvable" action={<Button asChild variant="outline"><Link to={`${base}/repairs`}>Retour</Link></Button>} />
+        <EmptyState icon={<Wrench className="h-6 w-6" />} title="Dossier introuvable" action={<Button asChild variant="outline"><Link to="/app/shop/$shopId/repairs" params={{ shopId }}>Retour</Link></Button>} />
       </PageContainer>
     );
   }
@@ -111,7 +111,7 @@ function RepairDetail() {
   return (
     <PageContainer size="wide">
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link to={`${base}/repairs`}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux réparations</Link>
+        <Link to="/app/shop/$shopId/repairs" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux réparations</Link>
       </Button>
 
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:items-end sm:justify-between">

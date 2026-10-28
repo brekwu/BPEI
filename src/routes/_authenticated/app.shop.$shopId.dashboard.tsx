@@ -59,13 +59,13 @@ function DashboardPage() {
         actions={
           <>
             <Button asChild size="sm" variant="outline">
-              <Link to={`${base}/clients/new`}><Users className="mr-2 h-4 w-4" />Client</Link>
+              <Link to="/app/shop/$shopId/clients/new" params={{ shopId }}><Users className="mr-2 h-4 w-4" />Client</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
-              <Link to={`${base}/devices/new`}><Cpu className="mr-2 h-4 w-4" />Appareil</Link>
+              <Link to="/app/shop/$shopId/devices/new" params={{ shopId }}><Cpu className="mr-2 h-4 w-4" />Appareil</Link>
             </Button>
             <Button asChild size="sm" className="bg-electric text-electric-foreground shadow-sm hover:bg-electric/90">
-              <Link to={`${base}/repairs/new`}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
+              <Link to="/app/shop/$shopId/repairs/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
             </Button>
           </>
         }
@@ -114,7 +114,7 @@ function DashboardPage() {
           description="Les 8 dossiers les plus récents"
           action={
             <Button asChild variant="ghost" size="sm">
-              <Link to={`${base}/repairs`}>
+              <Link to="/app/shop/$shopId/repairs" params={{ shopId }}>
                 Tout voir <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
               </Link>
             </Button>
@@ -130,7 +130,7 @@ function DashboardPage() {
               description="Créez votre première réparation pour la voir apparaître ici."
               action={
                 <Button asChild size="sm" className="bg-electric text-electric-foreground hover:bg-electric/90">
-                  <Link to={`${base}/repairs/new`}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
+                  <Link to="/app/shop/$shopId/repairs/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
                 </Button>
               }
             />
@@ -142,7 +142,7 @@ function DashboardPage() {
                 return (
                   <li key={r.id}>
                     <Link
-                      to={`${base}/repairs/${r.id}`}
+                      to="/app/shop/$shopId/repairs/$repairId" params={{ shopId, repairId: r.id }}
                       className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-surface-muted sm:flex sm:flex-wrap"
                     >
                       <span className="rounded-md bg-secondary px-2 py-1 font-mono text-[11px] font-medium text-navy shrink-0">

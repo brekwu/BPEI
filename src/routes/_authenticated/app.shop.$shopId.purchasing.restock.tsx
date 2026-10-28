@@ -228,7 +228,7 @@ function RestockPage() {
         description="Choisissez le fournisseur pour chaque article. La quantité est ajustée au minimum et au conditionnement de l'offre sélectionnée."
         actions={
           <Button variant="outline" asChild>
-            <Link to={`${base}/purchasing`}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux achats</Link>
+            <Link to="/app/shop/$shopId/purchasing" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux achats</Link>
           </Button>
         }
       />

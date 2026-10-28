@@ -56,7 +56,7 @@ function RepairsList() {
         description="Suivi de tous les dossiers en cours et clôturés."
         actions={
           <Button asChild>
-            <Link to={`${base}/repairs/new`}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
+            <Link to="/app/shop/$shopId/repairs/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
           </Button>
         }
       />
@@ -91,7 +91,7 @@ function RepairsList() {
         emptyDescription="Créez un dossier depuis un devis, un rendez-vous ou directement."
         emptyAction={
           <Button asChild>
-            <Link to={`${base}/repairs/new`}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
+            <Link to="/app/shop/$shopId/repairs/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
           </Button>
         }
       >
@@ -110,7 +110,7 @@ function RepairsList() {
             {rows.map((r) => (
               <tr key={r.id} className="transition-colors hover:bg-secondary/40">
                 <td className="px-4 py-2.5 font-mono text-xs">
-                  <Link to={`${base}/repairs/${r.id}`} className="font-medium text-electric hover:underline">{r.repair_number}</Link>
+                  <Link to="/app/shop/$shopId/repairs/$repairId" params={{ shopId, repairId: r.id }} className="font-medium text-electric hover:underline">{r.repair_number}</Link>
                 </td>
                 <td className="px-4 py-2.5">{r.customers ? customerDisplayName(r.customers) : "—"}</td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{r.devices ? [r.devices.brand, r.devices.model].filter(Boolean).join(" ") || "—" : "—"}</td>

@@ -70,7 +70,7 @@ function ClientDetail() {
   if (!data?.customer) {
     return (
       <PageContainer>
-        <EmptyState icon={<User className="h-6 w-6" />} title="Client introuvable" description="Ce client n'existe plus ou a été supprimé." action={<Button asChild variant="outline"><Link to={`${base}/clients`}>Retour à la liste</Link></Button>} />
+        <EmptyState icon={<User className="h-6 w-6" />} title="Client introuvable" description="Ce client n'existe plus ou a été supprimé." action={<Button asChild variant="outline"><Link to="/app/shop/$shopId/clients" params={{ shopId }}>Retour à la liste</Link></Button>} />
       </PageContainer>
     );
   }
@@ -80,7 +80,7 @@ function ClientDetail() {
   return (
     <PageContainer size="wide">
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link to={`${base}/clients`}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux clients</Link>
+        <Link to="/app/shop/$shopId/clients" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour aux clients</Link>
       </Button>
 
       <PageHeader
@@ -90,10 +90,10 @@ function ClientDetail() {
         actions={
           <>
             <Button asChild variant="outline" size="sm">
-              <Link to={`${base}/devices/new`} search={{ customerId: c.id } as never}><Plus className="mr-2 h-4 w-4" />Ajouter appareil</Link>
+              <Link to="/app/shop/$shopId/devices/new" params={{ shopId }} search={{ customerId: c.id } as never}><Plus className="mr-2 h-4 w-4" />Ajouter appareil</Link>
             </Button>
             <Button asChild className="bg-electric text-electric-foreground hover:bg-electric/90" size="sm">
-              <Link to={`${base}/repairs/new`} search={{ customerId: c.id } as never}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
+              <Link to="/app/shop/$shopId/repairs/new" params={{ shopId }} search={{ customerId: c.id } as never}><Plus className="mr-2 h-4 w-4" />Nouvelle réparation</Link>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -143,7 +143,7 @@ function ClientDetail() {
 
       <SectionCard
         title={`Appareils (${data.devices.length})`}
-        action={<Button asChild size="sm" variant="outline"><Link to={`${base}/devices/new`} search={{ customerId: c.id } as never}><Plus className="mr-1.5 h-4 w-4" />Ajouter</Link></Button>}
+        action={<Button asChild size="sm" variant="outline"><Link to="/app/shop/$shopId/devices/new" params={{ shopId }} search={{ customerId: c.id } as never}><Plus className="mr-1.5 h-4 w-4" />Ajouter</Link></Button>}
         padded={false}
       >
         {data.devices.length === 0 ? (
@@ -152,7 +152,7 @@ function ClientDetail() {
           <ul className="divide-y divide-border">
             {data.devices.map((d) => (
               <li key={d.id}>
-                <Link to={`${base}/devices/${d.id}`} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:bg-secondary/60 focus-visible:outline-none">
+                <Link to="/app/shop/$shopId/devices/$deviceId" params={{ shopId, deviceId: d.id }} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:bg-secondary/60 focus-visible:outline-none">
                   <Smartphone className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="flex-1 truncate">{DEVICE_TYPE_LABEL[d.device_type]} · {[d.brand, d.model].filter(Boolean).join(" ") || "—"}</span>
                   {d.serial_number && <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{d.serial_number}</span>}
@@ -171,7 +171,7 @@ function ClientDetail() {
           <ul className="divide-y divide-border">
             {data.repairs.map((r) => (
               <li key={r.id}>
-                <Link to={`${base}/repairs/${r.id}`} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:bg-secondary/60 focus-visible:outline-none">
+                <Link to="/app/shop/$shopId/repairs/$repairId" params={{ shopId, repairId: r.id }} className="flex items-center gap-3 px-5 py-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:bg-secondary/60 focus-visible:outline-none">
                   <span className="font-mono text-xs">{r.repair_number}</span>
                   <span className="flex-1 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("fr-FR")}</span>
                   <StatusBadge status={r.status} />

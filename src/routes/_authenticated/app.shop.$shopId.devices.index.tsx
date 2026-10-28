@@ -54,7 +54,7 @@ function DevicesList() {
         description="Parc d'appareils confiés à la boutique."
         actions={
           <Button asChild>
-            <Link to={`${base}/devices/new`}><Plus className="mr-2 h-4 w-4" />Ajouter un appareil</Link>
+            <Link to="/app/shop/$shopId/devices/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Ajouter un appareil</Link>
           </Button>
         }
       />
@@ -82,7 +82,7 @@ function DevicesList() {
         emptyDescription="Ajoutez un appareil pour démarrer une réparation."
         emptyAction={
           <Button asChild>
-            <Link to={`${base}/devices/new`}><Plus className="mr-2 h-4 w-4" />Ajouter un appareil</Link>
+            <Link to="/app/shop/$shopId/devices/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Ajouter un appareil</Link>
           </Button>
         }
       >
@@ -90,7 +90,7 @@ function DevicesList() {
           {rows.map((d) => (
             <li key={d.id}>
               <Link
-                to={`${base}/devices/${d.id}`}
+                to="/app/shop/$shopId/devices/$deviceId" params={{ shopId, deviceId: d.id }}
                 className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-secondary/50 focus:bg-secondary/50 focus:outline-none"
               >
                 <Badge variant="outline" className="font-normal">{DEVICE_TYPE_LABEL[d.device_type]}</Badge>

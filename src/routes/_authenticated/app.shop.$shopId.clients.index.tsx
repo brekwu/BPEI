@@ -57,7 +57,7 @@ function ClientsList() {
         description="Gérez vos clients particuliers et professionnels."
         actions={
           <Button asChild>
-            <Link to={`${base}/clients/new`}><Plus className="mr-2 h-4 w-4" />Ajouter un client</Link>
+            <Link to="/app/shop/$shopId/clients/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Ajouter un client</Link>
           </Button>
         }
       />
@@ -91,7 +91,7 @@ function ClientsList() {
         emptyDescription="Créez votre premier client pour démarrer un dossier."
         emptyAction={
           <Button asChild>
-            <Link to={`${base}/clients/new`}><Plus className="mr-2 h-4 w-4" />Ajouter un client</Link>
+            <Link to="/app/shop/$shopId/clients/new" params={{ shopId }}><Plus className="mr-2 h-4 w-4" />Ajouter un client</Link>
           </Button>
         }
       >
@@ -99,7 +99,7 @@ function ClientsList() {
           {rows.map((c) => (
             <li key={c.id}>
               <Link
-                to={`${base}/clients/${c.id}`}
+                to="/app/shop/$shopId/clients/$clientId" params={{ shopId, clientId: c.id }}
                 className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-secondary/50 focus:bg-secondary/50 focus:outline-none"
               >
                 <div className="min-w-0 flex-1">

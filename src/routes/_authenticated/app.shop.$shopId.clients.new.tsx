@@ -79,7 +79,7 @@ function NewClient() {
   return (
     <PageContainer>
       <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-        <Link to={`${base}/clients`}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
+        <Link to="/app/shop/$shopId/clients" params={{ shopId }}><ArrowLeft className="mr-2 h-4 w-4" />Retour</Link>
       </Button>
       <PageHeader
         title="Nouveau client"
@@ -159,7 +159,7 @@ function NewClient() {
         </SectionCard>
 
         <FormActions sticky>
-          <Button type="button" variant="ghost" asChild><Link to={`${base}/clients`}>Annuler</Link></Button>
+          <Button type="button" variant="ghost" asChild><Link to="/app/shop/$shopId/clients" params={{ shopId }}>Annuler</Link></Button>
           <Button type="submit" disabled={mutation.isPending} className="bg-electric text-electric-foreground hover:bg-electric/90">
             {mutation.isPending ? "Création…" : "Créer le client"}
           </Button>
