@@ -37,7 +37,7 @@ export function ProfessionalVerificationPanel({
  }
  return <section className="mt-4 rounded-lg border bg-muted/20 p-4" aria-label="Contrôle du professionnel">
   <h4 className="text-sm font-semibold">Vérification de l'entreprise et de l'identité</h4>
-  {current ? <p className="mt-2 text-sm" role="status">Contrôle enregistré le {new Date(check.checked_at).toLocaleDateString("fr-FR")} — SIRET correspondant. Validité maximale : 30 jours.</p> :
+  {current && check ? <p className="mt-2 text-sm" role="status">Contrôle enregistré le {new Date(check.checked_at).toLocaleDateString("fr-FR")} — SIRET correspondant. Validité maximale : 30 jours.</p> :
    <p className="mt-2 text-sm text-muted-foreground">Aucune vérification récente valable pour le SIRET actuel. Impossible d'approuver sans justificatifs.</p>}
   {!siret || !/^[0-9]{14}$/.test(siret) ? <p className="mt-2 text-sm text-destructive">Le candidat doit d'abord renseigner un SIRET à 14 chiffres.</p> :
   <>
