@@ -30,6 +30,7 @@ type Profile = {
 function IndependentSpace() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [spaceReady, setSpaceReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,6 +49,7 @@ function IndependentSpace() {
   const [application, setApplication] = useState<{ id: string; status: string; created_at: string; message: string } | null>(null);
 
   function clearPrivateState() {
+    setSpaceReady(false);
     setLaunch(null);
     setLegalAccepted(false);
     setProfile(null);
@@ -110,6 +112,7 @@ function IndependentSpace() {
       setError(contactError
         ? "Coordonnées du client indisponibles. Contactez l'administration BPEI."
         : "");
+      setSpaceReady(true);
       return true;
     } catch {
       clearPrivateState();
@@ -238,6 +241,10 @@ function IndependentSpace() {
           {!registration && <Link to="/reinitialiser-mot-de-passe" className="block text-sm underline">Mot de passe oublié ?</Link>}
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
         </form> :
+        !spaceReady ? <div className="mt-8 rounded-lg border bg-muted/30 p-6">
+          <p role="status">L'espace indépendant est indisponible tant que vos données et autorisations n'ont pas été entièrement vérifiées.</p>
+          <Button className="mt-4" onClick={() => void load(userId)}>Actualiser mon espace</Button>
+        </div> :
         <div className="mt-8 space-y-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Mon profil</h2>
