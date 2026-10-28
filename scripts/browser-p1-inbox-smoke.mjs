@@ -84,7 +84,16 @@ try{
  const inbox=await context.newPage();
  inbox.on("pageerror",e=>errors.push(e.message));
  await inbox.goto(base+"/gestion-incidents",{waitUntil:"domcontentloaded"});
- await inbox.getByRole("heading",{name:"Notifications (35 non lues)"}).waitFor({timeout:15000});
+ try {
+  await inbox.getByRole("heading",{name:"Notifications (35 non lues)"}).waitFor({timeout:12000});
+ } catch(error) {
+  console.error("INBOX DIAGNOSTIC",JSON.stringify({
+   rendered:await inbox.locator('section[aria-label="Notifications BPEI"]').allInnerTexts(),
+   countCalls,readCalls,markAttempts:attempts,
+   pageErrors:errors
+  }));
+  throw error;
+ }
  await inbox.getByRole("button",{name:"Consulter"}).click();
  await inbox.getByText("Notifications 1–20 sur 45").waitFor({timeout:15000});
  assert.equal(await inbox.getByText("Notification 45",{exact:true}).count(),1);
