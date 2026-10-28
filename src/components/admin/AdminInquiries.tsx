@@ -11,22 +11,29 @@ export function AdminInquiries() {
  const [loading,setLoading]=useState(true);
  const [inquiries,setInquiries]=useState<Inquiry[]>([]);
  const [technicians,setTechnicians]=useState<Technician[]>([]);
+ const [missionStatus,setMissionStatus]=useState<Record<string,{status:string;independent_id:string}>>({});
  const [selection,setSelection]=useState<Record<string,string>>({});
  const [error,setError]=useState("");
  const [busy,setBusy]=useState<string|null>(null);
  async function refresh(){
    setLoading(true);setError("");
    const db=supabase as any;
-   const [i,p,a]=await Promise.all([
+   const [i,p,a,m]=await Promise.all([
      db.from("bpei_inquiries").select("id,kind,client_name,email,phone,city,subject,description,status,created_at,assigned_to").order("created_at",{ascending:false}).limit(200),
      db.from("independent_profiles").select("user_id,display_name,city,verified_at").not("verified_at","is",null).limit(200),
-     db.from("independent_applications").select("user_id,status").eq("status","approved").limit(200)
+     db.from("independent_applications").select("user_id,status").eq("status","approved").limit(200),
+     db.from("independent_requests").select("inquiry_id,status,independent_id,created_at").not("inquiry_id","is",null).order("created_at",{ascending:false}).limit(400)
    ]);
-   if(i.error||p.error||a.error)setError("La lecture des demandes et des indépendants a échoué. Vérifiez les autorisations.");
+   if(i.error||p.error||a.error||m.error)setError("La lecture des demandes et des indépendants a échoué. Vérifiez les autorisations.");
    else{
      const eligible=new Set(((a.data??[]) as {user_id:string}[]).map(x=>x.user_id));
      setTechnicians(((p.data??[]) as Technician[]).filter(x=>eligible.has(x.user_id)));
      setInquiries(i.data??[]);
+     const latest:Record<string,{status:string;independent_id:string}>={};
+     for(const mission of (m.data??[]) as {inquiry_id:string;status:string;independent_id:string}[]){
+       if(!latest[mission.inquiry_id])latest[mission.inquiry_id]={status:mission.status,independent_id:mission.independent_id};
+     }
+     setMissionStatus(latest);
    }
    setLoading(false);
  }
@@ -70,7 +77,7 @@ export function AdminInquiries() {
        <Button disabled={!selection[i.id]||!!busy} onClick={()=>void assign(i)}>Attribuer</Button></>}
       <Button variant="outline" disabled={!!busy} onClick={()=>void close(i)}>Clore</Button>
     </div>}
-    {i.status==="assigned"&&<p className="text-xs text-muted-foreground">Mission attribuée : consultez son suivi depuis l'espace du professionnel.</p>}
+    {i.status==="assigned"&&<p className="text-xs text-muted-foreground">Mission attribuée — statut : {missionStatus[i.id]?.status??"chargement"} ; technicien : {missionStatus[i.id]?.independent_id??"non renseigné"}. Les changements d'étape sont réalisés par le professionnel.</p>}
   </article>)}
  </section>;
 }
