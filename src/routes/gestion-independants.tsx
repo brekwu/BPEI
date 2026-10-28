@@ -131,7 +131,8 @@ function IndependentReview() {
     <p className="mt-3"><Link to="/espace-independant" className="text-sm underline">Espace indépendant</Link></p>
     {loading ? <p className="mt-8" role="status">Chargement des candidatures…</p> :
       !authorized ? <div className="mt-8 rounded-lg border bg-muted/30 p-5" role="alert">
-        <p>{message ? "Accès administrateur non vérifié : vérifiez votre connexion." : "Accès administrateur non autorisé pour ce compte."}</p>
+        <p>Accès administrateur non autorisé pour ce compte.</p>
+        {message && <p className="mt-2 text-sm">La vérification a échoué temporairement. Vous pouvez réessayer.</p>}
         <Button variant="outline" className="mt-3" onClick={() => void load()}>Réessayer</Button>
       </div> :
       <section className="mt-8">
