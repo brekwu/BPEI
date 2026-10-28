@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
+import { MissionIncidentPanel } from "@/components/independent/MissionIncidentPanel";
+import { BpeiInbox } from "@/components/shared/BpeiInbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -240,10 +242,12 @@ function IndependentSpace() {
               <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
             </form>}
           </section>
+          <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
             {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4">
               <strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{missionStatusLabel(r.status)}</span>
+              <MissionIncidentPanel requestId={r.id} status={r.status} />
               {r.inquiry_id && canReadMissionClientContact(r.status) && clientContacts[r.inquiry_id] && <div className="mt-3 rounded-md border bg-muted/30 p-3 text-sm">
                 <p className="font-medium">Contact du client — mission acceptée</p>
                 <p>{clientContacts[r.inquiry_id].client_name} — {clientContacts[r.inquiry_id].city||"ville non indiquée"}</p>
