@@ -1,7 +1,10 @@
--- BPEI / Préflight lecture seule de source et destination.
+-- BPEI / Préflight sans modification des tables permanentes.
+-- Utilise seulement une table temporaire effacée au COMMIT.
 -- Aucun enregistrement personnel n'est exporté : uniquement les comptes de lignes.
 -- Exécution : psql -X -qAt -v ON_ERROR_STOP=1 -f scripts/migration/inventaire.sql > inventaire-source.json
-BEGIN READ ONLY;
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '120s';
 CREATE TEMP TABLE bpei_migration_inventory (
   schema_name text NOT NULL,
   table_name text NOT NULL,
