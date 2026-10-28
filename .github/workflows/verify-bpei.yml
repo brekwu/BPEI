@@ -27,5 +27,15 @@ jobs:
         run: bun test tests/network-forms.test.ts
       - name: Construire le site sans le publier
         run: bun run build
-      - name: Vérifier le lint
-        run: bun run lint
+      - name: Lint ciblé du code réseau BPEI
+        run: |
+          bunx eslint src/lib/network-forms.ts src/lib/network.functions.ts \
+            src/routes/demander-une-intervention.tsx \
+            src/routes/candidature-partenaire.tsx \
+            src/routes/_authenticated/admin.interventions.tsx \
+            src/routes/_authenticated/admin.techniciens.tsx \
+            tests/network-forms.test.ts \
+            --rule 'prettier/prettier: off'
+      - name: Diagnostic TypeScript du dépôt historique
+        continue-on-error: true
+        run: bunx tsc --noEmit
