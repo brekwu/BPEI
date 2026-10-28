@@ -13,6 +13,8 @@ const user={
  app_metadata:{provider:"email",providers:["email"]},user_metadata:{}
 };
 const calls=[];
+const escalationCalls=[];
+const incidentId="b0000000-0000-4000-8000-000000000001";
 const errors=[];
 const ok=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
 const summary={
@@ -40,7 +42,27 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
  if(p.includes("/rest/v1/bpei_launch_controls"))return route.fulfill(ok({
   id:true,legal_documents_published:false,independent_registration_enabled:false,legal_version:null
  }));
- if(p.includes("/rest/v1/independent_admins"))return route.fulfill(ok({user_id:id}));
+ if(p.includes("/rest/v1/independent_admins")){
+   const single=(req.headers().accept||"").includes("application/vnd.pgrst.object+json");
+   return route.fulfill(ok(single?{user_id:id}:[{user_id:id}]));
+ }
+ if(p.includes("/rest/v1/bpei_mission_incidents")){
+   return route.fulfill({
+    status:200,contentType:"application/json",headers:{"content-range":"0-0/1"},
+    body:JSON.stringify([{
+      id:incidentId,request_id:"a0000000-0000-4000-8000-000000000001",
+      category:"technical",description:"La connexion réseau du client est interrompue.",
+      status:"open",resolution_note:null,priority:"normal",assigned_admin_id:null,
+      target_at:"2026-10-29T12:00:00Z",created_at:"2026-10-28T12:00:00Z",escalation_reason:null
+    }])
+   });
+ }
+ if(p.includes("/rest/v1/bpei_incident_events"))return route.fulfill(ok([]));
+ if(p.includes("/rest/v1/bpei_notifications"))return route.fulfill(ok([]));
+ if(p.includes("/rest/v1/rpc/manage_incident_escalation")){
+   escalationCalls.push(req.postDataJSON());
+   return route.fulfill(ok({id:incidentId,status:"open",priority:"high",assigned_admin_id:id}));
+ }
  if(p.includes("/rest/v1/rpc/bpei_admin_search_missions")){
   const params=req.postDataJSON();
   calls.push(params);
@@ -80,8 +102,23 @@ try{
  await page.getByRole("button",{name:"Rechercher"}).click();
  await page.getByText("page 1 sur 1").waitFor({timeout:15000});
  assert.equal(calls.at(-1)?.p_query,"réseau","Search must execute in RPC, not client-only filtering");
- assert.deepEqual(errors,[],"No uncaught JS errors in mocked admin board");
- console.log(JSON.stringify({ok:true,mode:"mocked-admin-rpc",requests:calls.length,errors:errors.length}));
+ const incidentRoute=await page.goto(base+"/gestion-incidents",{waitUntil:"domcontentloaded"});
+ assert.equal(incidentRoute?.status(),200);
+ await page.getByRole("heading",{name:"Suivi des incidents BPEI"}).waitFor();
+ await page.getByText("Priorité : Normale").waitFor({timeout:15000});
+ await page.getByLabel("Priorité",{exact:true}).selectOption("high");
+ await page.getByLabel(/Justification de l.escalade/).fill("Incident client prioritaire, risque de retard confirmé.");
+ await page.getByRole("button",{name:"Enregistrer la priorité"}).click();
+ await page.getByRole("button",{name:"Enregistrer la priorité"}).waitFor({state:"visible"});
+ assert.equal(escalationCalls[0]?.p_action,"priority");
+ assert.equal(escalationCalls[0]?.p_priority,"high");
+ await page.getByLabel("Administrateur responsable").selectOption(id);
+ await page.getByRole("button",{name:"Affecter",exact:true}).click();
+ await page.getByRole("button",{name:"Affecter",exact:true}).waitFor({state:"visible"});
+ assert.equal(escalationCalls[1]?.p_action,"assign");
+ assert.equal(escalationCalls[1]?.p_assigned_admin_id,id);
+ assert.deepEqual(errors,[],"No uncaught JS errors in mocked admin board and incident escalations");
+ console.log(JSON.stringify({ok:true,mode:"mocked-admin-rpc",requests:calls.length,escalations:escalationCalls.length,errors:errors.length}));
 }finally{
  await browser.close();
 }
