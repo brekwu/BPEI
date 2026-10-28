@@ -1,4 +1,4 @@
-import {missionStatusLabel} from "@/lib/bpei-mission-status";
+import {missionStatusLabel} from "./bpei-mission-status.ts";
 
 export type MissionEvent = {
  id:string;
