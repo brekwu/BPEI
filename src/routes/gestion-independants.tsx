@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useBpeiAdminAccess } from "@/lib/use-bpei-admin-access";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
@@ -30,36 +31,94 @@ function IndependentReview() {
   const [checks, setChecks] = useState<Record<string, ProfessionalCheck>>({});
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+  const access = useBpeiAdminAccess();
+  const loadEpoch = useRef(0);
 
-  async function load() {
+  function clearAdminData() {
+    setApplications([]);
+    setProfiles({});
+    setChecks({});
+  }
+
+  async function load(): Promise<boolean> {
+    if (access !== "allowed") return false;
+    const run = ++loadEpoch.current;
+    const current = () => run === loadEpoch.current;
     setLoading(true);
     setMessage("");
-    const user = await supabase.auth.getUser();
-    if (!user.data.user) { setAuthorized(false); setLoading(false); return; }
-    const db = supabase as any;
-    const permission = await db.from("independent_admins").select("user_id").eq("user_id", user.data.user.id).maybeSingle();
-    if (permission.error || !permission.data) { setAuthorized(false); setLoading(false); return; }
-    setAuthorized(true);
-    const [a, p, v] = await Promise.all([
-      db.from("independent_applications").select("id,user_id,status,message,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
-      db.from("independent_profiles").select("user_id,display_name,business_name,siret,city,verified_at").limit(200),
-      db.from("independent_verification_checks").select("user_id,siret,checked_at,evidence_source,evidence_reference,insurance_confirmed,insurance_expires_on,insurance_evidence_reference").limit(200),
-    ]);
-    if (a.error || p.error || v.error) setMessage("Lecture impossible. Vérifiez vos autorisations et réessayez.");
-    else {
+    try {
+      const user = await supabase.auth.getUser();
+      if (!current()) return false;
+      if (user.error) {
+        setAuthorized(false);
+        clearAdminData();
+        setMessage("Impossible de vérifier la session. Réessayez.");
+        return false;
+      }
+      if (!user.data.user) {
+        setAuthorized(false);
+        clearAdminData();
+        return false;
+      }
+      const db = supabase as any;
+      const permission = await db.from("independent_admins")
+        .select("user_id").eq("user_id", user.data.user.id).maybeSingle();
+      if (!current()) return false;
+      if (permission.error) {
+        setAuthorized(false);
+        clearAdminData();
+        setMessage("Impossible de vérifier les droits administrateur. Réessayez.");
+        return false;
+      }
+      if (!permission.data) {
+        setAuthorized(false);
+        clearAdminData();
+        return false;
+      }
+      setAuthorized(true);
+      const [a, p, v] = await Promise.all([
+        db.from("independent_applications").select("id,user_id,status,message,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
+        db.from("independent_profiles").select("user_id,display_name,business_name,siret,city,verified_at").limit(200),
+        db.from("independent_verification_checks").select("user_id,siret,checked_at,evidence_source,evidence_reference,insurance_confirmed,insurance_expires_on,insurance_evidence_reference").limit(200),
+      ]);
+      if (!current()) return false;
+      if (a.error || p.error || v.error) {
+        clearAdminData();
+        setMessage("Lecture impossible. Vérifiez vos autorisations et réessayez.");
+        return false;
+      }
       setApplications(a.data ?? []);
       const byId: Record<string, Profile> = {};
       for (const row of (p.data ?? []) as Profile[]) byId[row.user_id] = row;
       setProfiles(byId);
       setChecks(Object.fromEntries((v.data??[]).map((check:ProfessionalCheck)=>[check.user_id,check])));
+      return true;
+    } catch {
+      if (!current()) return false;
+      setAuthorized(false);
+      clearAdminData();
+      setMessage("Service d'administration temporairement indisponible. Réessayez.");
+      return false;
+    } finally {
+      if (current()) setLoading(false);
     }
-    setLoading(false);
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    if (access === "allowed") {
+      void load();
+    } else {
+      // Clear cached applications, profiles and verification checks on auth transitions.
+      ++loadEpoch.current;
+      setAuthorized(false);
+      clearAdminData();
+      setMessage("");
+      setLoading(false);
+    }
+  }, [access]);
 
   async function review(id: string, next: "under_review" | "approved" | "rejected") {
-    if (busyId || !authorized) return;
+    if (busyId || !authorized || access !== "allowed") return;
     if(next==="approved"){
       const candidate=applications.find(a=>a.id===id);
       const verified=!!candidate && isVerificationCurrent(checks[candidate.user_id],profiles[candidate.user_id]?.siret);
@@ -70,20 +129,33 @@ function IndependentReview() {
         !window.confirm("Confirmer le refus de cette candidature ?")) return;
     setBusyId(id);
     setMessage("");
-    const { error } = await (supabase as any).rpc("review_independent_application", {
-      p_application_id: id, p_new_status: next,
-    });
-    if (error) setMessage("Action refusée : le compte doit être confirmé et un contrôle d’entreprise active, d’établissement et d’identité documenté depuis moins de 30 jours est requis.");
-    else { await load(); setMessage("Statut mis à jour."); }
-    setBusyId(null);
+    try {
+      const { error } = await (supabase as any).rpc("review_independent_application", {
+        p_application_id: id, p_new_status: next,
+      });
+      if (error) {
+        setMessage("Action refusée : compte administrateur ou vérification professionnelle non conforme.");
+        return;
+      }
+      if (await load()) setMessage("Statut mis à jour.");
+      else setMessage("Décision enregistrée, mais sa confirmation est indisponible. Actualisez avant de réessayer.");
+    } catch {
+      setMessage("Impossible de confirmer l'opération. Actualisez avant de réessayer.");
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return <PublicShell><main className="mx-auto max-w-5xl px-4 py-12 md:px-6">
     <h1 className="text-3xl font-bold">Gestion des indépendants BPEI</h1>
     <p className="mt-2 text-sm text-muted-foreground">Accès réservé aux administrateurs explicitement autorisés. Les approbations doivent suivre une vérification humaine.</p>
     <p className="mt-3"><Link to="/espace-independant" className="text-sm underline">Espace indépendant</Link></p>
-    {loading ? <p className="mt-8" role="status">Chargement des candidatures…</p> :
-      !authorized ? <p className="mt-8 rounded-lg border bg-muted/30 p-5" role="alert">Accès administrateur non autorisé pour ce compte.</p> :
+    {access === "loading" || loading ? <p className="mt-8" role="status">Chargement des candidatures…</p> :
+      access !== "allowed" || !authorized ? <div className="mt-8 rounded-lg border bg-muted/30 p-5" role="alert">
+        <p>Accès administrateur non autorisé pour ce compte.</p>
+        {message && <p className="mt-2 text-sm">La vérification a échoué temporairement. Vous pouvez réessayer.</p>}
+        <Button variant="outline" className="mt-3" onClick={() => void load()}>Réessayer</Button>
+      </div> :
       <section className="mt-8">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-xl font-semibold">Candidatures ({applications.length})</h2>
