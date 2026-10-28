@@ -57,7 +57,7 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
  if(path==="/rest/v1/bpei_notifications"){
   const filtered=notifications.filter(n=>n.recipient_id===id &&
    (!url.searchParams.has("read_at")||!n.read_at));
-  const countHeader={"content-range":"*/"+filtered.length};
+  const countHeader={"content-range":"*/"+filtered.length,"access-control-expose-headers":"content-range"};
   if(method==="HEAD"){
    countCalls++;
    return route.fulfill({status:200,headers:countHeader});
@@ -68,7 +68,7 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
   const start=match?Number(match[1]):0;
   const end=match?Number(match[2]):filtered.length-1;
   const page=filtered.slice(start,end+1).map(({recipient_id,...item})=>item);
-  return route.fulfill(json(page,200,{"content-range":start+"-"+Math.max(start,start+page.length-1)+"/"+filtered.length}));
+  return route.fulfill(json(page,200,{"content-range":start+"-"+Math.max(start,start+page.length-1)+"/"+filtered.length,"access-control-expose-headers":"content-range"}));
  }
  return route.fulfill(json(single?null:[]));
 });
