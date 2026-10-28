@@ -148,6 +148,26 @@ function IndependentSpace() {
             <label className="block text-sm">Présentation <Textarea maxLength={2000} value={profile.bio ?? ""} onChange={e => update("bio", e.target.value)} /></label>
             <Button type="submit" disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
           </form>}
+          <section className="rounded-xl border bg-card p-6">
+            <h2 className="text-xl font-semibold">Candidature au réseau BPEI</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Votre candidature sera examinée avant toute mission. La candidature est gratuite et ne garantit aucune attribution.</p>
+            <form className="mt-4 space-y-3" onSubmit={async event => {
+              event.preventDefault();
+              if (!userId || saving) return;
+              const message = (new FormData(event.currentTarget).get("message") ?? "").toString().trim();
+              if (message.length < 10 || message.length > 3000) { setError("Décrivez votre expérience en 10 à 3000 caractères."); return; }
+              setSaving(true); setError(""); setNotice("");
+              const { error: applicationError } = await (supabase as any).from("independent_applications").insert({ user_id: userId, message });
+              if (applicationError) setError("Candidature déjà déposée ou impossible à enregistrer.");
+              else setNotice("Candidature reçue. Elle reste en attente d'examen.");
+              setSaving(false);
+            }}>
+              <label className="block text-sm">Votre expérience et vos compétences
+                <Textarea name="message" required minLength={10} maxLength={3000} rows={4} />
+              </label>
+              <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
+            </form>
+          </section>
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
             {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4"><strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{r.status}</span></li>)}</ul> : <p className="mt-3 text-muted-foreground">Aucune demande attribuée pour l'instant.</p>}
