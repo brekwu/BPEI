@@ -76,6 +76,17 @@ if(missing.length){
     role+": foreign application leaked");
    assert.equal((await select(client,"independent_admins","user_id","user_id",users.get("admin"))).length,0,
     role+": admin roster leaked");
+   // A prior legal version is insufficient: each candidate must accept this actual release.
+   const {data:ownLegal,error:ownLegalError}=await client.from("bpei_legal_acceptances")
+    .select("user_id,legal_version,accepted_at")
+    .eq("user_id",id).eq("legal_version",env.P0_LEGAL_VERSION).maybeSingle();
+   if(ownLegalError)throw Error(role+": legal acceptance query failed");
+   assert.equal(ownLegal?.user_id,id,role+": current legal acceptance missing");
+   assert.ok(ownLegal?.accepted_at,role+": legal acceptance timestamp missing");
+   const {data:foreignLegal,error:foreignLegalError}=await client.from("bpei_legal_acceptances")
+    .select("user_id").eq("user_id",foreign).eq("legal_version",env.P0_LEGAL_VERSION);
+   if(foreignLegalError)throw Error(role+": foreign legal acceptance query failed");
+   assert.equal((foreignLegal??[]).length,0,role+": foreign legal acceptance leaked");
   }
   for(const app of [env.P0_APPLICATION_A_ID,env.P0_APPLICATION_B_ID]){
    assert.equal((await select(admin,"independent_applications","id","id",app)).length,1,
@@ -99,8 +110,13 @@ if(missing.length){
   for(const kind of ["mentions-legales","confidentialite","cgu"]){
    assert.ok(docs?.some(x=>x.kind===kind&&x.approved_at),kind+" legal document not approved");
   }
+  // Administrative visibility must include the immutable publication record, not only a toggle.
+  const published=await select(admin,"bpei_legal_releases","version,published_at","version",env.P0_LEGAL_VERSION);
+  assert.equal(published.length,1,"Approved legal text has no published release record");
+  assert.ok(published[0].published_at,"Legal release has no publication timestamp");
   process.stdout.write(JSON.stringify({result:"PASS",mode:"real-auth-rls-readonly",
-    accounts:3,applications:2,legal_release:env.P0_LEGAL_VERSION})+"\n");
+    accounts:3,applications:2,current_legal_acceptances:2,
+    legal_release:env.P0_LEGAL_VERSION,publication_record_verified:true})+"\n");
  }catch(error){
   process.exitCode=1;
   process.stderr.write("P0 LIVE AUTH FAILED: "+(error instanceof Error?error.message:"unknown error")+"\n");
