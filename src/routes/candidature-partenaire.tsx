@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ACQUISITION_SOURCES, EXPERIENCE_LEVELS, INTERVENTION_MODES, SKILLS, TechnicianApplicationSchema, readTrackingParams, type SkillValue } from "@/lib/network-forms";
 import { submitTechnicianApplication } from "@/lib/network.functions";
 
+const PUBLIC_FORMS_ENABLED = import.meta.env.VITE_BPEI_PUBLIC_FORMS_ENABLED === "true";
+
 export const Route = createFileRoute("/candidature-partenaire")({
   head: () => ({
     meta: [
@@ -105,7 +107,13 @@ function CandidatePage() {
       </section>
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-12 md:grid-cols-[minmax(0,1fr)_260px] md:px-6">
         <section className="rounded-2xl border bg-card p-5 md:p-8">
-          {reference ? (
+          {!PUBLIC_FORMS_ENABLED ? (
+            <div role="status" className="py-12 text-center">
+              <h2 className="text-2xl font-bold">Ouverture prochainement</h2>
+              <p className="mt-4 text-muted-foreground">Les candidatures seront accessibles après validation de notre politique de confidentialité et de notre infrastructure.</p>
+              <Link to="/contact" className="mt-6 inline-block underline">Nous contacter</Link>
+            </div>
+          ) : reference ? (
             <div role="status" className="py-12 text-center">
               <h2 className="text-2xl font-bold">Votre candidature est enregistrée</h2>
               <p className="mt-4 text-muted-foreground">Référence : <strong className="font-mono">{reference}</strong></p>
