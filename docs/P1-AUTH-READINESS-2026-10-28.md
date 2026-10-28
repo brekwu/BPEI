@@ -31,3 +31,11 @@ Constat en lecture seule du **28 octobre 2026**, projet Supabase `qmbsfmcotnsxsv
 ## Décision
 
 **NO GO pour la publication et l'ouverture des inscriptions.** Les vérifications de développement et la préproduction Vercel sont opérationnelles, mais les paramètres externes Auth/SMTP/redirects et les éléments juridiques ne sont pas homologués. Ne pas fusionner le lot P1 dans une branche de lancement tant que la recette réelle n'est pas terminée.
+
+## Lot P1.7 — Résilience des formulaires d'authentification
+
+- `src/routes/espace-independant.tsx` capture désormais les erreurs de réseau/SDK de l'inscription et de la connexion, remet l'interface en état prêt à réessayer et efface la notification d'une tentative précédente. Aucun privilège utilisateur n'est modifié.
+- `scripts/browser-p1-auth-prelaunch-smoke.mjs` valide avec un **faux serveur Auth** la fermeture des inscriptions, le refus d'une connexion et la possibilité de recommencer après une erreur e-mail. Aucun compte ou e-mail réel n'est créé ou envoyé pendant ce test.
+- Le scénario est exécuté dans `.github/workflows/verify-bpei.yml` en plus des tests de navigateur existants. Seule la réussite complète de CI permet de considérer le correctif UI validé.
+- Vérification préproduction en lecture seule : `auth.users=0`, `independent_admins=0`, `independent_registration_enabled=false`, `legal_documents_published=false`. Ni ouverture publique ni configuration SMTP n'ont été réalisées.
+- Les configurations du hook Auth, du serveur SMTP externe, des URL de redirection autorisées et des comptes administrateurs **ne peuvent pas être homologuées par les outils actuellement disponibles**. L'acceptation réelle reste bloquée.
