@@ -68,7 +68,7 @@ function Page() {
             <p>Un médiateur de la consommation BPEI est en cours de désignation. Ses coordonnées seront publiées sur cette page dès qu'elles seront confirmées. En attendant, les litiges peuvent être portés devant la juridiction compétente.</p>
           )
         )},
-        { id: "boutiques", title: "4. Réclamations concernant une boutique du réseau", body: <p>Pour tout litige portant sur une prestation ou une vente réalisée par une boutique du réseau, adressez-vous d'abord directement à la boutique concernée : le SAV, la garantie et la médiation restent de sa responsabilité. Ses coordonnées et son médiateur (le cas échéant) figurent sur sa fiche publique et ses documents.</p> },
+        { id: "boutiques", title: "4. Réclamations concernant une intervention", body: <p>Pour tout litige portant sur une intervention réalisée par un technicien indépendant, contactez d'abord le professionnel concerné. BPEI peut examiner les signalements relatifs au fonctionnement de son réseau, sans se substituer aux obligations légales du professionnel.</p> },
         { id: "plateforme-ue", title: "5. Plateforme européenne de règlement des litiges", body: <p>La Commission européenne met à disposition une plateforme de règlement en ligne des litiges : <a className="underline" href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noreferrer">ec.europa.eu/consumers/odr</a>.</p> },
       ]}
     />
