@@ -65,3 +65,12 @@ Conserver `bpei.fr` sur OVH tant que la recette n'est pas acquise. Avant une exp
 - Une erreur réseau ou d'authentification dans `/espace-independant` ne laisse plus le formulaire bloqué en chargement. `scripts/browser-p1-auth-prelaunch-smoke.mjs` teste le verrouillage du formulaire et sa capacité à réessayer après un échec simulé.
 - **La présence d'un hook et la réussite de son test SQL ne démontrent pas l'activation effective de ce hook dans GoTrue.** Les URL autorisées et la délivrabilité SMTP sont des paramètres externes non homologués.
 - Un opérateur doit toujours confirmer l'adresse du premier administrateur, les documents juridiques et la configuration SMTP. Aucune création de compte ni ouverture publique n'a été réalisée ici.
+
+## Mise à jour P0 — Résilience des opérations et recette (28/10/2026)
+
+- Les actions de profil, acceptation juridique, dépôt de candidature et réponse/avancement de mission utilisent désormais un garde commun qui libère systématiquement l'état « enregistrement en cours », même en cas de rejet réseau. Aucun rôle ou contrôle juridique serveur n'a été modifié.
+- Nouveau test `scripts/browser-p0-profile-resilience-smoke.mjs` exécuté dans GitHub CI avec **comptes et API simulés**. Il vérifie le refus temporaire d'une acceptation puis son succès à la nouvelle tentative, ainsi que le même cycle pour la création de profil.
+- Les vérifications automatiques ne constituent pas une recette SMTP, GoTrue Auth Hook ou identité juridique réelle.
+- La création d'un nouveau Preview Vercel pour le dernier code a été refusée par l'API (HTTP 402, limite gratuite de 100 déploiements sur 24 heures). Le site public et l'abonnement n'ont pas été modifiés. Le dernier commit doit encore être effectivement déployé en Preview puis éprouvé avant homologation.
+- État en base au contrôle : `auth.users=0`, `independent_admins=0`, zéro publication juridique et inscriptions fermées. La réception e-mail externe, la configuration du hook Auth et l'acceptation des documents restent non validées.
+- **Décision : P0 non homologué.** N'utiliser « P0 fini » qu'après obtention de preuves réelles pour ces prérequis, avec tests positifs et négatifs sur la même révision déployée.
