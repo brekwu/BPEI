@@ -6,7 +6,7 @@ import { enforceRateLimit } from "@/lib/security/rate-limit.server";
 const uuid = z.string().uuid();
 
 export const publicGetShopStorefront = createServerFn({ method: "GET" })
-  .inputValidator((i: { shopId: string }) => z.object({ shopId: uuid }).parse(i))
+  .validator((i: { shopId: string }) => z.object({ shopId: uuid }).parse(i))
   .handler(async ({ data }) => {
     await enforceRateLimit({ endpoint: "public_read", shopId: data.shopId });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -112,7 +112,7 @@ export const publicGetShopStorefront = createServerFn({ method: "GET" })
 
 // Public directory: list verified/published shops (independents + boutiques).
 export const publicListDirectory = createServerFn({ method: "GET" })
-  .inputValidator((i: { businessType?: "physical_shop" | "mobile_independent"; query?: string; city?: string }) =>
+  .validator((i: { businessType?: "physical_shop" | "mobile_independent"; query?: string; city?: string }) =>
     z.object({
       businessType: z.enum(["physical_shop", "mobile_independent"]).optional(),
       query: z.string().max(120).optional(),
