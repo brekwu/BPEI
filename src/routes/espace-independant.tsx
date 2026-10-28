@@ -107,17 +107,26 @@ function IndependentSpace() {
       return;
     }
     setLoading(true);
-    const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
-    setPassword("");
-    setPasswordConfirm("");
-    if (result.error || !result.data.user) {
-      setError("Connexion impossible. Vérifiez vos identifiants.");
+    setNotice("");
+    try {
+      const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
+      if (result.error || !result.data.user) {
+        setError("Connexion impossible. Vérifiez vos identifiants et le service d'authentification.");
+        return;
+      }
+      setPassword("");
+      setPasswordConfirm("");
+      if (!result.data.session) {
+        setNotice("Vérifiez votre e-mail pour confirmer le compte.");
+        return;
+      }
+      setUserId(result.data.user.id);
+      await load(result.data.user.id);
+    } catch {
+      setError("Service d'authentification indisponible. Réessayez.");
+    } finally {
       setLoading(false);
-      return;
     }
-    if (!result.data.session) { setNotice("Vérifiez votre e-mail pour confirmer le compte."); setLoading(false); return; }
-    setUserId(result.data.user.id);
-    await load(result.data.user.id);
   }
 
   async function save(e: FormEvent<HTMLFormElement>) {
