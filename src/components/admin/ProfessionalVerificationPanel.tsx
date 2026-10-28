@@ -44,6 +44,7 @@ export function ProfessionalVerificationPanel({
    <p className="mt-2 text-sm">SIRET à vérifier : <strong>{siret}</strong>. Ouvrez les registres officiels et comparez les données et justificatifs du candidat.</p>
    <div className="mt-2 flex flex-wrap gap-4 text-sm">
     <a className="underline" href="https://annuaire-entreprises.data.gouv.fr/" target="_blank" rel="noopener noreferrer">Annuaire des Entreprises</a>
+    <a className="underline" href={"https://recherche-entreprises.api.gouv.fr/search?q="+encodeURIComponent(siret)} target="_blank" rel="noopener noreferrer">Consulter la réponse officielle pour ce SIRET</a>
     <a className="underline" href="https://data.inpi.fr/" target="_blank" rel="noopener noreferrer">Registre national des entreprises (INPI)</a>
    </div>
    <label className="mt-3 block text-sm">Source utilisée
