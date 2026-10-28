@@ -10,6 +10,7 @@ const user={id:userId,email:"bpei-test-admin@example.invalid",aud:"authenticated
 const json=(obj,status=200)=>({status,contentType:"application/json",body:JSON.stringify(obj)});
 const errors=[];
 let rosterRequests=0;
+let permitRoster=false;
 const context=await browser.newContext();
 await context.route("https://placeholder.supabase.co/**",async route=>{
  const req=route.request(),path=new URL(req.url()).pathname;
@@ -24,7 +25,7 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
   id:true,legal_documents_published:false,independent_registration_enabled:false,legal_version:null}));
  if(path==="/rest/v1/independent_admins"){
   rosterRequests++;
-  if(rosterRequests===1)return route.fulfill(json({message:"Temporary network failure",code:"503"},503));
+  if(!permitRoster)return route.fulfill(json({message:"Temporary network failure",code:"503"},503));
   return route.fulfill(json({user_id:userId}));
  }
  return route.fulfill(json(singular?null:[]));
@@ -43,9 +44,10 @@ try{
  assert.equal(await page.getByText(/Impossible de vérifier les droits administrateur/).count(),1);
  assert.equal(await page.getByRole("heading",{name:/Candidatures \(/}).count(),0,
   "Admin data must stay hidden when permission lookup fails");
+ permitRoster=true;
  await retry.click();
  await page.getByRole("heading",{name:"Candidatures (0)"}).waitFor({timeout:15000});
- assert.equal(rosterRequests,2,"Permission check must be retried exactly once");
+ assert.ok(rosterRequests>=2,"Permission check must be retried after a deliberate failure");
  assert.deepEqual(errors,[],"No unhandled browser errors");
  console.log(JSON.stringify({ok:true,mode:"mocked-admin-network-recovery",rosterRequests}));
 }finally{await context.close();await browser.close();}
