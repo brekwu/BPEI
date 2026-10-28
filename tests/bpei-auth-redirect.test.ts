@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {bpeiAuthRedirect,isExplicitBpeiRecoveryLink} from "../src/lib/bpei-auth-redirect.ts";
+import {bpeiAuthRedirect,isExplicitBpeiRecoveryLink,isMatchingBpeiImplicitRecoverySession} from "../src/lib/bpei-auth-redirect.ts";
 
 test("auth redirect retains only the trusted origin and fixed route",()=>{
  assert.equal(bpeiAuthRedirect("https://bpei.fr","/espace-independant"),
@@ -25,4 +25,14 @@ test("recovery context requires explicit recovery type, not unrelated PKCE code"
  assert.equal(isExplicitBpeiRecoveryLink("","#type=recovery&access_token=x"),true);
  assert.equal(isExplicitBpeiRecoveryLink("?type=signup",""),false);
  assert.equal(isExplicitBpeiRecoveryLink("",""),false);
+});
+
+test("implicit recovery requires matching fragment and session tokens",()=>{
+ const hash="#type=recovery&access_token=token-from-email&refresh_token=ref-from-email";
+ assert.equal(isMatchingBpeiImplicitRecoverySession(hash,"unrelated-existing-session"),false);
+ assert.equal(isMatchingBpeiImplicitRecoverySession(hash,null),false);
+ assert.equal(isMatchingBpeiImplicitRecoverySession(hash,"token-from-email"),true);
+ assert.equal(isMatchingBpeiImplicitRecoverySession("#type=recovery&access_token=x","x"),false);
+ assert.equal(isMatchingBpeiImplicitRecoverySession("#type=signup&access_token=x&refresh_token=y","x"),false);
+ assert.equal(isMatchingBpeiImplicitRecoverySession("#type=recovery","x"),false);
 });
