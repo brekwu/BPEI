@@ -28,7 +28,7 @@ export function validateBpeiInquiry(input: BpeiInquiryDraft): { ok: true; data: 
   const subject = input.subject.trim();
   const description = input.description.trim();
   if (name.length < 2 || name.length > 120) return {ok:false,error:"Le nom doit contenir entre 2 et 120 caractères."};
-  if (email.length < 5 || email.length > 254 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return {ok:false,error:"Adresse e-mail invalide."};
+  if (email.length < 5 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok:false,error:"Adresse e-mail invalide."};
   if (phone.length > 40 || city.length > 120) return {ok:false,error:"Téléphone ou ville trop long."};
   if (input.kind === "intervention" && city.length < 2) return {ok:false,error:"La ville d'intervention est obligatoire."};
   if (subject.length < 3 || subject.length > 160) return {ok:false,error:"Le sujet doit contenir entre 3 et 160 caractères."};
