@@ -85,3 +85,11 @@ Vérifié le 28 octobre 2026 en préproduction :
 - Test SQL non destructif réutilisable : `tests/p1-db-permissions.sql`. Test navigateur supplémentaire d'un technicien connecté sans rôle administrateur : `scripts/browser-p1-role-isolation-smoke.mjs`.
 - La migration 37 est désormais synchronisée dans GitHub : 37 fichiers SQL pour 37 migrations Supabase. Le test de cohérence du manifeste s'exécute dans CI. Une restauration sur une base vierge reste à valider avant fusion ou publication.
 - Cette recette ne constitue pas la validation P0 : aucune inscription e-mail réelle, aucun compte administrateur réel, aucun SMTP ni activation du hook Auth vérifiée. Ne pas ouvrir `bpei.fr` ni les inscriptions.
+
+## Lot P1.7 — Résilience des formulaires d'authentification
+
+- `src/routes/espace-independant.tsx` capture désormais les erreurs de réseau/SDK de l'inscription et de la connexion, remet l'interface en état prêt à réessayer et efface la notification d'une tentative précédente. Aucun privilège utilisateur n'est modifié.
+- `scripts/browser-p1-auth-prelaunch-smoke.mjs` valide avec un **faux serveur Auth** la fermeture des inscriptions, le refus d'une connexion et la possibilité de recommencer après une erreur e-mail. Aucun compte ou e-mail réel n'est créé ou envoyé pendant ce test.
+- Le scénario est exécuté dans `.github/workflows/verify-bpei.yml` en plus des tests de navigateur existants. Seule la réussite complète de CI permet de considérer le correctif UI validé.
+- Vérification préproduction en lecture seule : `auth.users=0`, `independent_admins=0`, `independent_registration_enabled=false`, `legal_documents_published=false`. Ni ouverture publique ni configuration SMTP n'ont été réalisées.
+- Les configurations du hook Auth, du serveur SMTP externe, des URL de redirection autorisées et des comptes administrateurs **ne peuvent pas être homologuées par les outils actuellement disponibles**. L'acceptation réelle reste bloquée.
