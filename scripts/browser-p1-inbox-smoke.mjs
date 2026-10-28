@@ -17,7 +17,7 @@ const notifications=Array.from({length:45},(_,i)=>({
  id:"e0000000-0000-4000-8000-"+String(i+1).padStart(12,"0"),
  recipient_id:id,title:"Notification "+String(i+1),
  created_at:new Date(Date.UTC(2026,9,28,10,0,i)).toISOString(),
- read_at:i<35?null:"2026-10-28T11:00:00.000Z"
+ read_at:i>=10?null:"2026-10-28T11:00:00.000Z"
 })).reverse();
 let attempts=0,readCalls=0,countCalls=0;
 const errors=[];
@@ -98,7 +98,16 @@ try{
  await inbox.getByText("Notifications 1–20 sur 45").waitFor({timeout:15000});
  assert.equal(await inbox.getByText("Notification 45",{exact:true}).count(),1);
  assert.equal(await inbox.getByText("Notification 25",{exact:true}).count(),0);
- await inbox.getByRole("button",{name:"Marquer lue"}).first().click();
+ try {
+  await inbox.getByRole("button",{name:"Marquer lue"}).first().click({timeout:12000});
+ } catch(error){
+  console.error("INBOX MARK DIAGNOSTIC",JSON.stringify({
+   rendered:await inbox.locator('section[aria-label="Notifications BPEI"]').allInnerTexts(),
+   unreadButtonCount:await inbox.getByRole("button",{name:"Marquer lue"}).count(),
+   readCalls,countCalls
+  }));
+  throw error;
+ }
  await inbox.getByText("Impossible de marquer la notification comme lue.").waitFor({timeout:15000});
  assert.equal(await inbox.getByRole("heading",{name:"Notifications (35 non lues)"}).count(),1);
  await inbox.getByRole("button",{name:"Marquer lue"}).first().click();
