@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ type Profile = {
 
 function IndependentSpace() {
   const [userId, setUserId] = useState<string | null>(null);
+  const dataEpoch=useRef(0);
   const [loading, setLoading] = useState(true);
   const [spaceReady, setSpaceReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -59,7 +60,9 @@ function IndependentSpace() {
   }
 
   async function load(id: string): Promise<boolean> {
+    const epoch=++dataEpoch.current;
     setLoading(true);
+    setSpaceReady(false);
     try {
       const db = supabase as any;
       const [p, r, a, gate] = await Promise.all([
@@ -68,6 +71,7 @@ function IndependentSpace() {
         db.from("independent_applications").select("id,status,created_at,message").eq("user_id", id).maybeSingle(),
         db.from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle(),
       ]);
+      if(epoch!==dataEpoch.current)return false;
       if (p.error || r.error || a.error || gate.error || !gate.data) {
         clearPrivateState();
         setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
@@ -80,6 +84,7 @@ function IndependentSpace() {
       if (legalVersion) {
         const acceptance = await db.from("bpei_legal_acceptances").select("legal_version")
           .eq("user_id",id).eq("legal_version",legalVersion).maybeSingle();
+        if(epoch!==dataEpoch.current)return false;
         if (acceptance.error) {
           clearPrivateState();
           setError("Impossible de vérifier votre acceptation juridique. Réessayez.");
@@ -96,6 +101,7 @@ function IndependentSpace() {
       let contactError = false;
       if (eligibleIds.length > 0) {
         const result = await db.from("bpei_inquiries").select("id,client_name,email,phone,city").in("id",eligibleIds);
+        if(epoch!==dataEpoch.current)return false;
         if (result.error) {
           contactError = true;
         } else {
@@ -103,6 +109,7 @@ function IndependentSpace() {
         }
       }
 
+      if(epoch!==dataEpoch.current)return false;
       setLaunch(currentGate);
       setLegalAccepted(accepted);
       setProfile(p.data ?? null);
@@ -115,34 +122,50 @@ function IndependentSpace() {
       setSpaceReady(true);
       return true;
     } catch {
+      if(epoch!==dataEpoch.current)return false;
       clearPrivateState();
       setError("Service temporairement indisponible. Actualisez votre espace pour réessayer.");
       return false;
     } finally {
-      setLoading(false);
+      if(epoch===dataEpoch.current)setLoading(false);
     }
   }
 
   useEffect(() => {
     let active = true;
+    const initialEpoch=dataEpoch.current;
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
+      if(!active)return;
+      if(event==="SIGNED_OUT"){
+        // Includes sign-out from another tab; no pending request may restore old data.
+        dataEpoch.current+=1;
+        clearPrivateState();
+        setUserId(null);
+        setLoading(false);
+      }
+    });
     (supabase as any).from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle().then(({data}:any)=>{
-      if(active)setLaunch(data ?? null);
-    }).catch(()=>{if(active)setLaunch(null)});
+      if(active&&initialEpoch===dataEpoch.current)setLaunch(data ?? null);
+    }).catch(()=>{if(active&&initialEpoch===dataEpoch.current)setLaunch(null)});
     supabase.auth.getUser().then(async ({ data, error }) => {
-      if (!active) return;
+      if (!active||initialEpoch!==dataEpoch.current) return;
       if (error) throw error;
       setUserId(data.user?.id ?? null);
       if (data.user) await load(data.user.id);
       else setLoading(false);
     }).catch(() => {
-      if (active) {
+      if (active&&initialEpoch===dataEpoch.current) {
         clearPrivateState();
         setUserId(null);
         setError("Impossible de vérifier votre session. Réessayez.");
         setLoading(false);
       }
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+      dataEpoch.current+=1;
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function signIn(e: FormEvent<HTMLFormElement>) {
@@ -257,6 +280,7 @@ function IndependentSpace() {
                     setError("Déconnexion non confirmée. Réessayez.");
                     return;
                   }
+                  dataEpoch.current+=1;
                   setUserId(null);
                   clearPrivateState();
                   setError("");
