@@ -6,7 +6,6 @@ import { useSession } from "@/lib/useSession";
 import { Menu, X, MapPin, Phone, Mail } from "lucide-react";
 import { SITE } from "@/lib/site-content";
 import { usePlatformSettings } from "@/lib/platform-settings";
-import { SpaceSwitcher } from "./SpaceSwitcher";
 
 const NAV = [
   { to: "/", label: "Accueil" },
@@ -56,7 +55,7 @@ export function SiteHeader() {
           {loading ? (
             <div aria-hidden className="h-9 w-40 rounded-md bg-muted/40" />
           ) : session ? (
-            <SpaceSwitcher />
+            <Button asChild size="sm"><Link to="/espace-independant">Mon espace indépendant</Link></Button>
           ) : (
             <>
               <Button asChild variant="ghost" size="sm"><Link to="/espace-independant">Se connecter</Link></Button>
@@ -186,7 +185,6 @@ export function SiteFooter() {
           <div className="grid gap-8 md:col-span-8 md:grid-cols-4">
             <FooterCol title="Particuliers">
               <FooterLink to="/demander-une-intervention">Demander une intervention</FooterLink>
-              <FooterLink to="/annuaire">Annuaire vérifié</FooterLink>
               <FooterLink to="/avis/politique">Politique des avis</FooterLink>
             </FooterCol>
             <FooterCol title="Professionnels">
@@ -200,7 +198,6 @@ export function SiteFooter() {
               <FooterLink to="/conditions-abonnement">Conditions d'abonnement</FooterLink>
               <FooterLink to="/devenir-partenaire">Partenariat indépendant</FooterLink>
               <FooterLink to="/annuaire/regles-admission">Règles d'admission</FooterLink>
-              <FooterLink to="/annuaire/badge-verifie">Badge vérifié</FooterLink>
             </FooterCol>
             <FooterCol title="Assistance">
               <FooterLink to="/contact">Nous contacter</FooterLink>
