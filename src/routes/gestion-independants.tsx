@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
+import { AdminInquiries } from "@/components/admin/AdminInquiries";
 
 export const Route = createFileRoute("/gestion-independants")({
   component: IndependentReview,
@@ -100,6 +101,7 @@ function IndependentReview() {
             </article>;
           })}
         </div>
+        <AdminInquiries />
       </section>}
     {message && <p className="mt-5 text-sm" role="status">{message}</p>}
   </main></PublicShell>;
