@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/SiteHeader";
 import { BPEILogo } from "@/components/BPEILogo";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BadgeCheck, Handshake, HeartHandshake, Laptop, MapPin, Scale, Store, Wrench } from "lucide-react";
+import { ArrowRight, BadgeCheck, Handshake, HeartHandshake, Laptop, MapPin, Scale } from "lucide-react";
 import { HOW_IT_WORKS_CLIENT } from "@/lib/network-content";
 
 const TITLE = "BPEI — Réseau national de techniciens informatiques indépendants";
@@ -142,26 +142,6 @@ function Landing() {
           </div>
         </section>
 
-        {/* BOUTIQUES */}
-        <section className="border-t border-border/60 bg-secondary/30 py-14">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 md:flex-row md:items-center md:justify-between md:px-6">
-            <div className="flex items-start gap-4">
-              <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-electric/10 text-electric">
-                <Store className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold">Vous préférez une boutique informatique ?</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Consultez les boutiques inscrites sur BPEI. Vous gérez une boutique ? Découvrez nos outils de gestion.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild variant="outline"><Link to="/boutiques">Trouver une boutique</Link></Button>
-              <Button asChild variant="ghost"><Link to="/professionnels"><Wrench className="mr-2 h-4 w-4" />Outils pour boutiques</Link></Button>
-            </div>
-          </div>
-        </section>
       </main>
       <SiteFooter />
     </div>
