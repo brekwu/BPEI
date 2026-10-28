@@ -1,0 +1,118 @@
+name: BPEI - qualité et tests
+on:
+  push:
+    branches:
+      - feat/bpei-independent-release-clean
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check first-admin bootstrap script syntax
+        run: node --check scripts/p0-bootstrap-admin.mjs
+      - name: Validate P0 live acceptance suite syntax without credentials
+        run: node --check scripts/p0-live-auth-acceptance.mjs
+      - name: Tests du projet (sans données externes)
+        run: npm test
+
+  build-and-types:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install frozen dependencies
+        run: bun install --frozen-lockfile
+      - name: Isolated first-admin bootstrap integration cases (no external network)
+        run: node scripts/test-p0-bootstrap-admin.mjs
+      - name: Dry-run first-admin bootstrap without credentials
+        run: node scripts/p0-bootstrap-admin.mjs
+      - name: Guard check (must refuse execution without private credentials)
+        run: |
+          if node scripts/p0-bootstrap-admin.mjs --execute; then
+            echo "Critical: admin bootstrap executed without configuration."
+            exit 1
+          fi
+      - name: Guard check (live acceptance must not claim a PASS without accounts)
+        run: |
+          status=0
+          node scripts/p0-live-auth-acceptance.mjs || status=$?
+          if [ "$status" -ne 2 ]; then
+            echo "Critical: live P0 acceptance did not report missing credentials."
+            exit 1
+          fi
+      - name: Build then TypeScript check
+        run: bun run typecheck
+        env:
+          VITE_SUPABASE_URL: https://bpei-ci.invalid
+          VITE_SUPABASE_PUBLISHABLE_KEY: bpei-ci-publishable-key
+          SUPABASE_URL: https://bpei-ci.invalid
+          SUPABASE_PUBLISHABLE_KEY: bpei-ci-publishable-key
+          BPEI_STAGING: "true"
+          VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+
+  macos-webkit-smoke:
+    # Runs Apple WebKit engine on a macOS GitHub runner. Does not replace
+    # manual Safari/iPhone validation or the real Supabase P0 acceptance.
+    runs-on: macos-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      NITRO_PRESET: node-server
+      BPEI_STAGING: "true"
+      VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+      BPEI_BROWSER_ENGINE: webkit
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install pinned dependencies
+        run: bun install --frozen-lockfile
+      - name: Unit tests on macOS
+        run: npm test
+      - name: Build production SSR on macOS
+        run: bun run build
+      - name: Install Playwright WebKit
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install webkit
+      - name: Public and prelaunch WebKit smoke
+        shell: bash
+        run: |
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-macos-webkit.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          ready=0
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000/health >/dev/null; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then tail -80 /tmp/bpei-macos-webkit.log; exit 1; fi
+          node scripts/smoke-http.mjs || { tail -80 /tmp/bpei-macos-webkit.log; exit 1; }
+          node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-macos-webkit.log; exit 1; }
+          node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-macos-webkit.log; exit 1; }

@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /espace-independant
+Disallow: /api/
+
+Sitemap: https://bpei.fr/sitemap.xml

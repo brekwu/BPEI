@@ -1,0 +1,56 @@
+name: BPEI P0 - vraie recette Auth et isolation (manuel)
+
+# Ne se déclenche jamais sur un push, PR ou calendrier.
+# Ces secrets représentent trois VRAIS comptes autorisés; sans eux, la recette échoue.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bpei-p0-real-acceptance
+  cancel-in-progress: false
+
+jobs:
+  real-auth-and-rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      P0_SUPABASE_URL: ${{ secrets.P0_SUPABASE_URL }}
+      P0_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.P0_SUPABASE_PUBLISHABLE_KEY }}
+      P0_ADMIN_EMAIL: ${{ secrets.P0_ADMIN_EMAIL }}
+      P0_ADMIN_PASSWORD: ${{ secrets.P0_ADMIN_PASSWORD }}
+      P0_TECH_A_EMAIL: ${{ secrets.P0_TECH_A_EMAIL }}
+      P0_TECH_A_PASSWORD: ${{ secrets.P0_TECH_A_PASSWORD }}
+      P0_TECH_B_EMAIL: ${{ secrets.P0_TECH_B_EMAIL }}
+      P0_TECH_B_PASSWORD: ${{ secrets.P0_TECH_B_PASSWORD }}
+      P0_APPLICATION_A_ID: ${{ secrets.P0_APPLICATION_A_ID }}
+      P0_APPLICATION_B_ID: ${{ secrets.P0_APPLICATION_B_ID }}
+      P0_LEGAL_VERSION: ${{ secrets.P0_LEGAL_VERSION }}
+    steps:
+      - name: Checkout P0 code
+        uses: actions/checkout@v4
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Refuse missing real acceptance credentials
+        shell: bash
+        run: |
+          missing=0
+          for name in P0_SUPABASE_URL P0_SUPABASE_PUBLISHABLE_KEY P0_ADMIN_EMAIL P0_ADMIN_PASSWORD P0_TECH_A_EMAIL P0_TECH_A_PASSWORD P0_TECH_B_EMAIL P0_TECH_B_PASSWORD P0_APPLICATION_A_ID P0_APPLICATION_B_ID P0_LEGAL_VERSION; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing P0 acceptance secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then exit 1; fi
+      - name: Verify three real sessions and live RLS (read-only)
+        run: node scripts/p0-live-auth-acceptance.mjs
+      - name: State scope of acceptance
+        run: |
+          echo "Actual Supabase sessions/RLS verified for three authorized accounts."
+          echo "SMTP inbox delivery, hook activation, correct legal identity, and Vercel commit deployment require INDEPENDENT evidence."
