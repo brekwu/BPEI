@@ -2,7 +2,8 @@ name: BPEI independent preview checks
 on:
   push:
     branches:
-      - feat/reseau-national-2026-10
+      - feat/bpei-independent-release-clean
+      - feat/independants-sans-boutiques-2026-10
   pull_request:
     branches:
       - main
