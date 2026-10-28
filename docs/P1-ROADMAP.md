@@ -73,3 +73,15 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Les cellules CSV sont protégées contre l'injection de formules de tableur. Les exports contiennent des données professionnelles confidentielles et doivent être conservés/partagés avec précaution.
 - Chaque incident résolu dispose d'un rapport texte téléchargeable : description, résolution, priorité, échéance interne et chronologie des décisions (jusqu'à 499 événements).
 - Limites : tests réels Auth/RLS avec comptes distincts et validation opérationnelle des rapports encore nécessaires ; aucun SMTP, aucune publication `bpei.fr`, aucune mise en production P1.
+
+## Lot P1.6 — Séparation des comptes et sécurité RLS
+
+Vérifié le 28 octobre 2026 en préproduction :
+
+- Supabase : migration `20261028175736` appliquée pour permettre à deux administrateurs autorisés de consulter leur liste réciproque et d'affecter un incident. Les techniciens ne voient pas ce registre.
+- Test transactionnel SQL exécuté avec 2 administrateurs fictifs, 2 techniciens fictifs, 2 missions et 2 incidents. Un seul contrôle de création des missions a été suspendu **à l'intérieur de cette transaction de test uniquement** afin de ne pas simuler une fausse publication juridique. L'ensemble a été annulé par ROLLBACK.
+- Assertions réussies : chaque technicien ne voit que ses propres missions, incidents, journaux et notifications ; les administrateurs voient les incidents des deux techniciens et peuvent affecter un dossier entre eux ; les RPC administratifs refusent les techniciens.
+- Après test : 0 utilisateur, 0 administrateur, 0 mission, 0 incident, 0 événement ou notification persistants.
+- Test SQL non destructif réutilisable : `tests/p1-db-permissions.sql`. Test navigateur supplémentaire d'un technicien connecté sans rôle administrateur : `scripts/browser-p1-role-isolation-smoke.mjs`.
+- La migration 37 **n'est pas encore présente sous forme de fichier SQL dans GitHub**, bien qu'elle soit appliquée à Supabase. Il reste à synchroniser ce fichier avant toute reconstruction ou fusion. Les 36 fichiers de migration présents dans le dépôt ne reproduisent pas intégralement la base actuelle.
+- Cette recette ne constitue pas la validation P0 : aucune inscription e-mail réelle, aucun compte administrateur réel, aucun SMTP ni activation du hook Auth vérifiée. Ne pas ouvrir `bpei.fr` ni les inscriptions.
