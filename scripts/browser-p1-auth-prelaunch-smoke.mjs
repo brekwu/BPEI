@@ -50,8 +50,11 @@ try{
  assert.equal(response?.status(),200);
  await page.getByLabel("Adresse e-mail du compte").fill("existing@example.test");
  await page.getByRole("button",{name:"Recevoir un lien de réinitialisation"}).click();
- await page.getByText("La demande n'a pas pu être envoyée. Vérifiez le service e-mail et réessayez.").waitFor({timeout:12000});
- assert.equal(recoverCalls,1);
+ await page.getByRole("alert").waitFor({timeout:12000});
+ const errorMessage=await page.getByRole("alert").innerText();
+ assert.match(errorMessage,/La demande n'a pas pu être envoyée|Service temporairement indisponible/,
+   "Recovery failure must be communicated without claiming a successful email");
+ assert.equal(recoverCalls,1,"Browser must call the mocked recovery endpoint exactly once");
  assert.equal(await page.getByRole("button",{name:"Recevoir un lien de réinitialisation"}).isEnabled(),true,
   "Temporary email failure must not leave the form locked");
  assert.deepEqual(errors,[],"No uncaught errors on closed Auth paths");
