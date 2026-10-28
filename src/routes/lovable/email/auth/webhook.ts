@@ -18,7 +18,7 @@ const FROM_DOMAIN = 'notify.bpei.fr'
 
 // BRANDING VISUEL — résolu à chaque envoi depuis platform_public_settings
 // (versions PUBLIÉES uniquement, jamais de draft).
-const handler = createAuthEmailHandler({
+const handler = process.env.LOVABLE_API_KEY ? createAuthEmailHandler({
   apiKey: process.env.LOVABLE_API_KEY!,
   from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
   senderDomain: SENDER_DOMAIN,
@@ -80,12 +80,14 @@ const handler = createAuthEmailHandler({
       },
     },
   },
-})
+}) : null
 
 export const Route = createFileRoute('/lovable/email/auth/webhook')({
   server: {
     handlers: {
-      POST: ({ request }) => handler(request),
+      POST: ({ request }) => handler
+        ? handler(request)
+        : Response.json({ error: 'Auth email service is not configured on this host' }, { status: 503 }),
     },
   },
 })
