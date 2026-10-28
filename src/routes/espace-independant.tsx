@@ -32,6 +32,8 @@ function IndependentSpace() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [registration, setRegistration] = useState(false);
   const [launch, setLaunch] = useState<{legal_documents_published:boolean;independent_registration_enabled:boolean;legal_version:string|null}|null>(null);
   const [privacyChecked,setPrivacyChecked] = useState(false);
@@ -96,9 +98,14 @@ function IndependentSpace() {
       setError("L'inscription n'est pas ouverte ou les informations juridiques n'ont pas été acceptées.");
       return;
     }
+    if(registration && (password.length < 12 || password !== passwordConfirm)){
+      setError("Choisissez un mot de passe d'au moins 12 caractères, puis confirmez-le à l'identique.");
+      return;
+    }
     setLoading(true);
     const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/espace-independant`, data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
     setPassword("");
+    setPasswordConfirm("");
     if (result.error || !result.data.user) {
       setError("Connexion impossible. Vérifiez vos identifiants.");
       setLoading(false);
@@ -143,7 +150,14 @@ function IndependentSpace() {
         <form onSubmit={signIn} className="mt-8 space-y-4 rounded-xl border bg-card p-6">
           <h2 className="font-semibold">{registration ? "Inscription indépendant" : "Connexion"}</h2>
           <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
-          <Input type="password" autoComplete={registration ? "new-password" : "current-password"} minLength={6} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
+          <div className="space-y-3">
+            <Input type={showPassword ? "text" : "password"} autoComplete={registration ? "new-password" : "current-password"} minLength={registration ? 12 : 1} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
+            {registration && <Input type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={12} required placeholder="Confirmer le mot de passe" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} />}
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={showPassword} onChange={e=>setShowPassword(e.target.checked)} />
+              Afficher les mots de passe
+            </label>
+          </div>
           {registration && <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-sm">
             {canRegisterIndependent(launch) ?
               <label className="flex items-start gap-2">
@@ -152,7 +166,7 @@ function IndependentSpace() {
               </label> :
               <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
           </div>}
-          <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
+          <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked || password.length<12 || password !== passwordConfirm)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => {setRegistration(v => !v);setPasswordConfirm("");setPrivacyChecked(false);setError("");}}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           {!registration && <Link to="/reinitialiser-mot-de-passe" className="block text-sm underline">Mot de passe oublié ?</Link>}
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
