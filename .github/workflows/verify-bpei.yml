@@ -61,3 +61,36 @@ jobs:
       - name: Diagnostic TypeScript du dépôt historique
         continue-on-error: true
         run: bunx tsc --noEmit
+
+  build-vercel-preview:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+      BPEI_FORMS_ENABLED: "false"
+      BPEI_STAGING: "true"
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-secret
+      HASH_PEPPER: ci-only
+      VERCEL: "1"
+      NITRO_PRESET: vercel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Installer les dépendances
+        run: bun install --frozen-lockfile
+      - name: Compiler pour Vercel sans déployer
+        run: bun run build
+      - name: Vérifier la sortie Vercel
+        run: |
+          test -d .vercel/output
+          test -f .vercel/output/config.json
+      - name: Contrôler les secrets côté navigateur
+        run: |
+          if grep -R -F -q -- "$SUPABASE_SERVICE_ROLE_KEY" .vercel/output/static; then
+            echo "Clé serveur exposée dans les fichiers publics"
+            exit 1
+          fi
+          echo "Pas de clé serveur dans les fichiers statiques"
