@@ -39,6 +39,13 @@ try{
  assert.equal(await page.getByRole("button",{name:"Créer mon compte"}).isDisabled(),true,
   "Closed legal/registration gates must disable the sign-up action");
  assert.equal(signupCalls,0,"Closed public gate must not invoke Supabase signup");
+ await page.getByRole("button",{name:"Se connecter",exact:true}).click();
+ await page.getByPlaceholder("Adresse e-mail").fill("existing@example.test");
+ await page.getByPlaceholder("Mot de passe",{exact:true}).fill("Wrong-password-2026!");
+ await page.getByRole("button",{name:"Se connecter",exact:true}).click();
+ await page.getByText(/Connexion impossible. Vérifiez vos identifiants/).waitFor({timeout:12000});
+ assert.equal(await page.getByRole("button",{name:"Se connecter",exact:true}).isEnabled(),true,
+   "Login failure must not leave the sign-in form locked");
  response=await page.goto(base+"/reinitialiser-mot-de-passe",{waitUntil:"domcontentloaded"});
  assert.equal(response?.status(),200);
  await page.getByLabel("Adresse e-mail du compte").fill("existing@example.test");
