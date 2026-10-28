@@ -137,7 +137,7 @@ export function BpeiInbox(){
   {!authLoading&&!identity&&<p role="status" className="mt-2 text-sm">Connectez-vous pour consulter vos notifications.</p>}
   {error&&<p role="alert" className="mt-2 text-sm">{error}</p>}
   {identity&&visible&&<div className="mt-3 space-y-2">
-   {!pageReady&&<p role="status" className="text-sm">Chargement des notifications…</p>}
+   {!pageReady&&!error&&<p role="status" className="text-sm">Chargement des notifications…</p>}
    {pageReady&&!error&&items.length===0&&<p className="text-sm">Aucune notification.</p>}
    {pageReady&&items.map(n=><div key={n.id} className="flex flex-wrap justify-between gap-2 rounded-md border p-3 text-sm">
     <div><strong>{n.title}</strong><p className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString("fr-FR")}</p></div>
