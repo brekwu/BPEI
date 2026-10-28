@@ -70,7 +70,7 @@ try {
     await page.getByRole("heading", { name: "Espace technicien indépendant" }).waitFor();
     await page.getByRole("button", { name: "Créer un compte" }).click();
     const button = page.getByRole("button", { name: "Créer mon compte" });
-    await page.getByRole("checkbox").waitFor();
+    await page.getByRole("checkbox", { name: /^J.ai pris connaissance de la/ }).waitFor();
     await page.getByPlaceholder("Adresse e-mail").fill("p0-ui@example.test");
     await page.getByPlaceholder("Mot de passe", { exact: true }).fill("TestPassword-2026!");
     await page.getByPlaceholder("Confirmer le mot de passe").fill("DifferentPassword-2026!");
@@ -81,7 +81,7 @@ try {
     assert.equal(await page.getByPlaceholder("Mot de passe", { exact: true }).getAttribute("type"), "password");
     await page.getByPlaceholder("Confirmer le mot de passe").fill("TestPassword-2026!");
     assert.equal(await button.isDisabled(), true, "Signup must require legal consent");
-    await page.getByText(/J'ai pris connaissance de la/).locator("xpath=ancestor::label").getByRole("checkbox").check();
+    await page.getByRole("checkbox", { name: /^J.ai pris connaissance de la/ }).check();
     assert.equal(await button.isEnabled(), true, "Legal acknowledgment should enable signup");
     await button.click();
     await page.getByText("Vérifiez votre e-mail pour confirmer le compte.").waitFor();
