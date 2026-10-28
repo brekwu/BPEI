@@ -172,7 +172,20 @@ function IndependentSpace() {
           </section>
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
-            {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4"><strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{r.status}</span></li>)}</ul> : <p className="mt-3 text-muted-foreground">Aucune demande attribuée pour l'instant.</p>}
+            {requests.length ? <ul className="mt-4 space-y-3">{requests.map(r => <li key={r.id} className="rounded-lg border p-4">
+              <strong>{r.title}</strong><span className="ml-3 text-sm text-muted-foreground">{({new:"Nouvelle mission",accepted:"Acceptée",in_progress:"En cours",completed:"Terminée",cancelled:"Refusée / annulée"} as Record<string,string>)[r.status]??r.status}</span>
+              {r.status==="new" && <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" disabled={saving} onClick={async()=>{
+                  if(!userId)return;setSaving(true);setError("");const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"accepted"});
+                  if(e)setError("Impossible d'accepter cette mission.");else await load(userId);setSaving(false);
+                }}>Accepter</Button>
+                <Button variant="outline" size="sm" disabled={saving} onClick={async()=>{
+                  if(!userId||!window.confirm("Refuser cette mission ? Elle pourra être réattribuée."))return;
+                  setSaving(true);setError("");const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"declined"});
+                  if(e)setError("Impossible de refuser cette mission.");else await load(userId);setSaving(false);
+                }}>Refuser</Button>
+              </div>}
+            </li>)}</ul> : <p className="mt-3 text-muted-foreground">Aucune demande attribuée pour l'instant.</p>}
           </section>
         </div>}
     </section>
