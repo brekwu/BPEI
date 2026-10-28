@@ -68,7 +68,7 @@ export const PROBLEM_CATEGORIES = [
 const optText = (max: number) =>
   z.string().trim().max(max).optional().nullable().transform((v) => (v ? v : null));
 
-const postalCode = z.string().trim().regex(/^(\d{5}|\d{4}|2[AB]\d{3})$/i, "Code postal invalide (5 chiffres)");
+const postalCode = z.string().trim().regex(/^\d{5}$/i, "Code postal invalide (5 chiffres)");
 const phone = z.string().trim().min(6, "Téléphone requis").max(30).regex(/^[+\d\s().-]+$/, "Téléphone invalide");
 
 const tracking = {
@@ -91,7 +91,7 @@ export const TechnicianApplicationSchema = z.object({
   city: z.string().trim().min(1, "Ville requise").max(120),
   postal_code: postalCode,
   business_status: z.enum(["immatricule", "en_projet"], { message: "Indiquez votre situation" }),
-  siret: z.string().trim().replace(/\s/g, "").optional().nullable()
+  siret: z.string().trim().transform((value) => value.replace(/\s/g, "")).optional().nullable()
     .transform((v) => (v ? v : null))
     .refine((v) => v === null || /^\d{14}$/.test(v), "SIRET : 14 chiffres"),
   legal_form: optText(80),

@@ -31,10 +31,13 @@ export const Route = createFileRoute("/sitemap.xml")({
         // Pages statiques publiques indexables
         const entries: Entry[] = [
           { path: "/", changefreq: "weekly", priority: "1.0" },
+          { path: "/demander-une-intervention", changefreq: "weekly", priority: "0.9" },
+          { path: "/devenir-partenaire", changefreq: "weekly", priority: "0.9" },
+          { path: "/candidature-partenaire", changefreq: "weekly", priority: "0.8" },
+          { path: "/comment-ca-marche", changefreq: "monthly", priority: "0.7" },
           { path: "/boutiques", changefreq: "daily", priority: "0.9" },
           { path: "/annuaire", changefreq: "daily", priority: "0.9" },
           { path: "/professionnels", changefreq: "weekly", priority: "0.9" },
-          { path: "/tarifs", changefreq: "weekly", priority: "0.8" },
           { path: "/rejoindre", changefreq: "weekly", priority: "0.8" },
           { path: "/contact", changefreq: "monthly", priority: "0.7" },
           { path: "/juridique", changefreq: "monthly", priority: "0.5" },

@@ -80,7 +80,7 @@ import { getPublicSeoSnapshotFn } from "@/lib/platform-public.functions";
 // Repli technique sobre — jamais marketing, jamais juridique, jamais inventé.
 const FALLBACK_TITLE = "BPEI — Boutiques Professionnelles d'Experts Informatiques";
 const FALLBACK_DESCRIPTION =
-  "Le réseau des boutiques professionnelles d'experts informatiques. Trouvez une boutique de proximité, prenez rendez-vous et suivez votre réparation en ligne.";
+  "BPEI constitue un réseau de techniciens informatiques indépendants en France. Demandez une intervention ou candidatez comme partenaire freelance.";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   loader: async ({ context }) =>

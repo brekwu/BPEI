@@ -10,10 +10,10 @@ import { SpaceSwitcher } from "./SpaceSwitcher";
 
 const NAV = [
   { to: "/", label: "Accueil" },
-  { to: "/boutiques", label: "Trouver une boutique" },
+  { to: "/demander-une-intervention", label: "Demander une intervention" },
+  { to: "/devenir-partenaire", label: "Devenir partenaire" },
   { to: "/catalogue", label: "Catalogue" },
   { to: "/professionnels", label: "Pour les professionnels" },
-  { to: "/tarifs", label: "Tarifs" },
   { to: "/contact", label: "Contact" },
 ] as const;
 
@@ -62,7 +62,7 @@ export function SiteHeader() {
             <>
               <Button asChild variant="ghost" size="sm"><Link to="/auth">Se connecter</Link></Button>
               <Button asChild size="sm" className="bg-electric text-electric-foreground hover:bg-electric/90">
-                <Link to="/boutiques">Trouver une boutique</Link>
+                <Link to="/demander-une-intervention">Demander une intervention</Link>
               </Button>
             </>
           )}
@@ -112,7 +112,7 @@ export function SiteHeader() {
                     <Link to="/auth">Se connecter</Link>
                   </Button>
                   <Button asChild className="bg-electric text-electric-foreground hover:bg-electric/90" onClick={() => setOpen(false)}>
-                    <Link to="/boutiques">Trouver une boutique</Link>
+                    <Link to="/demander-une-intervention">Demander une intervention</Link>
                   </Button>
                 </>
               )}
@@ -171,7 +171,7 @@ export function SiteFooter() {
             )}
             <div className="mt-5 flex flex-wrap gap-2">
               <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-2.5 py-1 text-[11px] text-white/80">
-                Bêta en cours
+                Réseau en développement
               </span>
               <span className="inline-flex items-center rounded-full border border-white/20 bg-white/5 px-2.5 py-1 text-[11px] text-white/80">
                 Entreprise française
@@ -186,22 +186,22 @@ export function SiteFooter() {
 
           <div className="grid gap-8 md:col-span-8 md:grid-cols-4">
             <FooterCol title="Particuliers">
-              <FooterLink to="/boutiques">Trouver une boutique</FooterLink>
+              <FooterLink to="/demander-une-intervention">Demander une intervention</FooterLink>
               <FooterLink to="/catalogue">Catalogue</FooterLink>
               <FooterLink to="/annuaire">Annuaire vérifié</FooterLink>
               <FooterLink to="/avis/politique">Politique des avis</FooterLink>
             </FooterCol>
             <FooterCol title="Professionnels">
               <FooterLink to="/professionnels">Rejoindre BPEI</FooterLink>
-              <FooterLink to="/tarifs">Tarifs détaillés</FooterLink>
-              <FooterLink to="/rejoindre">Candidater</FooterLink>
+              <FooterLink to="/comment-ca-marche">Comment ça marche</FooterLink>
+              <FooterLink to="/candidature-partenaire">Candidater</FooterLink>
               <FooterLink to="/vendeurs/regles">Règles vendeurs</FooterLink>
               <FooterLink to="/auth">Connexion boutique</FooterLink>
             </FooterCol>
             <FooterCol title="Ressources">
               <FooterLink to="/juridique">Centre juridique</FooterLink>
               <FooterLink to="/conditions-abonnement">Conditions d'abonnement</FooterLink>
-              <FooterLink to="/conditions-beta">Conditions bêta</FooterLink>
+              <FooterLink to="/devenir-partenaire">Partenariat indépendant</FooterLink>
               <FooterLink to="/annuaire/regles-admission">Règles d'admission</FooterLink>
               <FooterLink to="/annuaire/badge-verifie">Badge vérifié</FooterLink>
             </FooterCol>

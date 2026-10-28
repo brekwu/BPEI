@@ -138,6 +138,12 @@ function AdminConsole() {
           <Link to="/owner">Candidatures boutiques (Console patron)</Link>
         </Button>
         <Button asChild size="sm" variant="outline">
+          <Link to="/admin/interventions">Demandes d’intervention</Link>
+        </Button>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/admin/techniciens">Candidatures techniciens</Link>
+        </Button>
+        <Button asChild size="sm" variant="outline">
           <Link to="/admin/contacts">
             Demandes de contact{globals.contacts > 0 && <Badge className="ml-2" variant="secondary">{globals.contacts}</Badge>}
           </Link>

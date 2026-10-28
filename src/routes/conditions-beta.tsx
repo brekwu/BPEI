@@ -5,6 +5,7 @@ export const Route = createFileRoute("/conditions-beta")({
   head: () => ({
     meta: [
       { title: "Conditions de la bêta — BPEI" },
+      { name: "robots", content: "noindex" },
       { name: "description", content: "Cadre juridique de la phase bêta gratuite de la plateforme BPEI." },
       { property: "og:title", content: "Conditions de la bêta — BPEI" },
     ],
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/conditions-beta")({
   component: () => (
     <LegalPage
       title="Conditions de la bêta"
-      intro="Ces conditions s'appliquent à la phase bêta gratuite de BPEI, jusqu'au 31 août 2026."
+      intro="Document historique relatif à la phase bêta gratuite de BPEI terminée le 31 août 2026 ; il ne constitue pas une offre actuellement ouverte."
       sections={[
         { id: "acces", title: "Accès à la bêta", body: "L'accès à la version bêta est proposé gratuitement aux boutiques et professionnels sélectionnés jusqu'au 31/08/2026. BPEI se réserve le droit d'accepter ou refuser une candidature." },
         { id: "service", title: "Niveau de service", body: "La plateforme est fournie « en l'état » pendant la bêta. Des interruptions, régressions ou modifications de fonctionnalités peuvent survenir sans préavis." },

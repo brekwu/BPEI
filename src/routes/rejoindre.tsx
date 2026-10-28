@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { BETA_END_LABEL } from "@/lib/pricing-plans";
 import { CheckCircle2, Store, Home, Building2, Network, Clock, Loader2, Save, Trash2 } from "lucide-react";
 
 const LOCAL_REF_KEY = "bpei_application_reference_v1";
@@ -32,9 +31,9 @@ export const Route = createFileRoute("/rejoindre")({
   head: () => ({
     meta: [
       { title: "Rejoindre BPEI — Candidature" },
-      { name: "description", content: `Candidatez pour rejoindre la bêta BPEI. Boutiques physiques et indépendants à domicile. Gratuit jusqu'au ${BETA_END_LABEL}.` },
-      { property: "og:title", content: "Rejoindre BPEI — Candidature bêta" },
-      { property: "og:description", content: `Rejoignez le réseau BPEI. Candidature ouverte aux boutiques et indépendants. Gratuit jusqu'au ${BETA_END_LABEL}.` },
+      { name: "description", content: `Présentez votre candidature pour rejoindre BPEI. Dossier examiné individuellement, sans paiement au dépôt.` },
+      { property: "og:title", content: "Rejoindre BPEI — Candidature" },
+      { property: "og:description", content: `Candidature auprès de BPEI, sans garantie d’admission ni de missions.` },
       { property: "og:url", content: "https://bpei.fr/rejoindre" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -345,7 +344,7 @@ function JoinPage() {
                 <h1 className="mt-4 text-2xl font-bold">Candidature enregistrée</h1>
                 <p className="mt-3 text-muted-foreground">Votre référence : <strong className="text-foreground">{reference}</strong></p>
                 <p className="mt-3 text-sm text-muted-foreground">
-                  BPEI examine votre dossier et vous recontacte sous quelques jours ouvrés. Pendant la bêta, l'accès est gratuit jusqu'au {BETA_END_LABEL}.
+                  BPEI examine votre dossier. Les éventuelles conditions commerciales seront communiquées avant toute activation.
                 </p>
                 <div className="mt-6 flex justify-center gap-3">
                   <Button asChild variant="outline"><Link to="/">Retour à l'accueil</Link></Button>
@@ -369,7 +368,7 @@ function JoinPage() {
             <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Rejoindre le réseau BPEI</h1>
             <p className="mt-3 max-w-2xl text-muted-foreground">
               Renseignez votre type d'activité, puis complétez les informations correspondantes.
-              Pendant la bêta, l'accès est gratuit jusqu'au {BETA_END_LABEL}. Aucun paiement n'est demandé.
+              Aucun paiement n’est demandé pour candidater. Les éventuelles conditions contractuelles seront précisées avant activation.
             </p>
           </div>
         </section>

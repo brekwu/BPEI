@@ -33,6 +33,8 @@ const SECTIONS: NavSection[] = [
   {
     title: "Réseau",
     items: [
+      { to: "/admin/interventions", label: "Interventions clients", icon: ClipboardList },
+      { to: "/admin/techniciens", label: "Candidatures techniciens", icon: Inbox },
       { to: "/owner/candidatures", label: "Candidatures", icon: Inbox },
       { to: "/owner/boutiques", label: "Structures", icon: Store },
       { to: "/owner/verifications", label: "Vérifications", icon: ShieldCheck },
