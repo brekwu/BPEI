@@ -10,6 +10,7 @@ export function BpeiInbox(){
  const [identity,setIdentity]=useState<string|null>(null);
  const [authLoading,setAuthLoading]=useState(true);
  const [items,setItems]=useState<Notice[]>([]);
+ const [loadedPage,setLoadedPage]=useState<number|null>(null);
  const [visible,setVisible]=useState(false);
  const [page,setPage]=useState(0);
  const [total,setTotal]=useState(0);
@@ -25,7 +26,7 @@ export function BpeiInbox(){
   function clear(){
    ++fetchEpoch.current;
    setIdentity(null);
-   setItems([]);setPage(0);setTotal(0);setUnread(0);
+   setItems([]);setLoadedPage(null);setPage(0);setTotal(0);setUnread(0);
    setVisible(false);setBusyId(null);setLoading(false);setError("");
   }
   async function verify(){
@@ -67,6 +68,7 @@ export function BpeiInbox(){
   let active=true;
   const run=++fetchEpoch.current;
   setLoading(true);
+  setLoadedPage(null);
   setError("");
   const db=supabase as any;
   (async()=>{
@@ -83,18 +85,19 @@ export function BpeiInbox(){
    if(!active||run!==fetchEpoch.current)return;
    if(list.error||count.error||!Array.isArray(list.data)
       ||typeof list.count!=="number"||typeof count.count!=="number"){
-    setItems([]);setTotal(0);setUnread(0);
+    setItems([]);setLoadedPage(null);setTotal(0);setUnread(0);
     setError("Notifications indisponibles. Réessayez.");
    }else if(page>0&&page*PAGE_SIZE>=list.count){
-    setItems([]);setPage(Math.max(0,Math.ceil(list.count/PAGE_SIZE)-1));
+    setItems([]);setLoadedPage(null);setPage(Math.max(0,Math.ceil(list.count/PAGE_SIZE)-1));
    }else{
     setItems(list.data as Notice[]);
+    setLoadedPage(page);
     setTotal(list.count);
     setUnread(count.count);
    }
   })().catch(()=>{
    if(active&&run===fetchEpoch.current){
-    setItems([]);setTotal(0);setUnread(0);
+    setItems([]);setLoadedPage(null);setTotal(0);setUnread(0);
     setError("Connexion aux notifications indisponible. Réessayez.");
    }
   }).finally(()=>{
@@ -119,6 +122,7 @@ export function BpeiInbox(){
   }
  }
  const pageCount=Math.ceil(total/PAGE_SIZE);
+ const pageReady=!loading&&loadedPage===page;
  return <section className="rounded-xl border bg-card p-4" aria-label="Notifications BPEI">
   <div className="flex flex-wrap items-center justify-between gap-2">
    <h2 className="font-semibold">Notifications {identity&&unread>0?"("+unread+" non lues)":""}</h2>
@@ -133,14 +137,14 @@ export function BpeiInbox(){
   {!authLoading&&!identity&&<p role="status" className="mt-2 text-sm">Connectez-vous pour consulter vos notifications.</p>}
   {error&&<p role="alert" className="mt-2 text-sm">{error}</p>}
   {identity&&visible&&<div className="mt-3 space-y-2">
-   {loading&&<p role="status" className="text-sm">Chargement des notifications…</p>}
-   {!loading&&!error&&items.length===0&&<p className="text-sm">Aucune notification.</p>}
-   {!loading&&items.map(n=><div key={n.id} className="flex flex-wrap justify-between gap-2 rounded-md border p-3 text-sm">
+   {!pageReady&&<p role="status" className="text-sm">Chargement des notifications…</p>}
+   {pageReady&&!error&&items.length===0&&<p className="text-sm">Aucune notification.</p>}
+   {pageReady&&items.map(n=><div key={n.id} className="flex flex-wrap justify-between gap-2 rounded-md border p-3 text-sm">
     <div><strong>{n.title}</strong><p className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleString("fr-FR")}</p></div>
     {!n.read_at&&<Button type="button" size="sm" variant="outline" disabled={!!busyId||loading}
      onClick={()=>void mark(n.id)}>{busyId===n.id?"Enregistrement…":"Marquer lue"}</Button>}
    </div>)}
-   {!loading&&total>0&&<div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+   {pageReady&&total>0&&<div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
     <p role="status" className="text-xs text-muted-foreground">Notifications {page*PAGE_SIZE+1}–{page*PAGE_SIZE+items.length} sur {total} · page {page+1} sur {pageCount}</p>
     <div className="flex gap-2">
      <Button type="button" size="sm" variant="outline" disabled={!!busyId||page===0} onClick={()=>setPage(p=>p-1)}>Précédent</Button>
