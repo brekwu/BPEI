@@ -70,6 +70,18 @@ INSERT INTO public.independent_admins(user_id) VALUES('b0000000-0000-4000-8000-0
 INSERT INTO public.independent_profiles(user_id,display_name) VALUES
  ('b0000000-0000-4000-8000-000000000002','P0 Technician A'),
  ('b0000000-0000-4000-8000-000000000003','P0 Technician B');
+-- An approved but NOT published document must remain private.
+INSERT INTO public.bpei_legal_documents(kind,version,content,approved_at,approved_by)
+VALUES('mentions-legales','p0-unpublished-fixture',
+       repeat('Temporary unapproved-for-publication legal test. ',10),
+       now(),'b0000000-0000-4000-8000-000000000001');
+SET LOCAL ROLE anon;
+DO $draft$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.bpei_legal_documents WHERE version='p0-unpublished-fixture')
+ THEN RAISE EXCEPTION 'P0 RLS: unpublished draft exposed to anonymous visitor'; END IF;
+END $draft$;
+RESET ROLE;
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','b0000000-0000-4000-8000-000000000002',true);
 DO $check$
@@ -100,5 +112,7 @@ BEGIN
  IF (SELECT count(*) FROM public.independent_profiles)<>2 OR
     (SELECT count(*) FROM public.independent_admins)<>1
  THEN RAISE EXCEPTION 'P0 failure: admin cannot read two profiles and admin roster'; END IF;
+ IF (SELECT count(*) FROM public.bpei_legal_documents WHERE version='p0-unpublished-fixture')<>1
+ THEN RAISE EXCEPTION 'P0 failure: administrator cannot review unpublished draft'; END IF;
 END $check$;
 ROLLBACK;
