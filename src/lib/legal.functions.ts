@@ -25,7 +25,7 @@ export const getPlatformLegalSettings = createServerFn({ method: "GET" }).handle
 });
 
 export const getPublishedDocument = createServerFn({ method: "GET" })
-  .inputValidator((i: { code: string }) => z.object({ code: z.string().min(1).max(100) }).parse(i))
+  .validator((i: { code: string }) => z.object({ code: z.string().min(1).max(100) }).parse(i))
   .handler(async ({ data }) => {
     const { data: doc } = await publicClient()
       .from("legal_documents")
@@ -40,7 +40,7 @@ export const getPublishedDocument = createServerFn({ method: "GET" })
 
 export const upsertPlatformLegalSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: Record<string, unknown>) => i)
+  .validator((i: Record<string, unknown>) => i)
   .handler(async ({ data, context }) => {
     // authz check: must be owner or admin
     const { data: role } = await context.supabase
@@ -59,7 +59,7 @@ export const upsertPlatformLegalSettings = createServerFn({ method: "POST" })
   });
 
 export const submitContentReport = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) =>
+  .validator((i: unknown) =>
     z.object({
       category: z.string().min(1).max(50),
       target_type: z.string().max(50).optional(),
@@ -94,7 +94,7 @@ export const submitContentReport = createServerFn({ method: "POST" })
   });
 
 export const submitPrivacyRequest = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) =>
+  .validator((i: unknown) =>
     z.object({
       request_type: z.enum(["access","rectification","deletion","opposition","limitation","portability","other"]),
       requester_full_name: z.string().min(2).max(200),
@@ -113,7 +113,7 @@ export const submitPrivacyRequest = createServerFn({ method: "POST" })
   });
 
 export const recordCookieConsent = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) =>
+  .validator((i: unknown) =>
     z.object({
       pseudonym_id: z.string().min(4).max(100),
       policy_version: z.string().max(20),
@@ -130,7 +130,7 @@ export const recordCookieConsent = createServerFn({ method: "POST" })
   });
 
 export const recordAcceptance = createServerFn({ method: "POST" })
-  .inputValidator((i: unknown) =>
+  .validator((i: unknown) =>
     z.object({
       document_code: z.string().max(100),
       document_version: z.number().int().positive(),
