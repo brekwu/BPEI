@@ -35,16 +35,19 @@ function IndependentSpace() {
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
   const [requests, setRequests] = useState<Array<{ id: string; title: string; status: string; created_at: string }>>([]);
+  const [application, setApplication] = useState<{ id: string; status: string; created_at: string; message: string } | null>(null);
 
   async function load(id: string) {
     const db = supabase as any;
-    const [p, r] = await Promise.all([
+    const [p, r, a] = await Promise.all([
       db.from("independent_profiles").select("*").eq("user_id", id).maybeSingle(),
       db.from("independent_requests").select("id,title,status,created_at").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
+      db.from("independent_applications").select("id,status,created_at,message").eq("user_id", id).maybeSingle(),
     ]);
-    if (p.error || r.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
+    if (p.error || r.error || a.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
     setProfile(p.data ?? null);
     setRequests(r.data ?? []);
+    setApplication(a.data ?? null);
     setLoading(false);
   }
 
@@ -82,7 +85,6 @@ function IndependentSpace() {
     setError("");
     setNotice("");
     const payload = {
-      user_id: userId,
       display_name: profile.display_name.trim(),
       business_name: profile.business_name?.trim() || null,
       siret: profile.siret?.trim() || null,
@@ -92,7 +94,7 @@ function IndependentSpace() {
       bio: profile.bio?.trim() || null,
       skills: profile.skills,
     };
-    const { error: saveError } = await (supabase as any).from("independent_profiles").upsert(payload, { onConflict: "user_id" });
+    const { error: saveError } = await (supabase as any).from("independent_profiles").update(payload).eq("user_id", userId);
     if (saveError) setError("Enregistrement impossible. Vérifiez les champs et vos autorisations.");
     else { setNotice("Profil enregistré."); await load(userId); }
     setSaving(false);
@@ -110,7 +112,7 @@ function IndependentSpace() {
         <form onSubmit={signIn} className="mt-8 space-y-4 rounded-xl border bg-card p-6">
           <h2 className="font-semibold">{registration ? "Inscription indépendant" : "Connexion"}</h2>
           <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
-          <Input type="password" autoComplete="current-password" required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
+          <Input type="password" autoComplete={registration ? "new-password" : "current-password"} minLength={6} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
           <Button type="submit">{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
@@ -118,7 +120,7 @@ function IndependentSpace() {
         <div className="mt-8 space-y-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Mon profil</h2>
-            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setRequests([]); }}>Se déconnecter</Button>
+            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setApplication(null); setRequests([]); }}>Se déconnecter</Button>
           </div>
           {!profile ? <form className="rounded-xl border p-6 space-y-4" onSubmit={async (event) => {
             event.preventDefault();
@@ -149,9 +151,9 @@ function IndependentSpace() {
             <Button type="submit" disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
           </form>}
           <section className="rounded-xl border bg-card p-6">
-            <h2 className="text-xl font-semibold">Candidature au réseau BPEI</h2>
+            <div className="flex flex-wrap justify-between gap-2"><h2 className="text-xl font-semibold">Candidature au réseau BPEI</h2><Button variant="outline" size="sm" onClick={() => userId && void load(userId)}>Actualiser</Button></div>
             <p className="mt-2 text-sm text-muted-foreground">Votre candidature sera examinée avant toute mission. La candidature est gratuite et ne garantit aucune attribution.</p>
-            <form className="mt-4 space-y-3" onSubmit={async event => {
+            {!profile ? <p className="mt-4 text-sm">Créez votre profil professionnel ci-dessus avant de candidater.</p> : application ? <div role="status" className="mt-4 rounded-lg border bg-muted/30 p-4 text-sm"><p><strong>Statut :</strong> {({pending:"En attente d’examen",under_review:"En cours d’examen",approved:"Candidature approuvée",rejected:"Candidature refusée"} as Record<string,string>)[application.status] ?? application.status}</p><p className="mt-2 text-muted-foreground">Candidature déposée le {new Date(application.created_at).toLocaleDateString("fr-FR")}. Vous pouvez modifier votre profil pendant l’examen.</p></div> : <form className="mt-4 space-y-3" onSubmit={async event => {
               event.preventDefault();
               if (!userId || saving) return;
               const message = (new FormData(event.currentTarget).get("message") ?? "").toString().trim();
@@ -159,14 +161,14 @@ function IndependentSpace() {
               setSaving(true); setError(""); setNotice("");
               const { error: applicationError } = await (supabase as any).from("independent_applications").insert({ user_id: userId, message });
               if (applicationError) setError("Candidature déjà déposée ou impossible à enregistrer.");
-              else setNotice("Candidature reçue. Elle reste en attente d'examen.");
+              else { setNotice("Candidature reçue. Elle reste en attente d'examen."); await load(userId); }
               setSaving(false);
             }}>
               <label className="block text-sm">Votre expérience et vos compétences
                 <Textarea name="message" required minLength={10} maxLength={3000} rows={4} />
               </label>
               <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
-            </form>
+            </form>}
           </section>
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
