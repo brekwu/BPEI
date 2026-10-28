@@ -51,3 +51,9 @@ La configuration des interrupteurs `bpei_launch_controls` et `bpei_intake_flags`
 Conserver `bpei.fr` sur OVH tant que la recette n'est pas acquise. Avant une exploitation commerciale, vérifier une offre Vercel conforme aux conditions applicables, le domaine, le certificat HTTPS, les redirections, la version de production et les tests de bout en bout.
 
 **Règle de sortie P0** : pas de « P0 terminé » sans SMTP livré à une adresse externe, Auth Hook activé, administrateur fonctionnel, documents approuvés et publiés, recette positive et commit réellement déployé.
+
+## Mise à jour P0 (28/10/2026)
+
+- La recette qualité et navigateur du commit `2ae1c346` a réussi et ce commit possède un déploiement de préproduction READY sur Vercel, protégé par l'authentification Vercel ; il ne constitue pas une publication de `bpei.fr`.
+- Une migration supplémentaire `20261028170430` empêche l'acceptation et le démarrage d'une mission si la vérification professionnelle ou la RC Pro a expiré entre l'attribution et le début. Le renouvellement de l'acceptation juridique est aussi exigé.
+- La suite P0 reste bloquée par une décision humaine de compte administrateur, la configuration SMTP et Auth Hook, la validation juridique et des essais réels avec des comptes contrôlés. Aucune déclaration « P0 terminé » avant ces vérifications.
