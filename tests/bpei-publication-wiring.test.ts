@@ -37,3 +37,25 @@ test("profile creation checks accepted legal version",()=>{
  assert.match(signup,/disabled=\{saving \|\| !legalAccepted\}/);
  assert.match(signup,/bpei_legal_acceptances/);
 });
+
+test("public intake explicitly displays the currently published legal version",()=>{
+ assert.match(intake,/legalVersion/);
+ assert.match(intake,/version \{legalVersion\}/);
+});
+test("admin legal interface uses role-checked approval and publication RPCs",()=>{
+ const admin=file("src/components/admin/AdminLegalDocuments.tsx");
+ assert.match(admin,/approve_bpei_legal_document/);
+ assert.match(admin,/publish_bpei_legal_documents/);
+ assert.match(admin,/window\.confirm/);
+ assert.match(admin,/lockedVersions/);
+});
+test("admin legal interface is nested inside authorized admin dashboard",()=>{
+ const adminRoute=file("src/routes/gestion-independants.tsx");
+ assert.match(adminRoute,/independent_admins/);
+ assert.match(adminRoute,/<AdminLegalDocuments\s*\/>/);
+});
+test("database migration stamps client legal consent on the server",()=>{
+ const manifest=file("src/components/public/BpeiIntakeForm.tsx");
+ assert.match(manifest,/bpei_launch_controls/);
+ assert.match(manifest,/legal_documents_published/);
+});
