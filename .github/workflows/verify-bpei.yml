@@ -30,6 +30,17 @@ jobs:
         run: node --test tests/migration-inventory.test.mjs
       - name: Construire le site sans le publier
         run: bun run build
+      - name: Contrôler l'absence des secrets serveur dans les fichiers publics
+        run: |
+          if grep -R -F -q -- "$SUPABASE_SERVICE_ROLE_KEY" .output/public; then
+            echo "Échec : clé serveur exposée dans le code public"
+            exit 1
+          fi
+          if grep -R -F -q -- "$HASH_PEPPER" .output/public; then
+            echo "Échec : secret de limitation de débit exposé dans le code public"
+            exit 1
+          fi
+          echo "Aucun secret serveur de test dans les assets publics"
       - name: Vérifier la sortie du serveur Nitro Node
         run: test -f .output/server/index.mjs
       - name: Essayer les pages avec le vrai serveur Node
