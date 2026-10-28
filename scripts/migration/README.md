@@ -43,7 +43,32 @@ Le script **refuse** les tables absentes, un nombre de lignes différent, un ré
 - Ne pointer `bpei.fr` vers le nouvel hébergeur qu'après validation technique et légale et installation de TLS.
 - Conserver les enregistrements DNS initiaux et le backend Lovable pour un retour arrière contrôlé. **Le retour des DNS ne ramène pas les données ajoutées sur le nouveau site** : les réconcilier avant toute restauration.
 
-## Blocage confirmé le 28 octobre 2026
-Le connecteur Supabase relié à ChatGPT présente **zéro projet**. La création du projet gratuit dans l'organisation `brekwu` a été refusée par les contrôles d'accès. Le connecteur Lovable permet de lire le code et certaines requêtes SQL, mais pas de déclencher un export complet. L'archive de sauvegarde n'est pas présente parmi les fichiers accessibles dans cette conversation, la bibliothèque ni le Drive connecté.
+## Statut mis à jour le 28 octobre 2026
 
-**Ne déclarer aucune restauration effectuée en l'absence d'un projet de destination et du fichier original.**
+- Projet Supabase **BPEI créé et sain**, référence `qmbsfmcotnsxsvbigynz`, région Paris `eu-west-3`.
+- Archive originale `pro-repair-connect_261028.backup` reçue et inventoriée séparément. **Ne jamais ajouter l'archive au GitHub public.**
+- La base cible contient encore **zéro compte, zéro identité et zéro table métier** lors du dernier contrôle. **La restauration n'a pas eu lieu.**
+- Le kit local de restauration `BPEI_etape1_pack_restauration.zip` a été fourni à l'utilisateur. Il nécessite PostgreSQL 18 et des identifiants de connexion saisis uniquement sur son poste ; il n'a pas été exécuté contre Supabase.
+- Vercel `bpei-preview` est en prévisualisation privée ; les formulaires restent désactivés et `bpei.fr` demeure inchangé.
+
+## Étape 2 — comptes et boutiques
+
+Après restauration, exécuter `scripts/migration/audit-comptes-boutiques.sql` dans le SQL Editor de **ce projet Supabase uniquement**, ou avec `psql -X -v ON_ERROR_STOP=1 -f scripts/migration/audit-comptes-boutiques.sql`.
+
+Ce diagnostic crée des **tables temporaires uniquement**, compare les volumes historiques suivants, puis vérifie les références croisées et l'activation RLS :
+
+| Objet | Attendu |
+|---|---:|
+| auth.users | 6 |
+| auth.identities | 6 |
+| public.profiles | 6 |
+| public.shops | 5 |
+| public.shop_applications | 6 |
+| public.shop_memberships | 9 |
+| public.user_platform_roles | 9 |
+| public.shop_subscriptions | 4 |
+| storage.buckets | 5 |
+
+Le contrôle a été testé sur la base encore vide : il retourne `A_VERIFIER` et identifie les tables absentes au lieu d'échouer.
+
+**Attention :** obtenir tous les comptes de lignes et l'absence de références orphelines ne prouve pas la connexion. Après import, tester séparément un vrai utilisateur existant (mot de passe / OAuth / réinitialisation), les permissions boutique et admin avec deux comptes distincts, les redirections Auth, les e-mails et la disponibilité des objets Storage physiques. Ne pas activer les paiements ou formulaires publics avant validation des autorisations RLS et des documents légaux.
