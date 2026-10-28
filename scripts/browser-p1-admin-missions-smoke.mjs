@@ -61,7 +61,7 @@ try{
  await page.getByPlaceholder("Adresse e-mail").fill(user.email);
  await page.getByPlaceholder("Mot de passe",{exact:true}).fill("Mock-password-2026!");
  await page.getByRole("button",{name:"Se connecter",exact:true}).click();
- await page.getByText("Mon profil").waitFor({timeout:15000});
+ await page.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
  const response=await page.goto(base+"/gestion-missions",{waitUntil:"domcontentloaded"});
  assert.equal(response?.status(),200);
  await page.getByRole("heading",{name:"Gestion des missions BPEI"}).waitFor();
