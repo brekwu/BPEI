@@ -27,6 +27,14 @@ jobs:
         run: bun test tests/network-forms.test.ts
       - name: Construire le site sans le publier
         run: bun run build
+      - name: Vérifier la sortie du serveur Nitro Node
+        run: test -f .output/server/index.mjs
+      - name: Essayer les pages avec le vrai serveur Node
+        run: |
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-ssr.log 2>&1 &
+          BPEI_PID=$!
+          trap 'kill "$BPEI_PID" 2>/dev/null || true' EXIT
+          node scripts/smoke-http.mjs
       - name: Lint ciblé du code réseau BPEI
         run: |
           bunx eslint src/lib/network-forms.ts src/lib/network.functions.ts \
