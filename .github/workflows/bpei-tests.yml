@@ -107,3 +107,4 @@ jobs:
           node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p1-admin-session-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p1-inbox-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
