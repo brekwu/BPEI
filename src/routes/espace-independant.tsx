@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { missionStatusLabel, nextMissionStatus, canReadMissionClientContact } from "@/lib/bpei-mission-status";
+import { canRegisterIndependent, isPublishedLegalVersion } from "@/lib/bpei-launch-policy";
 
 export const Route = createFileRoute("/espace-independant")({
   component: IndependentSpace,
@@ -91,7 +92,7 @@ function IndependentSpace() {
   async function signIn(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    if(registration && (!launch?.legal_documents_published || !launch?.independent_registration_enabled || !launch.legal_version || !privacyChecked)){
+    if(registration && (!canRegisterIndependent(launch) || !privacyChecked)){
       setError("L'inscription n'est pas ouverte ou les informations juridiques n'ont pas été acceptées.");
       return;
     }
@@ -144,14 +145,14 @@ function IndependentSpace() {
           <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
           <Input type="password" autoComplete={registration ? "new-password" : "current-password"} minLength={6} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
           {registration && <div className="space-y-2 rounded-md border bg-muted/20 p-3 text-sm">
-            {launch?.legal_documents_published && launch.independent_registration_enabled && launch.legal_version ?
+            {canRegisterIndependent(launch) ?
               <label className="flex items-start gap-2">
                 <input type="checkbox" checked={privacyChecked} onChange={e=>setPrivacyChecked(e.target.checked)} required />
                 <span>J'ai pris connaissance de la <Link className="underline" to="/confidentialite">politique de confidentialité</Link> et des <Link className="underline" to="/cgu">conditions d'utilisation</Link> (version {launch.legal_version}).</span>
               </label> :
               <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
           </div>}
-          <Button type="submit" disabled={registration && (!launch?.legal_documents_published || !launch?.independent_registration_enabled || !privacyChecked)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
+          <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => setRegistration(v => !v)}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           <Link to="/devenir-partenaire" className="block text-sm underline">Informations pour devenir partenaire</Link>
         </form> :
@@ -191,7 +192,7 @@ function IndependentSpace() {
           <section className="rounded-xl border bg-card p-6">
             <div className="flex flex-wrap justify-between gap-2"><h2 className="text-xl font-semibold">Candidature au réseau BPEI</h2><Button variant="outline" size="sm" onClick={() => userId && void load(userId)}>Actualiser</Button></div>
             <p className="mt-2 text-sm text-muted-foreground">Votre candidature sera examinée avant toute mission. La candidature est gratuite et ne garantit aucune attribution.</p>
-            {!launch?.legal_documents_published || !launch?.legal_version ?
+            {!isPublishedLegalVersion(launch) ?
               <p className="mt-4 rounded-lg border bg-muted/20 p-4 text-sm">Le dépôt de candidature est suspendu en attendant la publication des informations juridiques BPEI.</p>
               : !legalAccepted ?
               <div className="mt-4 space-y-3 rounded-lg border p-4 text-sm">
