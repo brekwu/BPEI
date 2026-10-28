@@ -5,6 +5,7 @@ export const Route = createFileRoute("/cgv")({
   head: () => ({
     meta: [
       { title: "CGV / CGS — Conditions de vente et de services — BPEI" },
+      { name: "robots", content: "noindex" },
       { name: "description", content: "Conditions générales de vente et de services BPEI : abonnement plateforme et cadre des ventes entre boutiques et clients." },
       { property: "og:title", content: "Conditions générales de vente et de services — BPEI" },
       { property: "og:url", content: "https://bpei.fr/cgv" },
@@ -18,7 +19,7 @@ function Page() {
   return (
     <LegalPage
       title="Conditions générales de vente et de services (CGV / CGS)"
-      intro="Ces conditions distinguent (A) l'abonnement d'une boutique à la plateforme BPEI et (B) le cadre applicable aux ventes entre une boutique et ses clients. BPEI n'est jamais le vendeur des produits et services proposés par les boutiques."
+      intro="Document consacré aux offres boutiques historiques de BPEI. Le réseau national de techniciens indépendants constitue un dispositif distinct : ses modalités de partenariat et d'intervention seront communiquées avant tout engagement. Les droits nés des contrats boutiques existants demeurent applicables."
       sections={[
         { id: "a-objet", title: "A. BPEI ↔ Boutique — Objet", body: <p>Les présentes conditions régissent la fourniture de la plateforme BPEI à une boutique cliente : accès aux modules, hébergement des données, support.</p> },
         { id: "a-offres", title: "A. Offres & prix", body: <p>Trois formules sont proposées (Starter, Pro, Réseau) — voir <a className="underline" href="/tarifs">Tarifs</a>. Prix HT hors options, en euros. Facturation mensuelle ou annuelle selon l'offre.</p> },
