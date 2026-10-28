@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
+import { ProfessionalVerificationPanel, isVerificationCurrent, type ProfessionalCheck } from "@/components/admin/ProfessionalVerificationPanel";
 
 export const Route = createFileRoute("/gestion-independants")({
   component: IndependentReview,
@@ -24,6 +25,7 @@ function IndependentReview() {
   const [authorized, setAuthorized] = useState(false);
   const [applications, setApplications] = useState<Candidate[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [checks, setChecks] = useState<Record<string, ProfessionalCheck>>({});
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -36,16 +38,18 @@ function IndependentReview() {
     const permission = await db.from("independent_admins").select("user_id").eq("user_id", user.data.user.id).maybeSingle();
     if (permission.error || !permission.data) { setAuthorized(false); setLoading(false); return; }
     setAuthorized(true);
-    const [a, p] = await Promise.all([
+    const [a, p, v] = await Promise.all([
       db.from("independent_applications").select("id,user_id,status,message,created_at,reviewed_at").order("created_at", { ascending: false }).limit(200),
       db.from("independent_profiles").select("user_id,display_name,business_name,siret,city,verified_at").limit(200),
+      db.from("independent_verification_checks").select("user_id,siret,checked_at,evidence_source,evidence_reference").limit(200),
     ]);
-    if (a.error || p.error) setMessage("Lecture impossible. Vérifiez vos autorisations et réessayez.");
+    if (a.error || p.error || v.error) setMessage("Lecture impossible. Vérifiez vos autorisations et réessayez.");
     else {
       setApplications(a.data ?? []);
       const byId: Record<string, Profile> = {};
       for (const row of (p.data ?? []) as Profile[]) byId[row.user_id] = row;
       setProfiles(byId);
+      setChecks(Object.fromEntries((v.data??[]).map((check:ProfessionalCheck)=>[check.user_id,check])));
     }
     setLoading(false);
   }
@@ -54,8 +58,12 @@ function IndependentReview() {
 
   async function review(id: string, next: "under_review" | "approved" | "rejected") {
     if (busyId || !authorized) return;
-    if (next === "approved" && typeof window !== "undefined" &&
-        !window.confirm("Confirmez-vous avoir vérifié le SIRET, le statut d'indépendant et les justificatifs nécessaires ?")) return;
+    if(next==="approved"){
+      const candidate=applications.find(a=>a.id===id);
+      const verified=!!candidate && isVerificationCurrent(checks[candidate.user_id],profiles[candidate.user_id]?.siret);
+      if(!verified){setMessage("Une vérification officielle récente de l'entreprise et de l'identité est obligatoire avant l'approbation.");return;}
+      if(typeof window!=="undefined" && !window.confirm("Approuver cette candidature après vérification des justificatifs ?"))return;
+    }
     if (next === "rejected" && typeof window !== "undefined" &&
         !window.confirm("Confirmer le refus de cette candidature ?")) return;
     setBusyId(id);
@@ -63,7 +71,7 @@ function IndependentReview() {
     const { error } = await (supabase as any).rpc("review_independent_application", {
       p_application_id: id, p_new_status: next,
     });
-    if (error) setMessage("Action refusée ou impossible. Vérifiez les justificatifs, notamment le SIRET à 14 chiffres.");
+    if (error) setMessage("Action refusée : le compte doit être confirmé et un contrôle d’entreprise active, d’établissement et d’identité documenté depuis moins de 30 jours est requis.");
     else { await load(); setMessage("Statut mis à jour."); }
     setBusyId(null);
   }
@@ -93,9 +101,10 @@ function IndependentReview() {
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm">{a.message}</p>
               <p className="mt-3 text-xs text-muted-foreground">Déposée le {new Date(a.created_at).toLocaleDateString("fr-FR")}</p>
+              <ProfessionalVerificationPanel userId={a.user_id} siret={p?.siret??null} check={checks[a.user_id]} onRecorded={load}/>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="outline" disabled={!!busyId || a.status === "under_review"} onClick={() => void review(a.id, "under_review")}>Examiner</Button>
-                <Button disabled={!!busyId || a.status === "approved"} onClick={() => void review(a.id, "approved")}>Approuver</Button>
+                <Button disabled={!!busyId || a.status === "approved" || !isVerificationCurrent(checks[a.user_id],p?.siret)} onClick={() => void review(a.id, "approved")}>Approuver</Button>
                 <Button variant="destructive" disabled={!!busyId || a.status === "rejected"} onClick={() => void review(a.id, "rejected")}>Refuser</Button>
               </div>
             </article>;
