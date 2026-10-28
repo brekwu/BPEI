@@ -4,6 +4,7 @@ import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { bpeiAuthRedirect, isExplicitBpeiRecoveryLink } from "@/lib/bpei-auth-redirect";
 
 export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
   component: ResetPasswordPage,
@@ -32,10 +33,7 @@ function ResetPasswordPage() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (alive && event === "PASSWORD_RECOVERY" && session) setRecovery(true);
     });
-    const query = new URLSearchParams(window.location.search);
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    const isRecoveryLink = query.get("type") === "recovery" ||
-      hash.get("type") === "recovery" || query.has("code");
+    const isRecoveryLink = isExplicitBpeiRecoveryLink(window.location.search,window.location.hash);
     if (isRecoveryLink) {
       void supabase.auth.getSession().then(({ data }) => {
         if (alive && data.session) setRecovery(true);
@@ -53,7 +51,7 @@ function ResetPasswordPage() {
     setError("");
     setNotice("");
     try {
-      const redirectTo = new URL("/reinitialiser-mot-de-passe", window.location.origin).toString();
+      const redirectTo = bpeiAuthRedirect(window.location.origin, "/reinitialiser-mot-de-passe");
       const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
       if (authError) {
         setError("La demande n'a pas pu être envoyée. Vérifiez le service e-mail et réessayez.");
@@ -77,17 +75,22 @@ function ResetPasswordPage() {
     }
     setBusy(true);
     setError("");
-    const { error: updateError } = await supabase.auth.updateUser({ password });
-    if (updateError) {
-      setError("Modification impossible. Ce lien peut être expiré. Demandez un nouveau lien.");
-    } else {
-      await supabase.auth.signOut();
-      setPassword("");
-      setConfirm("");
-      setDone(true);
-      setRecovery(false);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) {
+        setError("Modification impossible. Ce lien peut être expiré. Demandez un nouveau lien.");
+      } else {
+        await supabase.auth.signOut();
+        setPassword("");
+        setConfirm("");
+        setDone(true);
+        setRecovery(false);
+      }
+    } catch {
+      setError("Service temporairement indisponible. Réessayez ou demandez un nouveau lien.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   return <PublicShell><main className="mx-auto max-w-md px-4 py-16">

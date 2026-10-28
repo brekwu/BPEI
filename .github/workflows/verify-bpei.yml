@@ -44,3 +44,4 @@ jobs:
           node scripts/smoke-http.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-auth-prelaunch-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }

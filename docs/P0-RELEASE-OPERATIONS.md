@@ -57,3 +57,11 @@ Conserver `bpei.fr` sur OVH tant que la recette n'est pas acquise. Avant une exp
 - La recette qualité et navigateur du commit `2ae1c346` a réussi et ce commit possède un déploiement de préproduction READY sur Vercel, protégé par l'authentification Vercel ; il ne constitue pas une publication de `bpei.fr`.
 - Une migration supplémentaire `20261028170430` empêche l'acceptation et le démarrage d'une mission si la vérification professionnelle ou la RC Pro a expiré entre l'attribution et le début. Le renouvellement de l'acceptation juridique est aussi exigé.
 - La suite P0 reste bloquée par une décision humaine de compte administrateur, la configuration SMTP et Auth Hook, la validation juridique et des essais réels avec des comptes contrôlés. Aucune déclaration « P0 terminé » avant ces vérifications.
+
+## Contrôles P0 supplémentaires — 28 octobre 2026
+
+- Le test SQL `tests/p0-auth-hook-permissions.sql` a été exécuté en lecture seule sur le projet Supabase BPEI : le hook PostgreSQL refuse une inscription standard, autorise le bootstrap privilégié, et n'accepte ni consentement juridique absent ni version obsolète. Les permissions donnent l'exécution à `supabase_auth_admin`, pas aux visiteurs.
+- Les redirections Auth sont désormais limitées aux chemins BPEI attendus et exigent HTTPS sur les domaines non locaux. La page de récupération ne confond plus un `?code` générique avec une session valide de réinitialisation.
+- Une erreur réseau ou d'authentification dans `/espace-independant` ne laisse plus le formulaire bloqué en chargement. `scripts/browser-p1-auth-prelaunch-smoke.mjs` teste le verrouillage du formulaire et sa capacité à réessayer après un échec simulé.
+- **La présence d'un hook et la réussite de son test SQL ne démontrent pas l'activation effective de ce hook dans GoTrue.** Les URL autorisées et la délivrabilité SMTP sont des paramètres externes non homologués.
+- Un opérateur doit toujours confirmer l'adresse du premier administrateur, les documents juridiques et la configuration SMTP. Aucune création de compte ni ouverture publique n'a été réalisée ici.
