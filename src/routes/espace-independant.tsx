@@ -164,6 +164,7 @@ function IndependentSpace() {
           {!profile ? <form className="rounded-xl border p-6 space-y-4" onSubmit={async (event) => {
             event.preventDefault();
             if (!userId || saving) return;
+            if(!legalAccepted){setError("Acceptez les informations juridiques dans la section Candidature avant de créer votre profil.");return;}
             const form = event.currentTarget;
             const name = (new FormData(form).get("display_name") ?? "").toString().trim();
             if (name.length < 2 || name.length > 120) { setError("Nom professionnel invalide."); return; }
@@ -174,9 +175,9 @@ function IndependentSpace() {
             setSaving(false);
           }}>
             <h3 className="font-semibold">Créer mon profil indépendant</h3>
-            <p className="text-sm text-muted-foreground">Aucune mission ne sera accessible sans vérification professionnelle.</p>
+            <p className="text-sm text-muted-foreground">Aucune mission ne sera accessible sans vérification professionnelle. Avant de créer votre profil, validez les informations juridiques dans la section Candidature ci-dessous.</p>
             <label className="block text-sm">Nom professionnel<Input name="display_name" required minLength={2} maxLength={120}/></label>
-            <Button type="submit" disabled={saving}>Créer mon profil</Button>
+            <Button type="submit" disabled={saving || !legalAccepted}>Créer mon profil</Button>
           </form> :
           <form onSubmit={save} className="space-y-4 rounded-xl border bg-card p-6">
             <p className="text-sm">{profile.verified_at ? "Profil vérifié par BPEI" : "Profil non encore vérifié"}</p>
