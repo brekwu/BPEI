@@ -107,7 +107,7 @@ try {
     await page.getByRole("button", { name: "Recevoir un lien de réinitialisation" }).click();
     await page.getByText(/Si un compte existe avec cette adresse/).waitFor();
     assert.equal(resetBody?.email, "p0-ui@example.test");
-    assert.match(resetRedirect ?? "", /\\/reinitialiser-mot-de-passe$/);
+    assert.match(resetRedirect ?? "", new RegExp("/reinitialiser-mot-de-passe$"));
     await context.close();
   }
 
