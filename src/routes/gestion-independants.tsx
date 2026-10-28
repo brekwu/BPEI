@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
+import { AdminLegalDocuments } from "@/components/admin/AdminLegalDocuments";
 import { ProfessionalVerificationPanel } from "@/components/admin/ProfessionalVerificationPanel";
 import { isVerificationCurrent, type ProfessionalCheck } from "@/lib/bpei-professional-verification";
 
@@ -112,6 +113,7 @@ function IndependentReview() {
           })}
         </div>
         <AdminInquiries />
+        <AdminLegalDocuments />
       </section>}
     {message && <p className="mt-5 text-sm" role="status">{message}</p>}
   </main></PublicShell>;
