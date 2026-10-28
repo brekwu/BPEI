@@ -42,5 +42,5 @@ Aucune migration de boutiques ou comptes de l'ancien outil n'est prévue.
 - Le technicien peut consulter l'historique de ses missions depuis `/espace-independant`.
 - L'administrateur dispose d'un tableau `/gestion-missions` avec recherche, filtres de statuts, dates et historique par mission.
 - La lecture SQL est réservée au technicien désigné et aux administrateurs, et aucun droit direct d'insertion ou de modification n'est accordé aux comptes utilisateurs.
-- La page est volontairement limitée aux 300 dernières missions : pagination et exports restent à réaliser pour une exploitation à grande échelle.
+- Une pagination côté serveur de 50 missions par page est en place, avec total exact et lecture limitée aux profils affichés. Les filtres par statut, leurs compteurs et la recherche restent limités à la page courante ; filtres globaux, exports et recette en conditions réelles restent à réaliser.
 - Les tests navigateur anonymes ne remplacent pas la recette RLS en présence d'utilisateurs réels ; le portail reste fermé tant que les critères d'ouverture P0 ne sont pas validés.
