@@ -103,11 +103,11 @@ END $evidence$;
 -- Simulate expiry with a privileged test fixture, not through an authenticated client.
 RESET ROLE;
 UPDATE public.independent_verification_checks
- SET insurance_expires_on=current_date-1,checked_at=now()-interval '31 days'
+ SET insurance_expires_on=current_date-1,checked_at=now()
  WHERE user_id='c0000000-0000-4000-8000-000000000002';
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','c0000000-0000-4000-8000-000000000001',true);
-DO $expired$
+DO $expired_insurance$
 DECLARE blocked boolean:=false;
 BEGIN
  BEGIN
@@ -116,7 +116,24 @@ BEGIN
   WHERE user_id='c0000000-0000-4000-8000-000000000002';
  EXCEPTION WHEN OTHERS THEN blocked:=true;
  END;
- IF NOT blocked THEN RAISE EXCEPTION 'P0: expired professional check accepted'; END IF;
-END $expired$;
+ IF NOT blocked THEN RAISE EXCEPTION 'P0: expired RC Pro accepted despite fresh professional evidence'; END IF;
+END $expired_insurance$;
+RESET ROLE;
+UPDATE public.independent_verification_checks
+ SET insurance_expires_on=current_date+7,checked_at=now()-interval '31 days'
+ WHERE user_id='c0000000-0000-4000-8000-000000000002';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','c0000000-0000-4000-8000-000000000001',true);
+DO $expired_professional$
+DECLARE blocked boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM public.review_independent_application(id,'approved')
+  FROM public.independent_applications
+  WHERE user_id='c0000000-0000-4000-8000-000000000002';
+ EXCEPTION WHEN OTHERS THEN blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'P0: stale professional evidence accepted despite valid RC Pro'; END IF;
+END $expired_professional$;
 
 ROLLBACK;
