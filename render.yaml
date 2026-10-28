@@ -10,6 +10,10 @@ services:
     startCommand: node .output/server/index.mjs
     healthCheckPath: /health
     envVars:
+      - key: VITE_BPEI_PUBLIC_FORMS_ENABLED
+        value: "false"
+      - key: BPEI_FORMS_ENABLED
+        value: "false"
       - key: BPEI_STAGING
         value: "true"
       - key: NODE_ENV
