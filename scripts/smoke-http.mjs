@@ -37,6 +37,12 @@ for (const [path, expectedText] of routes) {
   assert.equal(response.status, 200, path + " HTTP " + response.status);
   assert.ok(html.toLowerCase().includes(expectedText.toLowerCase()),
     path + " did not contain expected page text");
+  if (path === "/demander-une-intervention" || path === "/candidature-partenaire") {
+    assert.ok(html.includes("Ouverture prochainement"),
+      path + " must remain closed until privacy and migration are approved");
+    assert.ok(!html.includes("Envoyer ma candidature") && !html.includes("Envoyer ma demande"),
+      path + " unexpectedly renders an active submission control");
+  }
   console.log("SSR OK:", path);
 }
 
