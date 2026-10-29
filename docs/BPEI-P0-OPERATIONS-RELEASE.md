@@ -61,3 +61,9 @@ Les scripts CI actuels simulent certaines réponses réseau ; leur réussite ne 
 ## 7. Conditions finales de publication
 
 Revoir le forfait commercial Vercel, les sauvegardes et procédures de restauration, les RLS et le rapport de test. Fusionner le code après revue et **seulement ensuite** activer les inscriptions publiques et les moyens de paiement réellement homologués. Un tableau P0 entièrement vert n'active aucune option automatiquement : il ne remplace pas la validation finale de l'exploitant.
+
+## Diagnostic opérateur consultable sans premier administrateur
+
+La fonction applicative `p0_readiness()` exige déjà une session Auth confirmée avec le rôle BPEI. Tant que la base ne contient aucun administrateur, **ne pas élargir les privilèges de cette fonction** pour consulter le lancement. À la place, exécuter `scripts/p0-owner-readiness.sql` **uniquement dans le SQL Editor Supabase du projet BPEI** avec les droits du titulaire. Ce fichier est en lecture seule, affiche sept rubriques et les observations issues de la vraie base, sans inventer de compte ni d'attestation. Chaque statut positif est une **condition SQL présente**, pas une preuve de réception de mail, d'accord juridique ou de paiement certifié. La sortie SQL peut être conservée comme compte-rendu sans exporter d'identifiants ou de données personnelles.
+
+Le script `tests/bpei-p0-owner-readiness.test.ts` vérifie notamment que ce diagnostic reste non mutateur et couvre les sept dépendances. Les tests de code et les préversions Vercel ne remplacent jamais la recette E2E avec des utilisateurs consentants ni les autorisations réelles de l'exploitant.
