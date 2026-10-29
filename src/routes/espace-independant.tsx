@@ -5,6 +5,7 @@ import { PublicShell } from "@/components/public/PublicShell";
 import { MissionIncidentPanel } from "@/components/independent/MissionIncidentPanel";
 import { MissionTimeline } from "@/components/shared/MissionTimeline";
 import { BpeiInbox } from "@/components/shared/BpeiInbox";
+import { IndependentConnectPanel } from "@/components/independent/IndependentConnectPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -357,6 +358,7 @@ function IndependentSpace() {
               <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
             </form>}
           </section>
+          {profile?.verified_at&&application?.status==="approved"&&legalAccepted&&<IndependentConnectPanel/>}
           <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
