@@ -64,7 +64,7 @@ Deno.serve(async req=>{
   let invoice:any=null;
   if(kind==="invoice"){
    const result=await admin.from("bpei_service_invoices")
-    .select("id,quote_id,invoice_number,issued_at,service_date,due_date")
+    .select("id,quote_id,invoice_number,issued_at,service_date,due_date,issuer_vat_number,payment_terms,early_payment_discount,late_payment_penalties,customer_order_reference,b2b_recovery_fee_cents")
     .eq("id",id).maybeSingle();
    if(result.error||!result.data)return response(404,{error:"invoice_not_found"},origin);
    invoice=result.data;
@@ -88,7 +88,12 @@ Deno.serve(async req=>{
    customerSiret:q.customer_siret,description:q.service_description,
    quantity:q.quantity,unitPriceCents:q.unit_price_cents,
    netCents:q.net_cents,vatCents:q.vat_cents,grossCents:q.gross_cents,
-   vatBasisPoints:q.vat_basis_points,taxMention:q.tax_mention
+   vatBasisPoints:q.vat_basis_points,taxMention:q.tax_mention,
+   issuerVatNumber:invoice?.issuer_vat_number,paymentTerms:invoice?.payment_terms,
+   earlyPaymentDiscount:invoice?.early_payment_discount,
+   latePaymentPenalties:invoice?.late_payment_penalties,
+   customerOrderReference:invoice?.customer_order_reference,
+   b2bRecoveryFeeCents:invoice?.b2b_recovery_fee_cents
   };
   // Render before reserving send: unsupported legal characters must not block the outbox.
   const content=await renderCommercialPdf(bill,footer);
