@@ -5,6 +5,7 @@ import { useBpeiAdminAccess } from "@/lib/use-bpei-admin-access";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
+import { AdminPrivateIntake } from "@/components/admin/AdminPrivateIntake";
 import { AdminLegalDocuments } from "@/components/admin/AdminLegalDocuments";
 import { ProfessionalVerificationPanel } from "@/components/admin/ProfessionalVerificationPanel";
 import { isVerificationCurrent, type ProfessionalCheck } from "@/lib/bpei-professional-verification";
@@ -27,6 +28,7 @@ function IndependentReview() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [applications, setApplications] = useState<Candidate[]>([]);
+  const [intakeRevision,setIntakeRevision]=useState(0);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [checks, setChecks] = useState<Record<string, ProfessionalCheck>>({});
   const [message, setMessage] = useState("");
@@ -185,7 +187,8 @@ function IndependentReview() {
           })}
         </div>
         <p className="mt-7"><Link to="/gestion-commerciale" className="font-medium underline">Gestion commerciale : devis et factures</Link></p>
-        <AdminInquiries />
+        <AdminPrivateIntake onCreated={()=>setIntakeRevision(n=>n+1)}/>
+        <AdminInquiries key={intakeRevision}/>
         <AdminLegalDocuments />
       </section>}
     {message && <p className="mt-5 text-sm" role="status">{message}</p>}
