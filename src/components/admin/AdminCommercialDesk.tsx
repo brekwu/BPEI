@@ -13,7 +13,7 @@ type Quote={id:string;inquiry_id:string;issuer_id:string;status:string;issuer_le
  accepted_at:string|null};
 type Invoice={id:string;quote_id:string;invoice_number:string;issued_at:string;payment_status:string};
 type Mission={inquiry_id:string;status:string};
-type PaymentAttempt={id:string;invoice_id:string;state:string;paid_at:string|null;created_at:string;amount_cents:number};
+type PaymentAttempt={id:string;invoice_id:string;state:string;paid_at:string|null;created_at:string;amount_cents:number;application_fee_cents:number};
 type Refund={attempt_id:string;amount_cents:number;status:string};
 type Dispute={attempt_id:string;disputed_cents:number;status:string};
 const testCheckoutUI=import.meta.env.VITE_BPEI_TEST_CHECKOUT_ENABLED==="true";
@@ -54,7 +54,7 @@ export function AdminCommercialDesk(){
     db.from("bpei_service_quotes").select("id,inquiry_id,issuer_id,status,issuer_legal_name,issuer_siret,customer_name,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_invoices").select("id,quote_id,invoice_number,issued_at,payment_status").order("issued_at",{ascending:false}).limit(200),
     db.from("independent_requests").select("inquiry_id,status").not("inquiry_id","is",null).limit(500),
-    db.from("bpei_payment_attempts").select("id,invoice_id,state,paid_at,created_at,amount_cents").order("created_at",{ascending:false}).limit(500),
+    db.from("bpei_payment_attempts") .select("id,invoice_id,state,paid_at,created_at,amount_cents,application_fee_cents").order("created_at",{ascending:false}).limit(500),
     db.from("bpei_payment_refunds").select("attempt_id,amount_cents,status").limit(500),
     db.from("bpei_payment_disputes").select("attempt_id,disputed_cents,status").limit(500)
    ]);
@@ -215,6 +215,7 @@ export function AdminCommercialDesk(){
         paidAttempt?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé"
        }</strong></p>
        {activeDispute&&<p role="alert">Contestation du paiement : vérifier la demande dans le Dashboard Stripe du prestataire indépendant.</p>}
+       {paidAttempt&&<p>Commission plateforme convenue (TEST) : {formatCents(paidAttempt.application_fee_cents)}. Le total facturé au client reste inchangé.</p>}
        {refundedCents>0&&<p>Remboursements confirmés par Stripe TEST : {formatCents(refundedCents)}. Vérifier la nécessité d'un avoir comptable.</p>}
        {testCheckoutUI&&!payments.some(p=>p.invoice_id===invoice.id&&["pending","open","paid"].includes(p.state))&&
         <Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void startTestCheckout(invoice)}>Créer un lien Stripe — TEST</Button>}
