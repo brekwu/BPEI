@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **47 migrations appliquées** au 29 octobre 2026, et la branche contient **47 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **48 migrations appliquées** au 29 octobre 2026, et la branche contient **48 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **47
 
 ## MVP commercial (29 octobre 2026)
 
-47 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+48 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -37,3 +37,7 @@ La migration 46 ajoute la réconciliation des événements signés de remboursem
 ## Sécurité supplémentaire des transactions Stripe TEST
 
 La migration 47 impose l'unicité du couple compte Stripe connecté / intention de paiement, et fige l'identité de chaque remboursement ou litige afin de prévenir un rattachement de l'événement à une facture différente.
+
+## Commission BPEI (Stripe Connect TEST)
+
+La migration 48 permet une **commission optionnelle uniquement si un accord explicite du prestataire et un taux vérifié sont enregistrés**. Valeur par défaut : **0 %** ; taux maximal technique 25 % sans présumer du tarif commercial. Calcul exclusivement en centimes entiers dans la fonction privée de préparation Checkout, figé par tentative, transmis à Stripe sur la charge directe via `payment_intent_data[application_fee_amount]`. L'application n'autorise aucune commission non consentie ; l'identité juridique de BPEI et le traitement des frais/avoirs restent à valider avant activation. Aucun compte marchand ni contrat n'a été créé.
