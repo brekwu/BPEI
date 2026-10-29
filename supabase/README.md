@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **49 migrations appliquées** au 29 octobre 2026, et la branche contient **49 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **50 migrations appliquées** au 29 octobre 2026, et la branche contient **50 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **49
 
 ## MVP commercial (29 octobre 2026)
 
-49 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+50 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -45,3 +45,7 @@ La migration 48 permet une **commission optionnelle uniquement si un accord expl
 ## Envoi de devis/facture PDF (préproduction)
 
 La migration 49 introduit une file de livraison d'e-mails privée, à usage unique par document, avec deux verrous `enabled=false` et `validated_legal_sender=false`. Une fonction Edge `bpei-commercial-mail` prépare le PDF côté serveur et le transmet via l'API Resend avec une clé d'idempotence. Elle impose une session d'administrateur, une adresse d'envoi du domaine professionnel, la publication juridique et l'approbation du modèle. **Aucun fournisseur, expéditeur ou secret n'est configuré, et aucun e-mail n'a été envoyé.** L'interface d'administration permet l'envoi uniquement lorsque la variable de préversion `VITE_BPEI_COMMERCIAL_MAIL_ENABLED=true` est explicitement activée, en plus des verrous serveur.
+
+## Factures françaises : champs obligatoires variables
+
+La migration 50 désactive l'ancien RPC d'émission incomplet et crée `mvp_issue_invoice_compliant`. Chaque émission exige les conditions réelles de règlement, les escomptes, les pénalités de retard B2B, le forfait légal 40 EUR de recouvrement pour le B2B, ainsi que l'identification TVA française quand elle est applicable. Le responsable de facturation doit vérifier ces valeurs ; BPEI ne les préremplit pas artificiellement. Ces informations sont figées dans la facture et intégrées au PDF et à l'affichage. La transmission de factures électroniques structurées par plateforme agréée reste distincte, avec ses échéances réglementaires.
