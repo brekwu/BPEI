@@ -15,14 +15,17 @@ const customer={id:inquiryId,client_name:"Marie Exemple",email:"marie@example.in
  phone:"0612345678",address_line1:"12 rue du Marché",postal_code:"06000",city:"Nice",
  subject:"Dépannage réseau",status:"assigned",assigned_to:id,customer_kind:"individual"};
 const quote={id:quoteId,inquiry_id:inquiryId,issuer_id:id,status:"proposed",
- issuer_legal_name:"Jean Exemple EI",issuer_siret:"12345678901234",
+ issuer_legal_name:"Jean Exemple EI",issuer_siret:"12345678901234",customer_kind:"individual",
  issuer_address:"14 rue des Ateliers, 06000 Nice",issuer_email:"jean@example.invalid",
  tax_mention:"",customer_name:customer.client_name,customer_email:customer.email,
  customer_address:"12 rue du Marché, 06000, Nice",customer_kind:"individual",customer_siret:null,
  service_description:"Intervention réseau à domicile",quantity:1,unit_price_cents:9000,
  vat_basis_points:2000,net_cents:9000,vat_cents:1800,gross_cents:10800,accepted_at:null};
 const invoice={id:invoiceId,quote_id:quoteId,invoice_number:"2026-000001",
- issued_at:"2026-10-29T12:00:00Z",service_date:"2026-10-29",due_date:"2026-10-30",payment_status:"unpaid"};
+ issued_at:"2026-10-29T12:00:00Z",service_date:"2026-10-29",due_date:"2026-10-30",payment_status:"unpaid",
+ issuer_vat_number:"FR12345678901",payment_terms:"Règlement par carte bancaire sous dix jours",
+ early_payment_discount:"Aucun escompte accordé pour paiement anticipé",late_payment_penalties:null,
+ customer_order_reference:null,b2b_recovery_fee_cents:null};
 let step=0,rpcCreates=0,rpcAccepts=0,rpcInvoices=0;
 const errors=[];
 const json=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
@@ -44,7 +47,13 @@ await ctx.route("https://placeholder.supabase.co/**",async route=>{
  if(path==="/rest/v1/bpei_service_invoices")return route.fulfill(json(single?invoice:step>2?[invoice]:[]));
  if(path==="/rest/v1/rpc/mvp_create_quote"){rpcCreates++;step=1;return route.fulfill(json(quoteId));}
  if(path==="/rest/v1/rpc/mvp_accept_quote"){rpcAccepts++;step=2;quote.status="accepted";quote.accepted_at="2026-10-29T10:00:00Z";return route.fulfill(json(true));}
- if(path==="/rest/v1/rpc/mvp_issue_invoice"){rpcInvoices++;step=3;return route.fulfill(json(invoiceId));}
+ if(path==="/rest/v1/rpc/mvp_issue_invoice_compliant"){
+  const body=req.postDataJSON();
+  assert.equal(body.p_issuer_vat_number,"FR12345678901");
+  assert.ok(body.p_payment_terms.length>=10);
+  assert.ok(body.p_early_payment_discount.length>=10);
+  rpcInvoices++;step=3;return route.fulfill(json(invoiceId));
+ }
  return route.fulfill(json(single?null:[]));
 });
 try{
@@ -76,6 +85,9 @@ try{
  assert.equal(rpcAccepts,1);
  await page.getByLabel("Date réelle de prestation").fill("2026-10-29");
  await page.getByLabel("Date limite de paiement").fill("2026-10-30");
+ await page.getByLabel(/TVA intracommunautaire du prestataire/).fill("FR12345678901");
+ await page.getByRole("textbox",{name:/Conditions de règlement exactes/}).fill("Règlement par carte bancaire sous dix jours");
+ await page.getByRole("textbox",{name:/Conditions d'escompte/}).fill("Aucun escompte accordé pour paiement anticipé");
  await page.getByRole("button",{name:"Émettre la facture définitive"}).click();
  await page.getByText("Facture définitive enregistrée",{exact:false}).waitFor({timeout:15000});
  await page.getByText("Facture 2026-000001",{exact:false}).waitFor({timeout:15000});
