@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **64 migrations appliquées** au 29 octobre 2026, et la branche contient **64 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **65 migrations appliquées** au 29 octobre 2026, et la branche contient **65 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **64
 
 ## MVP commercial (29 octobre 2026)
 
-64 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+65 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -69,3 +69,7 @@ La saisie d'un registre privé de **recettes réellement encaissées et dépense
 ## Agenda de rendez-vous et évaluations clients (migrations 62 à 64)
 
 Les indépendants peuvent déclarer librement leurs créneaux jusqu'à 180 jours à l'avance, sans chevauchements. Un administrateur confirme la date d'une **mission déjà acceptée** sur un créneau du bon prestataire ; la confirmation est atomique, évite les doubles réservations et journalise les annulations. Aucun créneau n'est annoncé comme réservé en temps réel sans confirmation, et le consentement du client au rendez-vous reste à vérifier par l'opérateur. Les avis clients exigent une mission terminée et facturée, une invitation à usage unique de 21 jours à token aléatoire stocké seulement sous empreinte SHA-256, une note et un commentaire client, un choix séparé de publication et une modération administrative. Seules les notes autorisées et publiées contribuent aux agrégats publics, et les identités professionnelles homonymes sans attribution unique sont exclues des moyennes. La fonction `bpei-customer-review` est déployée mais **fermée par défaut** : il manque `BPEI_REVIEWS_ENABLED=true` et un domaine d'origine validé. Le lien est à remettre au client sur un canal vérifié, non envoyé automatiquement. Aucune invitation ni aucun avis n'a été fabriqué.
+
+## Apporteur d'affaires interrégional (migration 65)
+
+Une mission réellement attribuée à un prestataire distinct peut bénéficier d'un **apporteur professionnel** vérifié. L'administration documente le contrat, le montant HT et l'origine d'apport, et la somme est obligatoirement couverte par la part BPEI **d'une proposition de rémunération de mission déjà acceptée** et identifiée comme `source=referral`. Le technicien apporteur peut accepter ou refuser librement sa propre proposition. L'accès aux données est limité à l'administration, à l'apporteur et à l'intervenant ; aucune information privée de client ni aucun virement Stripe n'est créé par cette fonction. La commission d'apport, sa TVA, sa facture et ses modalités de paiement restent à faire vérifier juridiquement avant usage réel.
