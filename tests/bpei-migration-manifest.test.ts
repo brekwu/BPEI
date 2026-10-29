@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,49,"49 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,49,
+ assert.equal(migrations.length,50,"50 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,50,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/49 migrations appliquées/);
- assert.match(readme,/49 fichiers SQL versionnés/);
+ assert.match(readme,/50 migrations appliquées/);
+ assert.match(readme,/50 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -116,4 +116,13 @@ test("The prelaunch transactional email outbox is private and cannot send by def
  assert.match(sql,/UNIQUE\(kind,document_id\)/);
  assert.match(sql,/enabled boolean NOT NULL DEFAULT false/);
  assert.match(sql,/CREATE POLICY bpei_mail_outbox_admin_read/);
+});
+
+test("Incomplete invoice RPC is disabled and detailed issuer-specific payment terms are mandatory",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029125501_mvp_invoice_real_issuer_tax_and_payment_terms_without_legacy_bypass.sql",import.meta.url),"utf8");
+ for(const part of ["mvp_issue_invoice_compliant","mvp_issue_invoice(p_quote_id","Old incomplete invoice issue path disabled",
+  "issuer_vat_number","p_payment_terms","p_early_payment_discount","p_late_payment_penalties",
+  "b2b_recovery_fee_cents","v_quote.vat_basis_points>0"])
+  assert.ok(sql.includes(part),part);
+ assert.match(sql,/SECURITY INVOKER/);
 });
