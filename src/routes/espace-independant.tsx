@@ -77,6 +77,12 @@ function IndependentSpace() {
     setSpaceReady(false);
     setLaunch(null);
     setLegalAccepted(false);
+    setAcceptChecked(false);
+    setPrivacyChecked(false);
+    setNotice("");
+    setPassword("");
+    setPasswordConfirm("");
+    setPendingConfirmationEmail("");
     setProfile(null);
     setRequests([]);
     setApplication(null);
