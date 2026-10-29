@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {tierName} from "@/lib/bpei-partner-levels";
 type Partner={display_name:string;city:string|null;postal_code:string|null;
- level:number;verified_skills:string[];remote_available:boolean};
+ level:number;verified_skills:string[];remote_available:boolean;rating_mean:number|null;rating_count:number};
 export const Route=createFileRoute("/trouver-un-technicien")({
  component:SearchNetwork,
  head:()=>({meta:[
@@ -28,7 +28,7 @@ function SearchNetwork(){
   if(busy||(!remote&&city.trim().length<2&&!/^[0-9]{5}$/.test(postal.trim())))return;
   setBusy(true);setError("");setSearched(false);setResults([]);
   try{
-   const {data,error:e}=await (supabase as any).rpc("search_active_partners",{
+   const {data,error:e}=await (supabase as any).rpc("review_summary_for_public",{
     p_city:city.trim()||null,p_postal_code:postal.trim()||null,
     p_remote:remote,p_skill:skill.trim()||null
    });
@@ -59,6 +59,7 @@ function SearchNetwork(){
     <div className="grid gap-4 sm:grid-cols-2">{results.map((p,i)=><article key={i} className="rounded-xl border bg-card p-5">
      <h3 className="text-lg font-semibold">{p.display_name}</h3>
      <p className="mt-1 text-sm">Niveau : <strong>{tierName(p.level)}</strong></p>
+     {p.rating_count>0&&p.rating_mean!==null&&<p className="mt-1 text-sm">Avis clients vérifiés : <strong>{Number(p.rating_mean).toLocaleString("fr-FR")}/5</strong> ({p.rating_count} avis publié{p.rating_count>1?"s":""})</p>}
      <p className="mt-1 text-sm">{p.city} {p.postal_code} {p.remote_available?"· Téléassistance possible":""}</p>
      {p.verified_skills.length>0&&<p className="mt-3 text-sm">Compétences évaluées : {p.verified_skills.join(", ")}</p>}
      <p className="mt-3 text-xs text-muted-foreground">Partenaire du réseau BPEI, juridiquement indépendant. Disponibilité et date d'intervention à confirmer.</p>
