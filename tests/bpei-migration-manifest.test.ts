@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,60,"60 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,60,
+ assert.equal(migrations.length,61,"61 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,61,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/60 migrations appliquées/);
- assert.match(readme,/60 fichiers SQL versionnés/);
+ assert.match(readme,/61 migrations appliquées/);
+ assert.match(readme,/61 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -145,4 +145,12 @@ test("Opt-in partner discovery and trusted lead attribution migrations are track
   "20261029132717_national_search_safe_public_definer_without_private_schema_usage.sql",
   "20261029132803_national_discovery_invoker_scoped_private_schema_access.sql"
  ])assert.ok(migrations.includes(name),name);
+});
+
+test("The private partner accounting journal migration is tracked",()=>{
+ const name="20261029133526_national_partner_private_cashflow_and_expense_journal.sql";
+ assert.ok(migrations.includes(name));
+ const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
+ assert.match(sql,/bpei_finance_self_read/);
+ assert.match(sql,/guard_finance_entry_correction/);
 });
