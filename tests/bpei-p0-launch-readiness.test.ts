@@ -52,3 +52,13 @@ test("Admin UI shows real blocked status, preserves external secret privacy, nev
   assert.match(s,/\[À COMPLÉTER\]|\[IDENTITÉ/);
  }
 });
+
+test("CLI first administrator bootstrap refuses self-asserted email verification and never creates a fake user",()=>{
+ const cli=read("scripts/p0-bootstrap-admin.mjs");
+ for(const term of ["--user-id","auth.admin.getUserById","email_confirmed_at",
+  "actor.is_anonymous===true","actor.deleted_at",
+  "Bootstrap disabled: one or more administrators already exist",
+  "from(\"independent_admins\").insert({user_id:userId})"])
+  assert.ok(cli.includes(term),term);
+ assert.doesNotMatch(cli,/email_confirm:\s*true|auth\.admin\.createUser|BPEI_ADMIN_EMAIL_VERIFIED/);
+});
