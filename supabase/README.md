@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **44 migrations appliquées** au 29 octobre 2026, et la branche contient **44 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **45 migrations appliquées** au 29 octobre 2026, et la branche contient **45 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **44
 
 ## MVP commercial (29 octobre 2026)
 
-44 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+45 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -25,3 +25,7 @@ La migration 42 ajoute un registre interne des tentatives de paiement, un rattac
 ## Saisie client par téléphone — administration seulement
 
 La migration 44 ajoute une saisie administrateur sécurisée des interventions reçues par téléphone, e-mail ou en personne, avec référence de la preuve d'information et acceptation du client. La route d'administration la propose, mais son RPC **refuse toute collecte tant que les documents de confidentialité ne sont pas réellement publiés**. La migration n'ouvre pas les formulaires publics, ne crée aucun utilisateur ni aucun faux consentement.
+
+## Sécurité du point d'entrée de saisie manuelle
+
+La migration 45 place la fonction privilégiée de saisie manuelle dans `bpei_private`. L'API publique conserve uniquement un wrapper `SECURITY INVOKER` et le contrôle du rôle administrateur est effectué dans la fonction privée. Aucun utilisateur n'a été créé, aucune validation juridique n'a été publiée et les formulaires restent fermés.
