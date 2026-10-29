@@ -34,6 +34,12 @@ test("Async identity verification cannot resurrect stale users after another aut
   assert.match(handler, /data\.user\?\.id!==expectedUserId/);
   assert.match(handler, /sessionUserId\.current=null/);
   assert.match(handler, /Impossible de confirmer la nouvelle session/);
+  const cleanup=fragment('  function clearPrivateState() {', '  async function load(id: string): Promise<boolean>');
+  for(const action of ['setAcceptChecked(false)', 'setPrivacyChecked(false)', 'setNotice("")',
+    'setPassword("")', 'setPasswordConfirm("")', 'setPendingConfirmationEmail("")',
+    'setClientContacts({})', 'setRemunerations({})']) {
+    assert.ok(cleanup.includes(action), "Missing identity-change cleanup: "+action);
+  }
   const read=fragment('async function load(id: string): Promise<boolean>', '  useEffect(() => {');
   assert.match(read, /const epoch=\+\+dataEpoch\.current/);
   assert.match(read, /if\(epoch!==dataEpoch\.current\)return false/g);
