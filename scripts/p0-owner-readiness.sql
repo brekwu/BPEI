@@ -10,7 +10,20 @@ WITH facts AS (
       JOIN auth.users u ON u.id=a.user_id
       WHERE u.email_confirmed_at IS NOT NULL AND u.deleted_at IS NULL AND u.is_anonymous IS NOT TRUE) AS confirmed_admins,
     (SELECT count(*) FROM public.bpei_legal_releases) AS published_legal_releases,
+    (SELECT c.legal_version FROM public.bpei_launch_controls c WHERE c.id=true) AS current_legal_version,
+    (SELECT count(DISTINCT d.kind)
+       FROM public.bpei_legal_documents d
+       JOIN public.bpei_launch_controls c ON c.id=true AND c.legal_version=d.version
+       JOIN public.bpei_legal_releases r ON r.version=d.version
+       WHERE d.kind IN ('mentions-legales','confidentialite','cgu')
+         AND c.legal_documents_published IS TRUE
+    ) AS approved_current_legal_docs,
     (SELECT count(*) FROM public.bpei_service_invoices) AS invoices,
+    (SELECT count(*) FROM public.bpei_service_quotes
+      WHERE status='accepted' AND accepted_at IS NOT NULL
+      AND nullif(btrim(acceptance_reference),'') IS NOT NULL) AS accepted_quotes,
+    (SELECT count(*) FROM public.bpei_stripe_connected_accounts
+      WHERE test_enabled IS TRUE AND test_verified_at IS NOT NULL) AS verified_test_merchants,
     (SELECT count(*) FROM public.bpei_payment_attempts WHERE paid_at IS NOT NULL AND state='paid') AS paid_test_attempts,
     (SELECT count(*) FROM public.bpei_p0_attestations) AS attestation_count,
     (SELECT count(*) FROM public.bpei_p0_attestations WHERE check_key='smtp_auth_delivery') > 0 AS smtp_attested,
@@ -35,8 +48,9 @@ WITH facts AS (
     format('%s compte(s) confirmés, preuve de livraison enregistrée : %s',confirmed_auth_users,smtp_attested),
     'Configurer un fournisseur SMTP valide, recevoir et ouvrir réellement le lien' FROM facts
   UNION ALL SELECT 3,'Juridique',
-    published_legal_releases >= 1 AND legal_flag AND legal_attested,
-    format('%s publication(s), activation juridique %s, revue %s',published_legal_releases,legal_flag,legal_attested),
+    approved_current_legal_docs = 3 AND legal_flag AND legal_attested,
+    format('%s/3 document(s) approuvé(s) sur version courante %s, publication %s, revue %s',
+      approved_current_legal_docs,coalesce(current_legal_version,'(aucune)'),legal_flag,legal_attested),
     'Faire approuver puis publier les textes et contrats vérifiés par le responsable légal' FROM facts
   UNION ALL SELECT 4,'Envoi devis / factures',
     mail_flag AND mail_attested,
@@ -47,12 +61,14 @@ WITH facts AS (
     format('Convention signée %s, plateforme agréée %s',contract_attested,einvoice_attested),
     'Documenter les flux contractuels et retenir la plateforme agréée appropriée' FROM facts
   UNION ALL SELECT 6,'Stripe TEST',
-    stripe_flag AND stripe_attested AND paid_test_attempts > 0,
-    format('Flag test %s, tentatives payées %s, attestation %s',stripe_flag,paid_test_attempts,stripe_attested),
+    stripe_flag AND stripe_attested AND verified_test_merchants > 0 AND paid_test_attempts > 0,
+    format('Flag test %s, marchand(s) test vérifié(s) %s, tentatives payées %s, attestation %s',
+      stripe_flag,verified_test_merchants,paid_test_attempts,stripe_attested),
     'Compte marchand de test identifié, webhook signé et paiement de test réellement rapproché' FROM facts
   UNION ALL SELECT 7,'Pilote de bout en bout',
-    confirmed_auth_users >= 2 AND invoices > 0 AND pilot_attested,
-    format('%s compte(s) confirmés, %s facture(s), preuve pilote %s',confirmed_auth_users,invoices,pilot_attested),
+    confirmed_auth_users >= 2 AND accepted_quotes > 0 AND invoices > 0 AND pilot_attested,
+    format('%s compte(s) confirmés, %s devis accepté(s), %s facture(s), preuve pilote %s',
+      confirmed_auth_users,accepted_quotes,invoices,pilot_attested),
     'Tester un vrai partenaire et un vrai client autorisés, devis, facture et permissions' FROM facts
 )
 SELECT ordinal,checkpoint,
