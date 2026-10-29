@@ -1,6 +1,7 @@
 // Stripe Connect webhook. Test-only; signature before parsing, no JWT public bypass.
 import {createClient} from "npm:@supabase/supabase-js@2";
 import {verifyStripeSignature,parseStripeCheckoutSignal} from "./stripe-guards.ts";
+import {parseStripeAdjustmentSignal} from "./stripe-adjustments.ts";
 const json=(status:number,msg:string)=>new Response(JSON.stringify({status:msg}),{
  status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}
 });
@@ -21,17 +22,40 @@ Deno.serve(async req=>{
  let payload:unknown;
  try{payload=JSON.parse(raw);}catch{return json(400,"invalid_json");}
  const signal=parseStripeCheckoutSignal(payload);
- // Stripe retries unknown event types? Acknowledge ignored events, never mark paid.
- if(!signal)return json(200,"ignored");
+ const adjustment=signal?null:parseStripeAdjustmentSignal(payload);
+ // Unknown Stripe event types must never mark a payment paid.
+ if(!signal&&!adjustment)return json(200,"ignored");
  try{
   const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
-  const {error}=await admin.rpc("mvp_test_checkout_webhook",{
-   p_event_id:signal.eventId,p_attempt_id:signal.attemptId,p_session_id:signal.sessionId,
-   p_account_id:signal.connectedAccountId,p_amount_cents:signal.amountCents,
-   p_currency:signal.currency,p_intent_id:signal.intentId,p_kind:signal.kind
+  if(signal){
+   const {error}=await admin.rpc("mvp_test_checkout_webhook",{
+    p_event_id:signal.eventId,p_attempt_id:signal.attemptId,p_session_id:signal.sessionId,
+    p_account_id:signal.connectedAccountId,p_amount_cents:signal.amountCents,
+    p_currency:signal.currency,p_intent_id:signal.intentId,p_kind:signal.kind
+   });
+   if(error){
+    console.error("BPEI checkout webhook rejected",error.code??"database_failure");
+    return json(500,"retry_later");
+   }
+   return json(200,"processed");
+  }
+  if(!adjustment)return json(200,"ignored");
+  // A refund/dispute is attached to the verified Stripe PI on a specific connected account.
+  const {data:attempts,error:lookupError}=await admin.from("bpei_payment_attempts")
+   .select("id").eq("connected_account_id",adjustment.accountId)
+   .eq("stripe_payment_intent_id",adjustment.paymentIntentId).eq("state","paid").limit(2);
+  if(lookupError||!attempts||attempts.length!==1){
+   console.error("BPEI adjustment unmatched or ambiguous");
+   return json(500,"retry_later");
+  }
+  const {error}=await admin.rpc("mvp_test_payment_adjustment_event",{
+   p_event_id:adjustment.eventId,p_attempt_id:attempts[0].id,
+   p_account_id:adjustment.accountId,p_payment_intent_id:adjustment.paymentIntentId,
+   p_object_id:adjustment.objectId,p_kind:adjustment.kind,p_status:adjustment.status,
+   p_amount_cents:adjustment.amountCents,p_provider_created:adjustment.providerCreated
   });
   if(error){
-   console.error("BPEI webhook reconciliation rejected",error.code??"database_failure");
+   console.error("BPEI adjustment reconciliation rejected",error.code??"database_failure");
    return json(500,"retry_later");
   }
   return json(200,"processed");
