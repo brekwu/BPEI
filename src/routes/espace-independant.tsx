@@ -66,7 +66,15 @@ function IndependentSpace() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = registration ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
+    let result;
+    try {
+      result = registration ? await supabase.auth.signUp({ email, password }) : await supabase.auth.signInWithPassword({ email, password });
+    } catch {
+      setPassword("");
+      setError("Service d'authentification temporairement indisponible.");
+      setLoading(false);
+      return;
+    }
     setPassword("");
     if (result.error || !result.data.user) {
       setError("Connexion impossible. Vérifiez vos identifiants.");
@@ -162,7 +170,7 @@ function IndependentSpace() {
               setSaving(true); setError(""); setNotice("");
               const { error: applicationError } = await (supabase as any).from("independent_applications").insert({ user_id: userId, message });
               if (applicationError) setError("Candidature déjà déposée ou impossible à enregistrer.");
-              else setNotice("Candidature reçue. Elle reste en attente d'examen.");
+              else { setNotice("Candidature reçue. Elle reste en attente d'examen."); await load(userId); }
               setSaving(false);
             }}>
               <label className="block text-sm">Votre expérience et vos compétences
