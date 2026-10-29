@@ -51,6 +51,7 @@ function InvoiceView(){
   {loading&&<p role="status">Vérification de la facture…</p>}
   {error&&<p role="alert">{error}</p>}
   {invoice&&quote&&<article id="bpei-invoice-print" className="space-y-7 rounded border bg-white p-8 text-slate-950 shadow-sm print:rounded-none print:border-none print:p-0 print:shadow-none" aria-label="Facture">
+   <p className="border border-amber-700 p-2 text-center text-sm font-bold">DOCUMENT DE PRÉPRODUCTION — À VÉRIFIER AVANT ÉMISSION RÉELLE</p>
    <header className="flex flex-wrap items-start justify-between gap-8 border-b pb-5">
     <div><p className="text-xs font-semibold uppercase tracking-wide">Facture du prestataire indépendant</p>
      <h1 className="mt-2 text-3xl font-bold">FACTURE</h1>
