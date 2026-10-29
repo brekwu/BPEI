@@ -34,17 +34,20 @@ function IndependentSpace() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [application, setApplication] = useState<{ status: string; created_at: string } | null>(null);
   const [requests, setRequests] = useState<Array<{ id: string; title: string; status: string; created_at: string }>>([]);
 
   async function load(id: string) {
     const db = supabase as any;
-    const [p, r] = await Promise.all([
+    const [p, r, a] = await Promise.all([
       db.from("independent_profiles").select("*").eq("user_id", id).maybeSingle(),
       db.from("independent_requests").select("id,title,status,created_at").eq("independent_id", id).order("created_at", { ascending: false }).limit(50),
+      db.from("independent_applications").select("status,created_at").eq("user_id", id).maybeSingle(),
     ]);
-    if (p.error || r.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
+    if (p.error || r.error || a.error) setError("Impossible de récupérer votre espace. Réessayez ultérieurement.");
     setProfile(p.data ?? null);
     setRequests(r.data ?? []);
+    setApplication(a.data ?? null);
     setLoading(false);
   }
 
@@ -118,7 +121,7 @@ function IndependentSpace() {
         <div className="mt-8 space-y-8">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Mon profil</h2>
-            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setRequests([]); }}>Se déconnecter</Button>
+            <Button variant="outline" onClick={async () => { await supabase.auth.signOut(); setUserId(null); setProfile(null); setRequests([]); setApplication(null); }}>Se déconnecter</Button>
           </div>
           {!profile ? <form className="rounded-xl border p-6 space-y-4" onSubmit={async (event) => {
             event.preventDefault();
@@ -151,7 +154,7 @@ function IndependentSpace() {
           <section className="rounded-xl border bg-card p-6">
             <h2 className="text-xl font-semibold">Candidature au réseau BPEI</h2>
             <p className="mt-2 text-sm text-muted-foreground">Votre candidature sera examinée avant toute mission. La candidature est gratuite et ne garantit aucune attribution.</p>
-            <form className="mt-4 space-y-3" onSubmit={async event => {
+            {application ? <p className="mt-4 rounded-lg border p-4 text-sm" role="status">Candidature déposée le {new Date(application.created_at).toLocaleDateString("fr-FR")} — statut : {({ pending: "En attente", under_review: "En cours d’examen", approved: "Approuvée", rejected: "Refusée" } as Record<string, string>)[application.status] ?? "À vérifier"}.</p> : <form className="mt-4 space-y-3" onSubmit={async event => {
               event.preventDefault();
               if (!userId || saving) return;
               const message = (new FormData(event.currentTarget).get("message") ?? "").toString().trim();
@@ -166,7 +169,7 @@ function IndependentSpace() {
                 <Textarea name="message" required minLength={10} maxLength={3000} rows={4} />
               </label>
               <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
-            </form>
+            </form>}
           </section>
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
