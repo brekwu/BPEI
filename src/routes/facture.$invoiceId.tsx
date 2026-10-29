@@ -17,11 +17,12 @@ function InvoiceView(){
  const {invoiceId}=Route.useParams();
  const [invoice,setInvoice]=useState<Invoice|null>(null);
  const [quote,setQuote]=useState<Quote|null>(null);
+ const [testPaymentConfirmed,setTestPaymentConfirmed]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  useEffect(()=>{
   let active=true;
-  setLoading(true);setInvoice(null);setQuote(null);setError("");
+  setLoading(true);setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setError("");
   (async()=>{
    const db=supabase as any;
    const {data:session,error:authError}=await supabase.auth.getUser();
@@ -34,11 +35,14 @@ function InvoiceView(){
     .select("id,issuer_legal_name,issuer_siret,issuer_address,issuer_email,tax_mention,customer_name,customer_email,customer_address,customer_kind,customer_siret,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at")
     .eq("id",i.quote_id).maybeSingle();
    if(quoteError||!q)throw new Error("Quote not available");
-   if(active){setInvoice(i);setQuote(q);}
-  })().catch(()=>{if(active){setInvoice(null);setQuote(null);setError("Facture indisponible ou accès non autorisé.");}})
+   const {data:verified,error:paymentError}=await db.from("bpei_payment_attempts")
+    .select("state").eq("invoice_id",i.id).eq("state","paid").limit(1);
+   if(paymentError)throw new Error("Payment status unavailable");
+   if(active){setInvoice(i);setQuote(q);setTestPaymentConfirmed((verified??[]).length>0);}
+  })().catch(()=>{if(active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setError("Facture indisponible ou accès non autorisé.");}})
    .finally(()=>{if(active)setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange(event=>{
-   if(event==="SIGNED_OUT"&&active){setInvoice(null);setQuote(null);setError("Session terminée.");}
+   if(event==="SIGNED_OUT"&&active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setError("Session terminée.");}
   });
   return ()=>{active=false;subscription.unsubscribe();};
  },[invoiceId]);
@@ -84,7 +88,7 @@ function InvoiceView(){
    </section>
    <footer className="space-y-2 border-t pt-5 text-sm">
     <p>Échéance de paiement : <strong>{date(invoice.due_date)}</strong></p>
-    <p>État du paiement : <strong>Non confirmé / impayé</strong>. Ne pas considérer cette facture acquittée sans rapprochement du prestataire de paiement.</p>
+    <p>État du paiement : <strong>{testPaymentConfirmed?"PAIEMENT SIMULÉ CONFIRMÉ (Stripe TEST)":"Non confirmé / impayé"}</strong>. Aucun paiement TEST ne vaut encaissement réel ; rapprocher les fonds chez le prestataire avant tout reçu définitif.</p>
     <p>Devis accepté le {quote.accepted_at?date(quote.accepted_at):"non renseigné"} · Référence du devis : {quote.id}</p>
     {quote.customer_kind==="business"&&<p>Conditions de pénalités de retard et éventuelle indemnité forfaitaire de recouvrement : à préciser par le prestataire selon ses conditions contractuelles.</p>}
    </footer>
