@@ -40,7 +40,7 @@ test("Skill approval requires admin and the public directory returns only redact
  assert.match(sql,/RETURNS TABLE\(/);
  assert.match(sql,/display_name text,city text,postal_code text,level smallint/);
  const route=read("src/routes/trouver-un-technicien.tsx");
- assert.match(route,/search_active_partners/);
+ assert.match(route,/review_summary_for_public/);
  assert.match(route,/Aucun partenaire BPEI vérifié/);
  assert.doesNotMatch(route,/prestataire disponible immédiatement/);
 });
