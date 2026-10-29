@@ -58,7 +58,7 @@ try{
  page.on("dialog",dialog=>dialog.accept());
  await page.goto(base+"/gestion-commerciale",{waitUntil:"domcontentloaded"});
  await page.getByRole("heading",{name:"Devis et factures — MVP"}).waitFor({timeout:15000});
- assert.equal(await page.getByText("Aucun devis pour le moment.").count(),1);
+ await page.getByText("Aucun devis pour le moment.").waitFor({timeout:15000});
  await page.getByRole("combobox",{name:"Demande attribuée à un indépendant"}).selectOption(inquiryId);
  await page.getByRole("textbox",{name:/Nom légal du prestataire/}).fill("Jean Exemple EI");
  await page.getByRole("textbox",{name:/E-mail professionnel du prestataire/}).fill("jean@example.invalid");
