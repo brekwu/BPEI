@@ -47,6 +47,7 @@ type Profile = {
 function IndependentSpace() {
   const [userId, setUserId] = useState<string | null>(null);
   const dataEpoch=useRef(0);
+  const sessionUserId=useRef<string|null>(null);
   const [loading, setLoading] = useState(true);
   const [spaceReady, setSpaceReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -163,14 +164,52 @@ function IndependentSpace() {
   useEffect(() => {
     let active = true;
     const initialEpoch=dataEpoch.current;
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
       if(!active)return;
       if(event==="SIGNED_OUT"){
-        // Includes sign-out from another tab; no pending request may restore old data.
+        // Cross-tab sign-out invalidates every pending profile, mission and client read.
         dataEpoch.current+=1;
+        sessionUserId.current=null;
         clearPrivateState();
         setUserId(null);
         setLoading(false);
+        return;
+      }
+      if(event==="SIGNED_IN" && session?.user?.id && session.user.id!==sessionUserId.current){
+        // A different user signed in (possibly in another tab). Hide all previous
+        // private records synchronously, before checking the new identity.
+        const expectedUserId=session.user.id;
+        const authEpoch=++dataEpoch.current;
+        sessionUserId.current=expectedUserId;
+        clearPrivateState();
+        setUserId(null);
+        setLoading(true);
+        setError("");
+        // Supabase documents that async SDK calls must not run inside the Auth
+        // callback while its internal auth lock is held. Defer verification.
+        window.setTimeout(()=>{
+          if(!active||dataEpoch.current!==authEpoch||sessionUserId.current!==expectedUserId)return;
+          void supabase.auth.getUser().then(async ({data,error})=>{
+            if(!active||dataEpoch.current!==authEpoch||sessionUserId.current!==expectedUserId)return;
+            if(error||data.user?.id!==expectedUserId){
+              sessionUserId.current=null;
+              clearPrivateState();
+              setUserId(null);
+              setLoading(false);
+              setError("Impossible de confirmer la nouvelle session. Reconnectez-vous.");
+              return;
+            }
+            setUserId(expectedUserId);
+            await load(expectedUserId);
+          }).catch(()=>{
+            if(!active||dataEpoch.current!==authEpoch||sessionUserId.current!==expectedUserId)return;
+            sessionUserId.current=null;
+            clearPrivateState();
+            setUserId(null);
+            setLoading(false);
+            setError("Impossible de confirmer la nouvelle session. Reconnectez-vous.");
+          });
+        },0);
       }
     });
     (supabase as any).from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle().then(({data}:any)=>{
@@ -179,11 +218,13 @@ function IndependentSpace() {
     supabase.auth.getUser().then(async ({ data, error }) => {
       if (!active||initialEpoch!==dataEpoch.current) return;
       if (error) throw error;
+      sessionUserId.current=data.user?.id ?? null;
       setUserId(data.user?.id ?? null);
       if (data.user) await load(data.user.id);
       else setLoading(false);
     }).catch(() => {
       if (active&&initialEpoch===dataEpoch.current) {
+        sessionUserId.current=null;
         clearPrivateState();
         setUserId(null);
         setError("Impossible de vérifier votre session. Réessayez.");
@@ -193,6 +234,7 @@ function IndependentSpace() {
     return () => {
       active = false;
       dataEpoch.current+=1;
+      sessionUserId.current=null;
       subscription.unsubscribe();
     };
   }, []);
@@ -230,6 +272,7 @@ function IndependentSpace() {
         return;
       }
       setPendingConfirmationEmail("");
+      sessionUserId.current=result.data.user.id;
       setUserId(result.data.user.id);
       await load(result.data.user.id);
     } catch {
