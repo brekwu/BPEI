@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 type Inquiry = {
  id:string; kind:"contact"|"intervention"; client_name:string; email:string; phone:string|null;
- city:string|null;subject:string;description:string;status:string;created_at:string;assigned_to:string|null;
+ city:string|null;address_line1:string|null;postal_code:string|null;customer_kind:string;company_name:string|null;company_siret:string|null;subject:string;description:string;status:string;created_at:string;assigned_to:string|null;
 };
 type Technician = { user_id:string;display_name:string;city:string|null;verified_at:string|null };
 export function AdminInquiries() {
@@ -20,7 +20,7 @@ export function AdminInquiries() {
    setLoading(true);setError("");
    const db=supabase as any;
    const [i,p,a,m]=await Promise.all([
-     db.from("bpei_inquiries").select("id,kind,client_name,email,phone,city,subject,description,status,created_at,assigned_to").order("created_at",{ascending:false}).limit(200),
+     db.from("bpei_inquiries").select("id,kind,client_name,email,phone,city,address_line1,postal_code,customer_kind,company_name,company_siret,subject,description,status,created_at,assigned_to").order("created_at",{ascending:false}).limit(200),
      db.from("independent_profiles").select("user_id,display_name,city,verified_at").not("verified_at","is",null).limit(200),
      db.from("independent_applications").select("user_id,status").eq("status","approved").limit(200),
      db.from("independent_requests").select("inquiry_id,status,independent_id,created_at").not("inquiry_id","is",null).order("created_at",{ascending:false}).limit(400)
@@ -69,7 +69,8 @@ export function AdminInquiries() {
   {!loading&&inquiries.length===0&&<p className="text-sm text-muted-foreground">Aucun message ou demande d'intervention.</p>}
   {inquiries.map(i=><article key={i.id} className="space-y-3 rounded-xl border bg-card p-5">
     <div className="flex flex-wrap justify-between gap-2"><strong>{i.kind==="contact"?"Contact":"Intervention"} : {i.subject}</strong><span className="text-sm">{i.status}</span></div>
-    <p className="text-sm">{i.client_name} · {i.email} · {i.city||"Ville non indiquée"} {i.phone?"· "+i.phone:""}</p>
+    <p className="text-sm">{i.customer_kind==="business"&&i.company_name?i.company_name+" · ":""}{i.client_name} · {i.email} {i.phone?"· "+i.phone:""}</p>
+    <p className="text-sm">{[i.address_line1,i.postal_code,i.city].filter(Boolean).join(", ")||"Adresse incomplète"}{i.company_siret?" · SIRET client : "+i.company_siret:""}</p>
     <p className="whitespace-pre-wrap text-sm text-muted-foreground">{i.description}</p>
     {i.status==="new"&&<div className="flex flex-wrap items-center gap-2">
       {i.kind==="intervention"&&<><label className="text-sm" htmlFor={"tech-"+i.id}>Professionnel :</label>
