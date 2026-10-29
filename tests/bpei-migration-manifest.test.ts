@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,45,"45 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,45,
+ assert.equal(migrations.length,46,"46 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,46,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/45 migrations appliquées/);
- assert.match(readme,/45 fichiers SQL versionnés/);
+ assert.match(readme,/46 migrations appliquées/);
+ assert.match(readme,/46 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -89,4 +89,12 @@ test("Privileged manual client intake cannot run as public SECURITY DEFINER",()=
  assert.match(sql,/SET SCHEMA bpei_private/);
  assert.match(sql,/SECURITY INVOKER/);
  assert.match(sql,/REVOKE ALL ON FUNCTION public\.mvp_admin_create_inquiry/);
+});
+
+test("Refund/dispute reports originate from signed Stripe TEST provider events only",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029075543_mvp_test_stripe_refund_dispute_reconciliation.sql",import.meta.url),"utf8");
+ for(const key of ["bpei_payment_refunds","bpei_payment_disputes","bpei_payment_adjustment_events","mvp_test_payment_adjustment_event","p_account_id","p_payment_intent_id","p_amount_cents>v_attempt.amount_cents","service_role","ON CONFLICT"]){
+  assert.ok(sql.includes(key),key);
+ }
+ assert.match(sql,/SECURITY INVOKER/);
 });
