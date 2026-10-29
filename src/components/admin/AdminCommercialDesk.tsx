@@ -13,7 +13,9 @@ type Quote={id:string;inquiry_id:string;issuer_id:string;status:string;issuer_le
  accepted_at:string|null};
 type Invoice={id:string;quote_id:string;invoice_number:string;issued_at:string;payment_status:string};
 type Mission={inquiry_id:string;status:string};
-type PaymentAttempt={invoice_id:string;state:string;paid_at:string|null;created_at:string};
+type PaymentAttempt={id:string;invoice_id:string;state:string;paid_at:string|null;created_at:string;amount_cents:number};
+type Refund={attempt_id:string;amount_cents:number;status:string};
+type Dispute={attempt_id:string;disputed_cents:number;status:string};
 const testCheckoutUI=import.meta.env.VITE_BPEI_TEST_CHECKOUT_ENABLED==="true";
 
 export function AdminCommercialDesk(){
@@ -22,6 +24,8 @@ export function AdminCommercialDesk(){
  const [invoices,setInvoices]=useState<Invoice[]>([]);
  const [missions,setMissions]=useState<Mission[]>([]);
  const [payments,setPayments]=useState<PaymentAttempt[]>([]);
+ const [refunds,setRefunds]=useState<Refund[]>([]);
+ const [disputes,setDisputes]=useState<Dispute[]>([]);
  const [testLink,setTestLink]=useState<{invoiceId:string;url:string}|null>(null);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
@@ -45,17 +49,19 @@ export function AdminCommercialDesk(){
   setLoading(true);setFailure("");
   try{
    const db=supabase as any;
-   const [i,q,n,m,pa]=await Promise.all([
+   const [i,q,n,m,pa,re,di]=await Promise.all([
     db.from("bpei_inquiries").select("id,client_name,email,phone,address_line1,postal_code,city,subject,status,assigned_to,customer_kind").eq("kind","intervention").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_quotes").select("id,inquiry_id,issuer_id,status,issuer_legal_name,issuer_siret,customer_name,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_invoices").select("id,quote_id,invoice_number,issued_at,payment_status").order("issued_at",{ascending:false}).limit(200),
     db.from("independent_requests").select("inquiry_id,status").not("inquiry_id","is",null).limit(500),
-    db.from("bpei_payment_attempts").select("invoice_id,state,paid_at,created_at").order("created_at",{ascending:false}).limit(500)
+    db.from("bpei_payment_attempts").select("id,invoice_id,state,paid_at,created_at,amount_cents").order("created_at",{ascending:false}).limit(500),
+    db.from("bpei_payment_refunds").select("attempt_id,amount_cents,status").limit(500),
+    db.from("bpei_payment_disputes").select("attempt_id,disputed_cents,status").limit(500)
    ]);
-   if(i.error||q.error||n.error||m.error||pa.error)throw new Error("Load failed");
-   setInquiries(i.data??[]);setQuotes(q.data??[]);setInvoices(n.data??[]);setMissions(m.data??[]);setPayments(pa.data??[]);
+   if(i.error||q.error||n.error||m.error||pa.error||re.error||di.error)throw new Error("Load failed");
+   setInquiries(i.data??[]);setQuotes(q.data??[]);setInvoices(n.data??[]);setMissions(m.data??[]);setPayments(pa.data??[]);setRefunds(re.data??[]);setDisputes(di.data??[]);
   }catch{
-   setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);
+   setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);setRefunds([]);setDisputes([]);
    setFailure("Lecture de la gestion commerciale impossible. Vérifiez vos droits et recommencez.");
   }finally{setLoading(false);}
  },[]);
@@ -167,6 +173,12 @@ export function AdminCommercialDesk(){
     {!quotes.length&&<p className="text-sm text-muted-foreground">Aucun devis pour le moment.</p>}
     {quotes.map(q=>{
      const invoice=invoices.find(i=>i.quote_id===q.id);
+     const paidAttempt=invoice?payments.find(p=>p.invoice_id===invoice.id&&p.state==="paid"):undefined;
+     const successfulRefunds=paidAttempt?refunds.filter(r=>r.attempt_id===paidAttempt.id&&r.status==="succeeded"):[];
+     const refundedCents=successfulRefunds.reduce((total,r)=>total+r.amount_cents,0);
+     const disputesForPayment=paidAttempt?disputes.filter(d=>d.attempt_id===paidAttempt.id):[];
+     const activeDispute=disputesForPayment.some(d=>d.status==="open");
+     const lostDispute=disputesForPayment.some(d=>d.status==="lost");
      const source=inquiries.find(i=>i.id===q.inquiry_id);
      const completed=workDone(q.inquiry_id);
      return <article key={q.id} className="rounded-lg border p-4 space-y-3 text-sm">
@@ -195,7 +207,15 @@ export function AdminCommercialDesk(){
        <Button type="button" disabled={busy||!completed||!serviceDate||!dueDate} onClick={()=>issue(q)}>Émettre la facture définitive</Button>
       </div>}
       {invoice&&<div className="border-t pt-3">
-       <p>Facture {invoice.invoice_number} · {new Date(invoice.issued_at).toLocaleDateString("fr-FR")} · <strong>{payments.some(p=>p.invoice_id===invoice.id&&p.state==="paid")?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé"}</strong></p>
+       <p>Facture {invoice.invoice_number} · {new Date(invoice.issued_at).toLocaleDateString("fr-FR")} · <strong>{
+        lostDispute?"Contestation perdue (TEST)":
+        activeDispute?"Contestation bancaire active (TEST)":
+        paidAttempt&&refundedCents>=paidAttempt.amount_cents?"Remboursement total (TEST)":
+        refundedCents>0?"Remboursement partiel de "+formatCents(refundedCents)+" (TEST)":
+        paidAttempt?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé"
+       }</strong></p>
+       {activeDispute&&<p role="alert">Contestation du paiement : vérifier la demande dans le Dashboard Stripe du prestataire indépendant.</p>}
+       {refundedCents>0&&<p>Remboursements confirmés par Stripe TEST : {formatCents(refundedCents)}. Vérifier la nécessité d'un avoir comptable.</p>
        {testCheckoutUI&&!payments.some(p=>p.invoice_id===invoice.id&&["pending","open","paid"].includes(p.state))&&
         <Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void startTestCheckout(invoice)}>Créer un lien Stripe — TEST</Button>}
        {testLink?.invoiceId===invoice.id&&<div className="mt-2 space-y-2 rounded border p-3">
