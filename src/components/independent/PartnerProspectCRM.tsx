@@ -10,7 +10,7 @@ export function PartnerProspectCRM({userId}:{userId:string}){
  const [name,setName]=useState("");const [email,setEmail]=useState("");
  const [phone,setPhone]=useState("");const [city,setCity]=useState("");
  const [title,setTitle]=useState("");const [kind,setKind]=useState("business");
- const [source,setSource]=useState("partner");const [basis,setBasis]=useState("incoming_request");
+ const [basis,setBasis]=useState("incoming_request");
  const [evidence,setEvidence]=useState("");const [notes,setNotes]=useState("");
  const [busy,setBusy]=useState(false);const [error,setError]=useState("");const [notice,setNotice]=useState("");
  async function refresh(){
@@ -40,7 +40,7 @@ export function PartnerProspectCRM({userId}:{userId:string}){
     partner_id:userId,created_by:userId,client_name:name.trim(),
     client_email:email.trim().toLowerCase(),client_phone:phone.trim()||null,
     city:city.trim(),opportunity_title:title.trim(),client_type:kind,
-    source,legal_basis:basis,legal_evidence:evidence.trim(),notes:notes.trim(),status:"new"
+    source:"partner",legal_basis:basis,legal_evidence:evidence.trim(),notes:notes.trim(),status:"new"
    });
    if(dbError)throw Error("insert denied");
    setName("");setEmail("");setPhone("");setCity("");setTitle("");setEvidence("");setNotes("");
@@ -74,11 +74,7 @@ export function PartnerProspectCRM({userId}:{userId:string}){
      <option value="business">Entreprise</option><option value="individual">Particulier</option>
     </select>
    </label>
-   <label className="text-sm">Origine
-    <select className="mt-1 w-full rounded border bg-background p-2" value={source} onChange={e=>setSource(e.target.value)}>
-     <option value="partner">Trouvé par moi-même</option><option value="bpei">Apport BPEI</option><option value="referral">Apporteur tiers</option>
-    </select>
-   </label>
+   <p className="text-sm">Origine : <strong>Prospection personnelle</strong>. Les attributions BPEI ou apporteur tiers sont contrôlées séparément par l'administration.</p>
    <label className="text-sm">Base du contact
     <select className="mt-1 w-full rounded border bg-background p-2" value={basis} onChange={e=>setBasis(e.target.value)}>
      <option value="incoming_request">Demande entrante du client</option>
