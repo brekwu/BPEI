@@ -68,7 +68,7 @@ Deno.serve(async req=>{
  if(!bearer)return answer(401,{error:"login_required"},origin);
  let payload:any;
  try{payload=await req.json()}catch{return answer(400,{error:"invalid_json"},origin)}
- if(!payload||typeof payload!=="object"||!["status","start","approve"].includes(payload.action))
+ if(!payload||typeof payload!=="object"||!["status","start","approve","admin_list"].includes(payload.action))
   return answer(400,{error:"invalid_action"},origin);
  try{
   const db=createClient(e.url,e.service,{auth:{persistSession:false,autoRefreshToken:false}});
@@ -80,6 +80,23 @@ Deno.serve(async req=>{
    .select("user_id").eq("user_id",user.id).maybeSingle();
   if(adminErr)return answer(503,{error:"authorization_unavailable"},origin);
   const isAdmin=admin?.user_id===user.id;
+  if(payload.action==="admin_list"){
+   if(!isAdmin)return answer(403,{error:"administrator_required"},origin);
+   const [{data:profiles,error:pe},{data:accounts,error:ae}]=await Promise.all([
+    db.from("independent_profiles").select("user_id,display_name,siret,verified_at")
+     .not("verified_at","is",null).limit(200),
+    db.from("bpei_stripe_connected_accounts")
+     .select("issuer_id,stripe_account_id,test_verified_at,test_enabled").limit(200)
+   ]);
+   if(pe||ae)return answer(503,{error:"list_unavailable"},origin);
+   const lookup=new Map((accounts??[]).map(a=>[a.issuer_id,a]));
+   return answer(200,{mode:"test",technicians:(profiles??[]).map(p=>{
+    const a=lookup.get(p.user_id);
+    return {id:p.user_id,name:p.display_name,siret:p.siret,
+     connected:!!a,approved:!!a?.test_enabled,
+     providerChecked:!!a?.test_verified_at};
+   })},origin);
+  }
   const issuerId=payload.action==="approve"?payload.issuer_id:user.id;
   if(typeof issuerId!=="string"||!/^[0-9a-f-]{36}$/i.test(issuerId))
    return answer(400,{error:"invalid_issuer"},origin);
