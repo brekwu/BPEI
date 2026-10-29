@@ -1,3 +1,4 @@
+import { PartnerReferralPanel } from "@/components/independent/PartnerReferralPanel";
 import { PartnerAvailabilityPanel } from "@/components/independent/PartnerAvailabilityPanel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -413,6 +414,7 @@ function IndependentSpace() {
           <p className="text-sm"><Link className="underline" to="/ressources-prospection">Consulter le guide BPEI de prospection locale et les modèles de messages</Link></p>
           <PartnerProspectCRM userId={userId}/>
           <PartnerFinanceDesk userId={userId}/>
+          <PartnerReferralPanel userId={userId}/>
           <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
