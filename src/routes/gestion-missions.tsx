@@ -1,3 +1,4 @@
+import {AdminSchedulingPanel} from "@/components/admin/AdminSchedulingPanel";
 import {createFileRoute,Link} from "@tanstack/react-router";
 import {useBpeiAdminAccess} from "@/lib/use-bpei-admin-access";
 import {PublicShell} from "@/components/public/PublicShell";
@@ -15,6 +16,6 @@ function MissionManagement(){
   <p><Link to="/gestion-commerciale" className="mt-2 inline-block text-sm underline">Devis et facturation des missions</Link></p>
   {access==="loading"?<p className="mt-8" role="status">Vérification de l'accès…</p>:
    access==="denied"?<p className="mt-8" role="alert">Accès administrateur non autorisé.</p>:
-   <div className="mt-8"><AdminMissionBoardServer/></div>}
+   <div className="mt-8 space-y-8"><AdminSchedulingPanel/><AdminMissionBoardServer/></div>}
  </main></PublicShell>;
 }
