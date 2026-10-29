@@ -57,6 +57,15 @@ if(!execute){
    .select("user_id").eq("user_id",userId).single();
   if(checked||check?.user_id!==userId)
    throw Error("Role insert not verified; review DB manually before any retry.");
+  // Remove the one-time creation bypass marker after verification and grant.
+  if(actor.app_metadata?.bpei_admin_bootstrap===true){
+   const clean={...actor.app_metadata};
+   delete clean.bpei_admin_bootstrap;
+   const {error:cleanError}=await db.auth.admin.updateUserById(userId,{
+    app_metadata:clean
+   });
+   if(cleanError)throw Error("Admin granted but temporary Auth bypass marker cleanup failed; manual review required.");
+  }
   console.log("BPEI first administrator role granted to a genuinely verified Auth user.");
   console.log("The account is not an indication that SMTP, legal or Stripe gates have passed.");
  }catch(error){fail(error instanceof Error?error.message:"Unknown error");}
