@@ -8,6 +8,8 @@ export type CommercialDocument={
  customerName:string;customerEmail:string;customerAddress:string;customerKind:string;customerSiret:string|null;
  description:string;quantity:number;unitPriceCents:Money;netCents:Money;vatCents:Money;grossCents:Money;
  vatBasisPoints:number;taxMention:string;
+ issuerVatNumber?:string|null;paymentTerms?:string|null;earlyPaymentDiscount?:string|null;
+ latePaymentPenalties?:string|null;customerOrderReference?:string|null;b2bRecoveryFeeCents?:number|null;
 };
 const euros=(v:Money)=>((Number(v)/100).toFixed(2)+" EUR");
 const date=(s:string)=>new Date(s).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
@@ -69,6 +71,14 @@ export async function renderCommercialPdf(data:CommercialDocument,legalFooter:st
  add("TVA ("+(data.vatBasisPoints/100).toLocaleString("fr-FR")+" %) : "+euros(data.vatCents));
  add("TOTAL TTC : "+euros(data.grossCents),true);
  if(data.taxMention)add("Mention TVA : "+data.taxMention);
+ if(data.issuerVatNumber)add("TVA intracommunautaire du prestataire : "+data.issuerVatNumber);
+ if(data.customerOrderReference)add("Bon de commande : "+data.customerOrderReference);
+ if(data.paymentTerms)add("Conditions de paiement : "+data.paymentTerms);
+ if(data.earlyPaymentDiscount)add("Escompte : "+data.earlyPaymentDiscount);
+ if(data.customerKind==="business"){
+  if(data.latePaymentPenalties)add("Pénalités de retard : "+data.latePaymentPenalties);
+  if(data.b2bRecoveryFeeCents===4000)add("Indemnité forfaitaire de recouvrement : 40 EUR");
+ }
  add("Mentions réglementaires",true);
  add(legalFooter);
  add("Ce document est produit en préproduction. Vérifier l'identité, la TVA, les mentions obligatoires et la facturation électronique applicable.",false);
