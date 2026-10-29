@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,65,"65 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,65,
+ assert.equal(migrations.length,68,"68 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,68,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/65 migrations appliquées/);
- assert.match(readme,/65 fichiers SQL versionnés/);
+ assert.match(readme,/68 migrations appliquées/);
+ assert.match(readme,/68 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -169,4 +169,12 @@ test("Independent interregional client referral with opt-in payout proposal is v
  const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
  assert.match(sql,/bpei_partner_referral_agreements/);
  assert.match(sql,/respond_partner_referral/);
+});
+
+test("Stripe TEST checkout must reconcile the quote, partner remuneration and VAT",()=>{
+ for(const name of [
+  "20261029140639_strict_stripe_test_checkout_invoice_compensation_reconciliation.sql",
+  "20261029140800_admin_test_checkout_readiness_reconciliation_explanations.sql",
+  "20261029140847_checkout_readiness_typed_optional_rows.sql"
+ ])assert.ok(migrations.includes(name),name);
 });
