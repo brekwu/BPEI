@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import {chromium,webkit} from "playwright";
+/** All customer records are mocked and never sent to the real Supabase project. */
+const browser=await (process.env.BPEI_BROWSER_ENGINE==="webkit"?webkit:chromium).launch({headless:true});
+const ctx=await browser.newContext();
+const base=process.env.BPEI_SMOKE_ORIGIN??"http://127.0.0.1:3000";
+const id="99999999-9999-4999-8999-999999999999";
+const user={id,email:"intake-admin@example.invalid",role:"authenticated",aud:"authenticated",user_metadata:{},app_metadata:{provider:"email",providers:["email"]}};
+let legalPublished=false,attempts=0,created=0;
+const pageErrors=[];
+const ok=(body,status=200)=>({status,contentType:"application/json",body:JSON.stringify(body)});
+await ctx.route("https://placeholder.supabase.co/**",async route=>{
+ const req=route.request(),url=new URL(req.url()),p=url.pathname;
+ const single=(req.headers().accept??"").includes("application/vnd.pgrst.object+json");
+ if(p==="/auth/v1/token")return route.fulfill(ok({user,access_token:"mock-intake.token.signature",refresh_token:"mock-intake-refresh",expires_in:3600,token_type:"bearer"}));
+ if(p==="/auth/v1/user")return route.fulfill(ok(user));
+ if(p==="/auth/v1/logout")return route.fulfill({status:204,body:""});
+ if(p.startsWith("/auth/v1/"))return route.fulfill(ok({message:"unauthenticated"},401));
+ if(p==="/rest/v1/independent_admins")return route.fulfill(ok(single?{user_id:id}:[{user_id:id}]));
+ if(p==="/rest/v1/bpei_launch_controls")return route.fulfill(ok({id:true,legal_documents_published:legalPublished,independent_registration_enabled:false,legal_version:legalPublished?"v-test-legal":null}));
+ if(p==="/rest/v1/rpc/mvp_admin_create_inquiry"){
+  attempts++;
+  const data=req.postDataJSON();
+  assert.equal(data.p_privacy_ack_confirmed,true);
+  assert.equal(data.p_phone,"0611223344");
+  assert.equal(data.p_address_line1,"12 rue de France");
+  assert.equal(data.p_postal_code,"06000");
+  assert.equal(data.p_source,"phone");
+  if(!legalPublished)return route.fulfill(ok({code:"42501",message:"Legal publication required"},403));
+  created++;
+  return route.fulfill(ok("ffffffff-ffff-4fff-8fff-ffffffffffff"));
+ }
+ return route.fulfill(ok(single?null:[]));
+});
+try{
+ const login=await ctx.newPage();login.on("pageerror",e=>pageErrors.push(e.message));
+ await login.goto(base+"/espace-independant",{waitUntil:"domcontentloaded"});
+ await login.getByPlaceholder("Adresse e-mail").fill(user.email);
+ await login.getByPlaceholder("Mot de passe",{exact:true}).fill("Test-only-login-123!");
+ await login.getByRole("button",{name:"Se connecter",exact:true}).click();
+ await login.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
+ const page=await ctx.newPage();page.on("pageerror",e=>pageErrors.push(e.message));
+ page.on("dialog",dialog=>dialog.accept());
+ await page.goto(base+"/gestion-independants",{waitUntil:"domcontentloaded"});
+ const section=page.getByRole("region",{name:"Saisie privée d'une intervention"});
+ await section.getByText("Saisir une demande client reçue par téléphone").waitFor({timeout:15000});
+ const send=section.getByRole("button",{name:"Créer la demande d'intervention"});
+ assert.equal(await send.isDisabled(),true);
+ await section.getByRole("textbox",{name:"Nom du client"}).fill("Alice Dupont");
+ await section.getByRole("textbox",{name:"Téléphone du client"}).fill("0611223344");
+ await section.getByRole("textbox",{name:"E-mail du client"}).fill("alice@example.invalid");
+ await section.getByRole("textbox",{name:"Ville"}).fill("Nice");
+ await section.getByRole("textbox",{name:"Adresse d'intervention"}).fill("12 rue de France");
+ await section.getByRole("textbox",{name:"Code postal"}).fill("06000");
+ await section.getByRole("textbox",{name:"Objet de l'intervention"}).fill("Dépannage informatique");
+ await section.getByRole("textbox",{name:"Description de la demande"}).fill("Le PC portable ne démarre plus correctement.");
+ await section.getByRole("textbox",{name:/Référence de l'accord/}).fill("ref-preuve-test-2026-10-29");
+ await section.getByRole("checkbox").check();
+ assert.equal(await send.isEnabled(),true);
+ await send.click();
+ await section.getByRole("alert").waitFor({timeout:15000});
+ assert.equal(attempts,1);assert.equal(created,0,"Legal gate must fail closed in mocked server");
+ legalPublished=true;
+ await send.click();
+ await section.getByText("Demande enregistrée dans l'administration.",{exact:false}).waitFor({timeout:15000});
+ assert.equal(attempts,2);assert.equal(created,1);
+ await login.getByRole("button",{name:"Se déconnecter"}).click();
+ await page.getByText("Accès administrateur non autorisé").first().waitFor({timeout:15000});
+ assert.equal(await section.count(),0,"Manual customer form must be hidden after cross-tab logout");
+ assert.deepEqual(pageErrors,[]);
+ console.log(JSON.stringify({ok:true,mode:"mocked-private-admin-intake",attempts,created,legalGate:true,crossTabSignout:true}));
+}finally{await ctx.close();await browser.close();}
