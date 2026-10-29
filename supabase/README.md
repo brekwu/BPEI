@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **65 migrations appliquées** au 29 octobre 2026, et la branche contient **65 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **68 migrations appliquées** au 29 octobre 2026, et la branche contient **68 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **65
 
 ## MVP commercial (29 octobre 2026)
 
-65 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+68 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -73,3 +73,7 @@ Les indépendants peuvent déclarer librement leurs créneaux jusqu'à 180 jours
 ## Apporteur d'affaires interrégional (migration 65)
 
 Une mission réellement attribuée à un prestataire distinct peut bénéficier d'un **apporteur professionnel** vérifié. L'administration documente le contrat, le montant HT et l'origine d'apport, et la somme est obligatoirement couverte par la part BPEI **d'une proposition de rémunération de mission déjà acceptée** et identifiée comme `source=referral`. Le technicien apporteur peut accepter ou refuser librement sa propre proposition. L'accès aux données est limité à l'administration, à l'apporteur et à l'intervenant ; aucune information privée de client ni aucun virement Stripe n'est créé par cette fonction. La commission d'apport, sa TVA, sa facture et ses modalités de paiement restent à faire vérifier juridiquement avant usage réel.
+
+## Rapprochement financier Stripe TEST (migrations 66 à 68)
+
+Le serveur refuse maintenant une création de lien Stripe TEST si la facture n'appartient pas au bon technicien, si la mission n'est pas effectivement terminée, si la rémunération de mission n'est pas acceptée, si le **prix HT du devis et le partage indépendant/BPEI ne correspondent pas exactement**, ou si la commission Stripe est différente de la part BPEI dûment convenue. Un apporteur interrégional doit avoir accepté sa convention. Pour éviter de présumer le traitement fiscal de la commission BPEI, ce parcours de test refuse actuellement les devis comportant de la TVA et garde le plafond de sécurité interne **25 %**. Le barème indicatif 50/40 sur 90 € HT **ne passe donc pas** tant que le modèle de paiement, les frais et la TVA n'ont pas été contractualisés et adaptés ; aucun partage trompeur n'est présenté comme réellement versé. L'administration peut consulter sur chaque facture le diagnostic `mvp_test_checkout_readiness` : prérequis manquants et éventuelles incohérences, **sans créer de paiement**. Les contrôles de clés `sk_test_`, du vendeur marchand, de Checkout et des webhooks restent indépendants de ce diagnostic.
