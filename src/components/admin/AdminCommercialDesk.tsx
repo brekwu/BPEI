@@ -152,6 +152,7 @@ export function AdminCommercialDesk(){
       <p>Prestataire : {q.issuer_legal_name} (SIRET {q.issuer_siret})</p>
       <p>Montant HT {formatCents(q.net_cents)} · TVA {formatCents(q.vat_cents)} · <strong>Total TTC {formatCents(q.gross_cents)}</strong></p>
       <p>Statut : {q.status==="accepted"?"Devis accepté":"Devis proposé"} · Mission {completed?"terminée":"non terminée"} · Paiement non confirmé</p>
+      <Link to="/devis/$quoteId" params={{quoteId:q.id}} className="inline-block underline">Consulter et imprimer le devis</Link>
       {source&&<p className="text-muted-foreground">Dossier : {source.subject} · {source.email}</p>}
       {q.status==="proposed"&&<div className="space-y-2 border-t pt-3">
        <p>Après validation explicite du client, conservez une preuve vérifiable (e-mail ou document signé).</p>
