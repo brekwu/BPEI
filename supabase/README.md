@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **61 migrations appliquées** au 29 octobre 2026, et la branche contient **61 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **64 migrations appliquées** au 29 octobre 2026, et la branche contient **64 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **61
 
 ## MVP commercial (29 octobre 2026)
 
-61 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+64 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -65,3 +65,7 @@ Un intervenant choisit explicitement l'affichage public. Seuls les profils **act
 ## Finances personnelles de l'indépendant (migration 61)
 
 La saisie d'un registre privé de **recettes réellement encaissées et dépenses payées** est disponible depuis l'espace indépendant. La base n'autorise la lecture qu'au propriétaire ; les montants et justificatifs restent immuables, sauf annulation motivée et tracée. Export CSV sur demande, total indicatif recettes/dépenses HT et simulation de charges sociales sur le taux **saisi par le technicien**, sans taux inventé, sans déduction automatique des frais ni déclaration officielle Urssaf. Les données sont entrées manuellement, indépendamment de Stripe. Un guide pratique de prospection 2026 existe désormais dans `/ressources-prospection`, relié à l'espace. Aucun e-mail de prospection n'est envoyé automatiquement.
+
+## Agenda de rendez-vous et évaluations clients (migrations 62 à 64)
+
+Les indépendants peuvent déclarer librement leurs créneaux jusqu'à 180 jours à l'avance, sans chevauchements. Un administrateur confirme la date d'une **mission déjà acceptée** sur un créneau du bon prestataire ; la confirmation est atomique, évite les doubles réservations et journalise les annulations. Aucun créneau n'est annoncé comme réservé en temps réel sans confirmation, et le consentement du client au rendez-vous reste à vérifier par l'opérateur. Les avis clients exigent une mission terminée et facturée, une invitation à usage unique de 21 jours à token aléatoire stocké seulement sous empreinte SHA-256, une note et un commentaire client, un choix séparé de publication et une modération administrative. Seules les notes autorisées et publiées contribuent aux agrégats publics, et les identités professionnelles homonymes sans attribution unique sont exclues des moyennes. La fonction `bpei-customer-review` est déployée mais **fermée par défaut** : il manque `BPEI_REVIEWS_ENABLED=true` et un domaine d'origine validé. Le lien est à remettre au client sur un canal vérifié, non envoyé automatiquement. Aucune invitation ni aucun avis n'a été fabriqué.
