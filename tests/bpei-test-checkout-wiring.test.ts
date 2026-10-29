@@ -16,3 +16,11 @@ test("Test-only Stripe integration cannot accidentally accept live keys or publi
  assert.equal(checkout.includes("payload.amount"),false);
  for(const flag of ["BPEI_STRIPE_CONNECT_WEBHOOK_SECRET","verifyStripeSignature","parseStripeCheckoutSignal","mvp_test_checkout_webhook"])assert.ok(webhook.includes(flag),flag);
 });
+
+test("A Stripe test link is presented to the operator, never auto-paid by redirecting the administrator",()=>{
+ const component=readFileSync(new URL("../src/components/admin/AdminCommercialDesk.tsx",import.meta.url),"utf8");
+ assert.doesNotMatch(component,/window\.location\.assign\(/);
+ assert.match(component,/Lien de paiement Stripe TEST/);
+ assert.match(component,/testLink/);
+ assert.match(component,/rel="noopener noreferrer"/);
+});
