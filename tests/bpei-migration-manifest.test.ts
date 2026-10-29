@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,44,"44 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,44,
+ assert.equal(migrations.length,45,"45 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,45,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/44 migrations appliquées/);
- assert.match(readme,/44 fichiers SQL versionnés/);
+ assert.match(readme,/45 migrations appliquées/);
+ assert.match(readme,/45 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -82,4 +82,11 @@ test("Manual admin intake requires publication, permission and verifiable privac
  ])assert.ok(sql.includes(fragment),fragment);
  assert.ok(!sql.includes("UPDATE public.bpei_launch_controls SET"),
    "Manual intake must never activate legal publication");
+});
+
+test("Privileged manual client intake cannot run as public SECURITY DEFINER",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029074651_mvp_private_schema_for_privileged_manual_intake.sql",import.meta.url),"utf8");
+ assert.match(sql,/SET SCHEMA bpei_private/);
+ assert.match(sql,/SECURITY INVOKER/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION public\.mvp_admin_create_inquiry/);
 });
