@@ -49,3 +49,7 @@ La migration 49 introduit une file de livraison d'e-mails privée, à usage uniq
 ## Factures françaises : champs obligatoires variables
 
 La migration 50 désactive l'ancien RPC d'émission incomplet et crée `mvp_issue_invoice_compliant`. Chaque émission exige les conditions réelles de règlement, les escomptes, les pénalités de retard B2B, le forfait légal 40 EUR de recouvrement pour le B2B, ainsi que l'identification TVA française quand elle est applicable. Le responsable de facturation doit vérifier ces valeurs ; BPEI ne les préremplit pas artificiellement. Ces informations sont figées dans la facture et intégrées au PDF et à l'affichage. La transmission de factures électroniques structurées par plateforme agréée reste distincte, avec ses échéances réglementaires.
+
+## Onboarding Stripe Connect Accounts v2 (2026-10-29)
+
+Une fonction Edge `bpei-test-connect`, **désactivée par défaut**, peut créer à la demande du technicien préalablement validé un compte marchand **Stripe Accounts v2** en mode test. Stripe lui-même collecte l'identité et les informations de règlement, puis le serveur BPEI vérifie `charges_enabled`, `payouts_enabled` et `details_submitted`. L'activation par l'administrateur est distincte et le verrou de paiement général reste fermé sans validation du compte plateforme. Les écrans technicien et administrateur comprennent les actions, sans approbation automatique ni saisie de faux identifiants. Le projet juridique complet est disponible dans `docs/juridique` ; il n'est PAS publié et ne remplace aucune validation réglementaire.
