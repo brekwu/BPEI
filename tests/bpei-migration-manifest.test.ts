@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,40,"Migration 38 and earlier must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,40,
+ assert.equal(migrations.length,41,"41 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,41,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/40 migrations appliquées/);
- assert.match(readme,/40 fichiers SQL versionnés/);
+ assert.match(readme,/41 migrations appliquées/);
+ assert.match(readme,/41 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -49,4 +49,11 @@ test("Migrations commerciales : validation des coordonnées et numérotation ato
  const q=readFileSync(new URL("../supabase/migrations/20261029071146_mvp_quotes_accepted_invoices_atomic_numbering.sql",import.meta.url),"utf8");
  for(const key of ["mvp_create_quote","mvp_accept_quote","mvp_issue_invoice","ON CONFLICT","ENABLE ROW LEVEL SECURITY","REVOKE ALL"])
   assert.ok(q.includes(key),key);
+});
+
+test("Issued invoices are immutable and counters remain private",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029071946_mvp_invoice_immutability_and_counter_privacy.sql",import.meta.url),"utf8");
+ assert.match(sql,/bpei_invoice_immutable/);
+ assert.match(sql,/bpei_invoice_counters_no_direct_read/);
+ assert.match(sql,/BEFORE UPDATE OR DELETE/);
 });
