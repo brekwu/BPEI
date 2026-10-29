@@ -7,6 +7,7 @@ import { MissionTimeline } from "@/components/shared/MissionTimeline";
 import { BpeiInbox } from "@/components/shared/BpeiInbox";
 import { IndependentConnectPanel } from "@/components/independent/IndependentConnectPanel";
 import { IndependentLevelStatus } from "@/components/independent/IndependentLevelStatus";
+import { PartnerProspectCRM } from "@/components/independent/PartnerProspectCRM";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -390,6 +391,7 @@ function IndependentSpace() {
           </section>
           {profile?.verified_at&&application?.status==="approved"&&legalAccepted&&<IndependentConnectPanel/>}
           <IndependentLevelStatus userId={userId}/>
+          <PartnerProspectCRM userId={userId}/>
           <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
