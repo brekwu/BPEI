@@ -35,3 +35,13 @@ test("Stripe adjustments parser deployed to Edge Function equals tested helper",
  }
  assert.doesNotMatch(webhook, /\/v1\/refunds/,"Provider payment movements require approved merchant account and explicit request");
 });
+
+test("Connected technician's commission is sourced from database, never request data",()=>{
+ const checkout=readFileSync(new URL("../supabase/functions/bpei-test-checkout/index.ts",import.meta.url),"utf8");
+ assert.match(checkout,/attempt\.application_fee_cents/);
+ assert.match(checkout,/payment_intent_data\[application_fee_amount\]/);
+ assert.match(checkout,/if\(fee>0\)/);
+ assert.doesNotMatch(checkout,/payload\.(?:fee|commission|amount)/);
+ const sql=readFileSync(new URL("../supabase/migrations/20261029123512_mvp_optional_documented_connect_test_commission.sql",import.meta.url),"utf8");
+ for(const requirement of ["test_application_fee_bps integer NOT NULL DEFAULT 0","fee_agreement_reference","fee_agreement_at","application_fee_cents","v_fee","mvp_test_checkout_prepare"])assert.ok(sql.includes(requirement),requirement);
+});
