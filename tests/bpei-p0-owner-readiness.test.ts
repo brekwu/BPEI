@@ -27,6 +27,6 @@ test("P0 owner report covers every real-world release dependency without fabrica
     "bpei_service_invoices",
     "bpei_payment_attempts",
   ]) assert.ok(sql.includes(term), "Missing P0 requirement: " + term);
-  assert.match(sql, /conditions SQL presentes/i.test(sql) ? /CONDITIONS SQL PRESENTES/ : /CONDITIONS SQL PRESENTES/);
+  assert.match(sql, /CONDITIONS SQL PRESENTES/);
   assert.match(sql, /NON PRET/);
 });
