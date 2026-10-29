@@ -7,7 +7,7 @@ import {euroToCents,formatCents,vatChoices} from "@/lib/bpei-commercial";
 
 type Inquiry={id:string;client_name:string;email:string;phone:string|null;address_line1:string|null;postal_code:string|null;city:string|null;
  subject:string;status:string;assigned_to:string|null;customer_kind:string};
-type Quote={id:string;inquiry_id:string;issuer_id:string;status:string;issuer_legal_name:string;
+type Quote={id:string;inquiry_id:string;issuer_id:string;status:string;issuer_legal_name:string;customer_kind:string;
  issuer_siret:string;customer_name:string;service_description:string;quantity:number;
  unit_price_cents:number;vat_basis_points:number;net_cents:number;vat_cents:number;gross_cents:number;
  accepted_at:string|null};
@@ -47,6 +47,11 @@ export function AdminCommercialDesk(){
  const [evidenceReference,setEvidenceReference]=useState("");
  const [serviceDate,setServiceDate]=useState("");
  const [dueDate,setDueDate]=useState("");
+ const [issuerVatNumber,setIssuerVatNumber]=useState("");
+ const [paymentTerms,setPaymentTerms]=useState("");
+ const [earlyPaymentDiscount,setEarlyPaymentDiscount]=useState("");
+ const [latePaymentPenalties,setLatePaymentPenalties]=useState("");
+ const [orderReference,setOrderReference]=useState("");
 
  const refresh=useCallback(async()=>{
   setLoading(true);setFailure("");
@@ -54,7 +59,7 @@ export function AdminCommercialDesk(){
    const db=supabase as any;
    const [i,q,n,m,pa,re,di,ma]=await Promise.all([
     db.from("bpei_inquiries").select("id,client_name,email,phone,address_line1,postal_code,city,subject,status,assigned_to,customer_kind").eq("kind","intervention").order("created_at",{ascending:false}).limit(200),
-    db.from("bpei_service_quotes").select("id,inquiry_id,issuer_id,status,issuer_legal_name,issuer_siret,customer_name,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at").order("created_at",{ascending:false}).limit(200),
+    db.from("bpei_service_quotes").select("id,inquiry_id,issuer_id,status,issuer_legal_name,issuer_siret,customer_name,customer_kind,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_invoices").select("id,quote_id,invoice_number,issued_at,payment_status").order("issued_at",{ascending:false}).limit(200),
     db.from("independent_requests").select("inquiry_id,status").not("inquiry_id","is",null).limit(500),
     db.from("bpei_payment_attempts") .select("id,invoice_id,state,paid_at,created_at,amount_cents,application_fee_cents").order("created_at",{ascending:false}).limit(500),
@@ -145,10 +150,18 @@ export function AdminCommercialDesk(){
   }),"Acceptation du client enregistrée avec sa référence justificative.");
  }
  function issue(quote:Quote){
-  if(!serviceDate||!dueDate)return;
-  if(!window.confirm("Créer une facture définitive et numérotée pour ce prestataire ? Elle ne sera plus modifiable."))return;
-  void run(()=> (supabase as any).rpc("mvp_issue_invoice",{
-   p_quote_id:quote.id,p_service_date:serviceDate,p_due_date:dueDate
+  if(!serviceDate||!dueDate||paymentTerms.trim().length<10
+   ||earlyPaymentDiscount.trim().length<10
+   ||(quote.customer_kind==="business"&&latePaymentPenalties.trim().length<10)
+   ||(quote.vat_basis_points>0&&!/^FR[0-9A-Z]{2}[0-9]{9}$/.test(issuerVatNumber.trim().toUpperCase())))return;
+  if(!window.confirm("Créer une facture définitive numérotée avec les conditions réelles du prestataire ? Elle ne sera plus modifiable."))return;
+  void run(()=> (supabase as any).rpc("mvp_issue_invoice_compliant",{
+   p_quote_id:quote.id,p_service_date:serviceDate,p_due_date:dueDate,
+   p_issuer_vat_number:issuerVatNumber.trim().toUpperCase(),
+   p_payment_terms:paymentTerms.trim(),
+   p_early_payment_discount:earlyPaymentDiscount.trim(),
+   p_late_payment_penalties:latePaymentPenalties.trim(),
+   p_customer_order_reference:orderReference.trim()
   }),"Facture définitive enregistrée. Vérifiez et imprimez-la depuis la liste ci-dessous.");
  }
 
@@ -228,7 +241,22 @@ export function AdminCommercialDesk(){
        <p>La facture définitive peut être émise après clôture de la mission. Vérifiez les dates avant confirmation.</p>
        <label className="block">Date réelle de prestation <Input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)}/></label>
        <label className="block">Date limite de paiement <Input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label>
-       <Button type="button" disabled={busy||!completed||!serviceDate||!dueDate} onClick={()=>issue(q)}>Émettre la facture définitive</Button>
+       <p className="text-xs text-muted-foreground">Reprenez les véritables conditions fiscales et commerciales du prestataire, sans valeur supposée.</p>
+       <label className="block">TVA intracommunautaire du prestataire {q.vat_basis_points>0?"(obligatoire)":"(si applicable)"}
+        <Input value={issuerVatNumber} maxLength={13} onChange={e=>setIssuerVatNumber(e.target.value.toUpperCase())} placeholder="FR + clé + 9 chiffres"/></label>
+       <label className="block">Conditions de règlement exactes *
+        <Input value={paymentTerms} maxLength={500} onChange={e=>setPaymentTerms(e.target.value)} placeholder="Mode et échéance du règlement"/></label>
+       <label className="block">Conditions d'escompte (ou absence d'escompte) *
+        <Input value={earlyPaymentDiscount} maxLength={250} onChange={e=>setEarlyPaymentDiscount(e.target.value)}/></label>
+       {q.customer_kind==="business"&&<label className="block">Pénalités de retard B2B *
+        <Input value={latePaymentPenalties} maxLength={400} onChange={e=>setLatePaymentPenalties(e.target.value)}/></label>}
+       <label className="block">Bon de commande client (si existant)
+        <Input value={orderReference} maxLength={160} onChange={e=>setOrderReference(e.target.value)}/></label>
+       <Button type="button" disabled={busy||!completed||!serviceDate||!dueDate
+        ||paymentTerms.trim().length<10||earlyPaymentDiscount.trim().length<10
+        ||(q.customer_kind==="business"&&latePaymentPenalties.trim().length<10)
+        ||(q.vat_basis_points>0&&!/^FR[0-9A-Z]{2}[0-9]{9}$/.test(issuerVatNumber.trim().toUpperCase()))}
+        onClick={()=>issue(q)}>Émettre la facture définitive</Button>
       </div>}
       {invoice&&<div className="border-t pt-3">
        <p>Facture {invoice.invoice_number} · {new Date(invoice.issued_at).toLocaleDateString("fr-FR")} · <strong>{
