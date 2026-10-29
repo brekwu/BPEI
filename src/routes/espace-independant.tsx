@@ -53,6 +53,8 @@ function IndependentSpace() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [registration, setRegistration] = useState(false);
   const [launch, setLaunch] = useState<{legal_documents_published:boolean;independent_registration_enabled:boolean;legal_version:string|null}|null>(null);
@@ -198,6 +200,7 @@ function IndependentSpace() {
   async function signIn(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setPendingConfirmationEmail("");
     if(registration && (!canRegisterIndependent(launch) || !privacyChecked)){
       setError("L'inscription n'est pas ouverte ou les informations juridiques n'ont pas été acceptées.");
       return;
@@ -211,21 +214,51 @@ function IndependentSpace() {
     try {
       const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
       if (result.error || !result.data.user) {
+        if (!registration && result.error?.code === "email_not_confirmed") {
+          setPendingConfirmationEmail(email.trim().toLowerCase());
+          setError("Confirmez votre adresse e-mail pour vous connecter. Vous pouvez demander un nouvel envoi.");
+          return;
+        }
         setError("Connexion impossible. Vérifiez vos identifiants et le service d'authentification.");
         return;
       }
       setPassword("");
       setPasswordConfirm("");
       if (!result.data.session) {
+        setPendingConfirmationEmail(email.trim().toLowerCase());
         setNotice("Vérifiez votre e-mail pour confirmer le compte.");
         return;
       }
+      setPendingConfirmationEmail("");
       setUserId(result.data.user.id);
       await load(result.data.user.id);
     } catch {
       setError("Service d'authentification indisponible. Réessayez.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!pendingConfirmationEmail || resendingConfirmation) return;
+    setResendingConfirmation(true);
+    setError("");
+    setNotice("");
+    try {
+      const {error: resendError} = await supabase.auth.resend({
+        type: "signup",
+        email: pendingConfirmationEmail,
+        options: {emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant")}
+      });
+      if (resendError) {
+        setError("Renvoi impossible pour le moment. Vérifiez votre boîte e-mail ou réessayez plus tard.");
+      } else {
+        setNotice("Si votre inscription est en attente et que le service e-mail est disponible, un nouveau message de confirmation sera envoyé.");
+      }
+    } catch {
+      setError("Service e-mail indisponible. Réessayez plus tard.");
+    } finally {
+      setResendingConfirmation(false);
     }
   }
 
@@ -276,7 +309,7 @@ function IndependentSpace() {
       {loading ? <p className="mt-8">Chargement…</p> : !userId ?
         <form onSubmit={signIn} className="mt-8 space-y-4 rounded-xl border bg-card p-6">
           <h2 className="font-semibold">{registration ? "Inscription indépendant" : "Connexion"}</h2>
-          <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
+          <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => {setEmail(e.target.value);setPendingConfirmationEmail("");}} />
           <div className="space-y-3">
             <Input type={showPassword ? "text" : "password"} autoComplete={registration ? "new-password" : "current-password"} minLength={registration ? 12 : 1} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
             {registration && <Input type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={12} required placeholder="Confirmer le mot de passe" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} />}
@@ -293,6 +326,10 @@ function IndependentSpace() {
               </label> :
               <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
           </div>}
+          {pendingConfirmationEmail && <Button type="button" variant="outline" disabled={resendingConfirmation || loading}
+            onClick={() => void resendConfirmation()}>
+            {resendingConfirmation ? "Envoi en cours…" : "Renvoyer l'e-mail de confirmation"}
+          </Button>}
           <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked || password.length<12 || password !== passwordConfirm)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => {setRegistration(v => !v);setPasswordConfirm("");setPrivacyChecked(false);setError("");}}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           {!registration && <Link to="/reinitialiser-mot-de-passe" className="block text-sm underline">Mot de passe oublié ?</Link>}
