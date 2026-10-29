@@ -15,6 +15,9 @@ export function AdminPartnerAssessment({userId,displayName}:{
  const [questions,setQuestions]=useState<Question[]>([]);
  const [level,setLevel]=useState<Level|null>(null);
  const [history,setHistory]=useState<Assessment[]>([]);
+ const [verifiedSkills,setVerifiedSkills]=useState<string[]>([]);
+ const [newSkill,setNewSkill]=useState("");
+ const [skillEvidence,setSkillEvidence]=useState("");
  const [selected,setSelected]=useState(1);
  const [score,setScore]=useState("0");
  const [practical,setPractical]=useState("0");
@@ -30,22 +33,24 @@ export function AdminPartnerAssessment({userId,displayName}:{
  const [showAnswers,setShowAnswers]=useState(false);
  const load=useCallback(async()=>{
   const db=supabase as any;
-  const [q,l,a]=await Promise.all([
+  const [q,l,a,v]=await Promise.all([
    db.from("bpei_assessment_questions")
     .select("level,ordinal,domain,question,evaluator_answer").eq("level",selected).order("ordinal"),
    db.from("bpei_technician_levels").select("level,authorization_state,decision_note")
     .eq("user_id",userId).maybeSingle(),
    db.from("bpei_technician_assessments")
     .select("id,tested_level,knowledge_score,practical_score,interview_score,decision,summary,created_at")
-    .eq("user_id",userId).order("created_at",{ascending:false}).limit(10)
+    .eq("user_id",userId).order("created_at",{ascending:false}).limit(10),
+   db.from("bpei_verified_partner_skills").select("skill")
+    .eq("user_id",userId).order("skill").limit(80)
   ]);
-  if(q.error||l.error||a.error)throw Error("data unavailable");
-  setQuestions(q.data??[]);setLevel(l.data??null);setHistory(a.data??[]);
+  if(q.error||l.error||a.error||v.error)throw Error("data unavailable");
+  setQuestions(q.data??[]);setLevel(l.data??null);setHistory(a.data??[]);setVerifiedSkills((v.data??[]).map((x:{skill:string})=>x.skill));
  },[userId,selected]);
  useEffect(()=>{
   let active=true;
   load().catch(()=>{if(active)setError("Questionnaire indisponible : vérifiez les droits administrateur.");});
-  return ()=>{active=false;setQuestions([]);setLevel(null);setHistory([])};
+  return ()=>{active=false;setQuestions([]);setLevel(null);setHistory([]);setVerifiedSkills([])};
  },[load]);
  async function run(action:()=>Promise<unknown>){
   setBusy(true);setError("");setNotice("");
@@ -139,6 +144,23 @@ export function AdminPartnerAssessment({userId,displayName}:{
     {level.authorization_state!=="active"&&<Button type="button" disabled={busy||authorizationReason.trim().length<30} onClick={()=>authorize("activate")}>Activer pour les missions</Button>}
     {level.authorization_state==="active"&&<Button type="button" variant="outline" disabled={busy||authorizationReason.trim().length<30} onClick={()=>authorize("suspend")}>Suspendre les missions</Button>}
    </div>
+  </div>}
+  {level?.level&&<div className="mt-5 space-y-3 border-t pt-4">
+   <h5 className="font-semibold">Compétences vérifiées par BPEI</h5>
+   <p className="text-xs text-muted-foreground">Seules ces compétences seront visibles dans l'annuaire public, avec l'accord du partenaire et si son dossier reste valable.</p>
+   {verifiedSkills.length>0&&<p className="text-sm">{verifiedSkills.join(", ")}</p>}
+   <label className="block text-sm">Compétence contrôlée (3 à 80 caractères)
+    <Input minLength={3} maxLength={80} value={newSkill} onChange={e=>setNewSkill(e.target.value)}/></label>
+   <label className="block text-sm">Référence d'une épreuve vérifiable (20 à 500 caractères)
+    <Input minLength={20} maxLength={500} value={skillEvidence} onChange={e=>setSkillEvidence(e.target.value)}/></label>
+   <Button type="button" variant="outline" disabled={busy||newSkill.trim().length<3||skillEvidence.trim().length<20}
+    onClick={()=>void run(async()=>{
+     const result=await (supabase as any).rpc("verify_partner_skill",{
+      p_user_id:userId,p_skill:newSkill.trim(),p_evidence_reference:skillEvidence.trim()
+     });
+     if(!result.error){setNewSkill("");setSkillEvidence("");}
+     return result;
+    })}>Enregistrer la compétence vérifiée</Button>
   </div>}
   {history.length>0&&<details className="mt-4 text-sm"><summary>Historique des évaluations ({history.length})</summary>
    <ul className="mt-2 space-y-2">{history.map(h=><li key={h.id} className="border-b pb-2">
