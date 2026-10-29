@@ -38,6 +38,7 @@ type Profile = {
   availability_notes:string;
   mission_types:string[];
   professional_stage:"preparing"|"registered";
+  public_listing_opt_in:boolean;
 };
 
 function IndependentSpace() {
@@ -253,6 +254,7 @@ function IndependentSpace() {
         availability_notes:profile.availability_notes.trim(),
         mission_types:profile.mission_types,
         professional_stage:profile.professional_stage,
+        public_listing_opt_in:profile.public_listing_opt_in,
       };
       const {error:saveError}=await (supabase as any).from("independent_profiles").update(payload).eq("user_id",userId);
       if(saveError){setError("Enregistrement impossible. Vérifiez les champs et vos autorisations.");return;}
@@ -360,6 +362,9 @@ function IndependentSpace() {
              Je peux proposer des interventions informatiques à distance.</label>
             <label className="block text-sm">Disponibilités et types de missions souhaités
              <Textarea maxLength={800} value={profile.availability_notes??""} onChange={e=>update("availability_notes",e.target.value)} placeholder="Indiquez vos préférences librement ; aucun quota ni horaire imposé."/></label>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={profile.public_listing_opt_in??false}
+             onChange={e=>update("public_listing_opt_in",e.target.checked)}/>
+             J'autorise BPEI à afficher publiquement mon nom professionnel, mon niveau, ma ville et mes compétences effectivement validées. Cette autorisation n'active pas mon profil sans contrôle professionnel.</label>
             <label className="block text-sm">Types de missions (séparés par une virgule)
              <Input value={(profile.mission_types??[]).join(", ")} onChange={e=>update("mission_types",e.target.value.split(",").map(v=>v.trim()).filter(Boolean).slice(0,20))}
               placeholder="PC, réseaux, sauvegarde, support, distance…"/></label>
