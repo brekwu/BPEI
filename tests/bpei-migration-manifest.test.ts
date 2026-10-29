@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,50,"50 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,50,
+ assert.equal(migrations.length,56,"56 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,56,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/50 migrations appliquées/);
- assert.match(readme,/50 fichiers SQL versionnés/);
+ assert.match(readme,/56 migrations appliquées/);
+ assert.match(readme,/56 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -125,4 +125,15 @@ test("Incomplete invoice RPC is disabled and detailed issuer-specific payment te
   "b2b_recovery_fee_cents","v_quote.vat_basis_points>0"])
   assert.ok(sql.includes(part),part);
  assert.match(sql,/SECURITY INVOKER/);
+});
+
+test("National partner network migration files are tracked and complete",()=>{
+ for(const name of [
+ "20261029131257_national_partner_profiles_assessments_and_authorization.sql",
+ "20261029131348_network_assessment_level_1_question_bank.sql",
+ "20261029131401_network_assessment_level_2_question_bank.sql",
+ "20261029131455_network_assessment_level_3_question_bank.sql",
+ "20261029131503_network_assessment_level_4_question_bank.sql",
+ "20261029131827_national_partner_prospect_registry_and_mission_compensation_offer.sql"
+ ])assert.ok(migrations.includes(name),name);
 });
