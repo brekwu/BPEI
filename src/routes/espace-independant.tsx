@@ -8,6 +8,7 @@ import { BpeiInbox } from "@/components/shared/BpeiInbox";
 import { IndependentConnectPanel } from "@/components/independent/IndependentConnectPanel";
 import { IndependentLevelStatus } from "@/components/independent/IndependentLevelStatus";
 import { PartnerProspectCRM } from "@/components/independent/PartnerProspectCRM";
+import { PartnerFinanceDesk } from "@/components/independent/PartnerFinanceDesk";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -409,6 +410,7 @@ function IndependentSpace() {
           <IndependentLevelStatus userId={userId}/>
           <p className="text-sm"><Link className="underline" to="/ressources-prospection">Consulter le guide BPEI de prospection locale et les modèles de messages</Link></p>
           <PartnerProspectCRM userId={userId}/>
+          <PartnerFinanceDesk userId={userId}/>
           <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
