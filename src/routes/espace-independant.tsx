@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { missionStatusLabel, nextMissionStatus, canReadMissionClientContact } from "@/lib/bpei-mission-status";
+import {formatCents} from "@/lib/bpei-commercial";
 import { canRegisterIndependent, isPublishedLegalVersion } from "@/lib/bpei-launch-policy";
 import { bpeiAuthRedirect } from "@/lib/bpei-auth-redirect";
 
@@ -59,6 +60,10 @@ function IndependentSpace() {
   const [saving, setSaving] = useState(false);
   const [requests, setRequests] = useState<Array<{ id: string; title: string; status: string; created_at: string; inquiry_id: string | null }>>([]);
   const [clientContacts, setClientContacts] = useState<Record<string,{ client_name:string; email:string; phone:string|null; city:string|null }>>({});
+  const [remunerations,setRemunerations]=useState<Record<string,{
+   id:string;request_id:string;status:string;client_price_ht_cents:number;
+   technician_ht_cents:number;bpei_ht_cents:number;expense_policy:string;source:string
+  }>>({});
   const [application, setApplication] = useState<{ id: string; status: string; created_at: string; message: string } | null>(null);
 
   function clearPrivateState() {
@@ -69,6 +74,7 @@ function IndependentSpace() {
     setRequests([]);
     setApplication(null);
     setClientContacts({});
+    setRemunerations({});
   }
 
   async function load(id: string): Promise<boolean> {
@@ -121,7 +127,12 @@ function IndependentSpace() {
         }
       }
 
+      const paymentOfferResult=await db.from("bpei_partner_compensation_proposals")
+       .select("id,request_id,status,client_price_ht_cents,technician_ht_cents,bpei_ht_cents,expense_policy,source")
+       .eq("partner_id",id).limit(100);
       if(epoch!==dataEpoch.current)return false;
+      if(paymentOfferResult.error){clearPrivateState();setError("Rémunération des missions indisponible. Réessayez.");return false;}
+      setRemunerations(Object.fromEntries((paymentOfferResult.data??[]).map((o:any)=>[o.request_id,o])));
       setLaunch(currentGate);
       setLegalAccepted(accepted);
       setProfile(p.data ?? null);
@@ -415,14 +426,46 @@ function IndependentSpace() {
                   },"Service indisponible pendant le changement de statut.");
                 }}>{r.status==="accepted"?"Démarrer l'intervention":"Marquer l'intervention terminée"}</Button>
               </div>}
+              {r.status==="new"&&remunerations[r.id]&&<div className="mt-3 rounded-md border p-3 text-sm">
+               <h4 className="font-semibold">Rémunération proposée, HT</h4>
+               <p>Prix client : {formatCents(remunerations[r.id].client_price_ht_cents)}
+                · Votre part : <strong>{formatCents(remunerations[r.id].technician_ht_cents)}</strong>
+                · BPEI : {formatCents(remunerations[r.id].bpei_ht_cents)}</p>
+               <p>Origine : {remunerations[r.id].source==="partner"?"Client apporté par le technicien":remunerations[r.id].source==="bpei"?"Client apporté par BPEI":"Client apporté par un autre partenaire"}</p>
+               <p>Déplacements et frais : {remunerations[r.id].expense_policy}</p>
+               <p>Accord : {remunerations[r.id].status==="accepted"?"Votre rémunération est acceptée":remunerations[r.id].status==="declined"?"Rémunération refusée":"Votre décision est nécessaire"}</p>
+               {remunerations[r.id].status==="proposed"&&<div className="mt-2 flex gap-2">
+                <Button type="button" size="sm" disabled={saving} onClick={async()=>{
+                 if(!userId||!window.confirm("Accepter les conditions de rémunération proposées avant de décider pour la mission ?"))return;
+                 await withSaveGuard(async()=>{
+                  const {error:e}=await (supabase as any).rpc("respond_partner_compensation",{
+                   p_proposal_id:remunerations[r.id].id,p_decision:"accepted"});
+                  if(e){setError("Rémunération non acceptée.");return;}
+                  await load(userId);
+                 },"Service indisponible pendant l'accord de rémunération.");
+                }}>Accepter cette rémunération</Button>
+                <Button type="button" size="sm" variant="outline" disabled={saving} onClick={async()=>{
+                 if(!userId||!window.confirm("Refuser cette rémunération ? Vous restez libre de refuser la mission."))return;
+                 await withSaveGuard(async()=>{
+                  const {error:e}=await (supabase as any).rpc("respond_partner_compensation",{
+                   p_proposal_id:remunerations[r.id].id,p_decision:"declined"});
+                  if(e){setError("Refus non enregistré.");return;}
+                  await load(userId);
+                 },"Service indisponible pendant la décision de rémunération.");
+                }}>Refuser cette rémunération</Button>
+               </div>}
+              </div>}
+              {r.status==="new"&&!remunerations[r.id]&&<p className="mt-3 text-sm text-muted-foreground">
+               Les conditions de rémunération et de déplacement doivent être transmises avant que vous puissiez accepter cette mission.
+              </p>}
               {r.status==="new" && <div className="mt-3 flex flex-wrap gap-2">
-                <Button size="sm" disabled={saving} onClick={async()=>{
+                <Button size="sm" disabled={saving||remunerations[r.id]?.status!=="accepted"} onClick={async()=>{
                   if(!userId)return;await withSaveGuard(async()=>{
                     const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"accepted"});
                     if(e){setError("Impossible d'accepter cette mission.");return;}
                     await load(userId);
                   },"Service indisponible pendant l'acceptation de la mission.");
-                }}>Accepter</Button>
+                }}>Accepter la mission</Button>
                 <Button variant="outline" size="sm" disabled={saving} onClick={async()=>{
                   if(!userId||!window.confirm("Refuser cette mission ? Elle pourra être réattribuée."))return;
                   await withSaveGuard(async()=>{
