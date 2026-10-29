@@ -125,13 +125,13 @@ try{
  await page.getByText("Priorité : Normale").waitFor({timeout:15000});
  await page.locator('section[aria-label="Escalades administratives"] select').first().selectOption("high");
  await page.getByLabel(/Justification de l.escalade/).fill("Incident client prioritaire, risque de retard confirmé.");
- const priorityRpc=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/manage_incident_escalation")&&r.postDataJSON()?.p_action==="priority");
+ const priorityRpc=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/manage_incident_escalation")&&r.request().postDataJSON()?.p_action==="priority");
  await page.getByRole("button",{name:"Enregistrer la priorité"}).click();
  await priorityRpc;
  assert.equal(escalationCalls[0]?.p_action,"priority");
  assert.equal(escalationCalls[0]?.p_priority,"high");
  await page.locator('section[aria-label="Escalades administratives"] select').nth(1).selectOption(id);
- const assignmentRpc=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/manage_incident_escalation")&&r.postDataJSON()?.p_action==="assign");
+ const assignmentRpc=page.waitForResponse(r=>r.url().includes("/rest/v1/rpc/manage_incident_escalation")&&r.request().postDataJSON()?.p_action==="assign");
  await page.getByRole("button",{name:"Affecter",exact:true}).click();
  await assignmentRpc;
  assert.equal(escalationCalls[1]?.p_action,"assign");
