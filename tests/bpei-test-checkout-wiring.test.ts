@@ -24,3 +24,14 @@ test("A Stripe test link is presented to the operator, never auto-paid by redire
  assert.match(component,/testLink/);
  assert.match(component,/rel="noopener noreferrer"/);
 });
+
+test("Stripe adjustments parser deployed to Edge Function equals tested helper",()=>{
+ const local=readFileSync(new URL("../src/lib/bpei-stripe-adjustments.ts",import.meta.url),"utf8");
+ const edge=readFileSync(new URL("../supabase/functions/bpei-test-webhook/stripe-adjustments.ts",import.meta.url),"utf8");
+ assert.equal(edge,local);
+ const webhook=readFileSync(new URL("../supabase/functions/bpei-test-webhook/index.ts",import.meta.url),"utf8");
+ for(const needle of ["parseStripeAdjustmentSignal","mvp_test_payment_adjustment_event","stripe_payment_intent_id","connected_account_id"]){
+  assert.ok(webhook.includes(needle),needle);
+ }
+ assert.doesNotMatch(webhook, /\/v1\/refunds/,"Provider payment movements require approved merchant account and explicit request");
+});
