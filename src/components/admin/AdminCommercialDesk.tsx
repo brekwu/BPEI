@@ -22,6 +22,7 @@ export function AdminCommercialDesk(){
  const [invoices,setInvoices]=useState<Invoice[]>([]);
  const [missions,setMissions]=useState<Mission[]>([]);
  const [payments,setPayments]=useState<PaymentAttempt[]>([]);
+ const [testLink,setTestLink]=useState<{invoiceId:string;url:string}|null>(null);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
@@ -84,8 +85,8 @@ export function AdminCommercialDesk(){
 
  async function startTestCheckout(invoice:Invoice){
   if(!testCheckoutUI||busy)return;
-  if(!window.confirm("Ouvrir un paiement fictif Stripe en environnement de test ? Aucun paiement réel n'est autorisé."))return;
-  setBusy(true);setFailure("");
+  if(!window.confirm("Créer un lien de paiement Stripe TEST associé à cette facture ? Aucun paiement réel n'est autorisé."))return;
+  setBusy(true);setFailure("");setTestLink(null);
   try{
    const {data,error}=await supabase.functions.invoke("bpei-test-checkout",{body:{invoice_id:invoice.id}});
    if(error||!data||data.mode!=="test"||typeof data.url!=="string")
@@ -93,11 +94,11 @@ export function AdminCommercialDesk(){
    const url=new URL(data.url);
    if(url.protocol!=="https:"||url.hostname!=="checkout.stripe.com")
     throw new Error("Invalid checkout destination");
-   window.location.assign(url.href);
+   setTestLink({invoiceId:invoice.id,url:url.href});
+   setMessage("Lien de paiement Stripe TEST généré. Vous pouvez le copier pour un test contrôlé.");
   }catch{
    setFailure("Paiement de test indisponible : compte indépendant, clés Stripe ou validation serveur manquants.");
-   setBusy(false);
-  }
+  }finally{setBusy(false)}
  }
  function submitQuote(e:FormEvent){
   e.preventDefault();
@@ -197,6 +198,12 @@ export function AdminCommercialDesk(){
        <p>Facture {invoice.invoice_number} · {new Date(invoice.issued_at).toLocaleDateString("fr-FR")} · <strong>{payments.some(p=>p.invoice_id===invoice.id&&p.state==="paid")?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé"}</strong></p>
        {testCheckoutUI&&!payments.some(p=>p.invoice_id===invoice.id&&["pending","open","paid"].includes(p.state))&&
         <Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void startTestCheckout(invoice)}>Créer un lien Stripe — TEST</Button>}
+       {testLink?.invoiceId===invoice.id&&<div className="mt-2 space-y-2 rounded border p-3">
+        <p className="font-semibold">Lien Stripe TEST — à ne pas utiliser pour des clients réels</p>
+        <Input aria-label="Lien de paiement Stripe TEST" readOnly value={testLink.url} onFocus={e=>e.currentTarget.select()}/>
+        <a href={testLink.url} target="_blank" rel="noopener noreferrer" className="inline-block underline">Ouvrir le paiement de test</a>
+        <p className="text-xs text-muted-foreground">Sélectionnez le lien ci-dessus pour le copier. Vérifiez toujours le statut de paiement dans BPEI après un webhook valide.</p>
+       </div>}
        {payments.some(p=>p.invoice_id===invoice.id&&["pending","open"].includes(p.state))&&<p>Session de paiement test active. Vérifiez le paiement chez Stripe avant toute nouvelle tentative.</p>}
        <Link to="/facture/$invoiceId" params={{invoiceId:invoice.id}} className="mt-2 inline-block underline">Consulter et imprimer la facture</Link>
       </div>}
