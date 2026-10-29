@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, BadgeCheck, Handshake, HeartHandshake, Laptop, MapPin, Scale } from "lucide-react";
 import { HOW_IT_WORKS_CLIENT } from "@/lib/network-content";
 
-const TITLE = "BPEI — Réseau national de techniciens informatiques indépendants";
+const TITLE = "BPEI — Bureau des Partenaires et Entrepreneurs de l’Informatique";
 const DESCRIPTION =
   "Besoin d'un dépannage informatique ? Décrivez votre besoin : BPEI cherche un technicien indépendant vérifié près de chez vous. Techniciens freelance : rejoignez le réseau.";
 
@@ -39,11 +39,11 @@ function Landing() {
                   <MapPin className="h-3 w-3" /> Réseau national en constitution
                 </div>
                 <h1 className="mt-6 text-4xl font-bold leading-tight tracking-tight text-white md:text-6xl">
-                  Le réseau national des techniciens informatiques indépendants
+                  BPEI, le réseau national des techniciens informatiques indépendants
                 </h1>
                 <p className="mt-6 max-w-2xl text-lg text-white/75 md:text-xl">
                   Une panne, un ordinateur lent, un Wi-Fi capricieux ? Décrivez votre besoin :
-                  BPEI cherche un technicien indépendant vérifié près de chez vous.
+                  BPEI — Bureau des Partenaires et Entrepreneurs de l’Informatique — recherche un partenaire vérifié dans les zones réellement couvertes.
                 </p>
                 <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <Button asChild size="lg" className="bg-electric text-electric-foreground hover:bg-electric/90">
@@ -51,6 +51,7 @@ function Landing() {
                       Demander une intervention <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
+                  <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white"><Link to="/trouver-un-technicien">Rechercher un partenaire BPEI</Link></Button>
                   <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:text-white">
                     <Link to="/devenir-partenaire">Devenir partenaire indépendant</Link>
                   </Button>
