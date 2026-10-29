@@ -10,7 +10,7 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   const [availability,setAvailability] = useState<"loading"|"open"|"closed"|"error">("loading");
   const [legalVersion,setLegalVersion] = useState<string|null>(null);
   const [draft,setDraft] = useState<BpeiInquiryDraft>({
-    kind,client_name:"",email:"",phone:"",city:"",subject:"",description:"",consent_accepted:false
+    kind,client_name:"",email:"",phone:"",city:"",address_line1:"",postal_code:"",customer_kind:"individual",company_name:"",company_siret:"",subject:"",description:"",consent_accepted:false
   });
   const [trap,setTrap] = useState("");
   const [saving,setSaving] = useState(false);
@@ -52,8 +52,17 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
     <p className="text-sm text-muted-foreground">Les champs marqués * sont obligatoires. Ne communiquez jamais de mot de passe ni de donnée médicale dans la description.</p>
     <label className="block text-sm font-medium">Nom et prénom *<Input autoComplete="name" required maxLength={120} value={draft.client_name} onChange={e=>set("client_name",e.target.value)} /></label>
     <label className="block text-sm font-medium">E-mail *<Input type="email" autoComplete="email" required maxLength={254} value={draft.email} onChange={e=>set("email",e.target.value)} /></label>
-    <label className="block text-sm font-medium">Téléphone (facultatif)<Input type="tel" autoComplete="tel" maxLength={40} value={draft.phone} onChange={e=>set("phone",e.target.value)} /></label>
+    <label className="block text-sm font-medium">Téléphone {kind==="intervention"?"*":"(facultatif)"}<Input required={kind==="intervention"} minLength={kind==="intervention"?6:undefined} type="tel" autoComplete="tel" maxLength={40} value={draft.phone} onChange={e=>set("phone",e.target.value)} /></label>
     <label className="block text-sm font-medium">Ville {kind==="intervention"?"*":"(facultatif)"}<Input required={kind==="intervention"} autoComplete="address-level2" maxLength={120} value={draft.city} onChange={e=>set("city",e.target.value)} /></label>
+    {kind==="intervention"&&<>
+    <label className="block text-sm font-medium">Type de client *<select className="mt-1 w-full rounded-md border bg-background p-2" value={draft.customer_kind} onChange={e=>set("customer_kind",e.target.value)}><option value="individual">Particulier</option><option value="business">Entreprise</option></select></label>
+    <label className="block text-sm font-medium">Adresse d’intervention / facturation *<Input autoComplete="street-address" required minLength={5} maxLength={200} value={draft.address_line1} onChange={e=>set("address_line1",e.target.value)} /></label>
+    <label className="block text-sm font-medium">Code postal *<Input autoComplete="postal-code" inputMode="numeric" pattern="[0-9]{5}" maxLength={5} required value={draft.postal_code} onChange={e=>set("postal_code",e.target.value)}/></label>
+    {draft.customer_kind==="business"&&<>
+      <label className="block text-sm font-medium">Raison sociale *<Input required minLength={2} maxLength={160} value={draft.company_name} onChange={e=>set("company_name",e.target.value)}/></label>
+      <label className="block text-sm font-medium">SIRET du client (facultatif)<Input maxLength={14} pattern="[0-9]{14}" value={draft.company_siret} onChange={e=>set("company_siret",e.target.value)}/></label>
+    </>}
+    </>}
     <label className="block text-sm font-medium">Sujet *<Input required minLength={3} maxLength={160} value={draft.subject} onChange={e=>set("subject",e.target.value)} /></label>
     <label className="block text-sm font-medium">Description *<Textarea required minLength={15} maxLength={3000} rows={5} value={draft.description} onChange={e=>set("description",e.target.value)} /></label>
     <div className="absolute -left-[9999px]" aria-hidden="true"><label htmlFor="bpei-hidden-address">Site web</label><input id="bpei-hidden-address" autoComplete="off" tabIndex={-1} value={trap} onChange={e=>setTrap(e.target.value)} /></div>
