@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,56,"56 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,56,
+ assert.equal(migrations.length,60,"60 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,60,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/56 migrations appliquées/);
- assert.match(readme,/56 fichiers SQL versionnés/);
+ assert.match(readme,/60 migrations appliquées/);
+ assert.match(readme,/60 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -135,5 +135,14 @@ test("National partner network migration files are tracked and complete",()=>{
  "20261029131455_network_assessment_level_3_question_bank.sql",
  "20261029131503_network_assessment_level_4_question_bank.sql",
  "20261029131827_national_partner_prospect_registry_and_mission_compensation_offer.sql"
+ ])assert.ok(migrations.includes(name),name);
+});
+
+test("Opt-in partner discovery and trusted lead attribution migrations are tracked",()=>{
+ for(const name of [
+  "20261029132434_national_lead_trusted_origin_and_client_category_immutability.sql",
+  "20261029132619_national_public_partner_discovery_opt_in_verified_capabilities.sql",
+  "20261029132717_national_search_safe_public_definer_without_private_schema_usage.sql",
+  "20261029132803_national_discovery_invoker_scoped_private_schema_access.sql"
  ])assert.ok(migrations.includes(name),name);
 });
