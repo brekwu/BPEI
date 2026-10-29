@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
 import { AdminPrivateIntake } from "@/components/admin/AdminPrivateIntake";
 import { AdminLegalDocuments } from "@/components/admin/AdminLegalDocuments";
+import { AdminP0Readiness } from "@/components/admin/AdminP0Readiness";
 import { ProfessionalVerificationPanel } from "@/components/admin/ProfessionalVerificationPanel";
 import { AdminPartnerAssessment } from "@/components/admin/AdminPartnerAssessment";
 import { isVerificationCurrent, type ProfessionalCheck } from "@/lib/bpei-professional-verification";
@@ -191,7 +192,8 @@ function IndependentReview() {
         <p className="mt-7"><Link to="/gestion-commerciale" className="font-medium underline">Gestion commerciale : devis et factures</Link></p>
         <AdminPrivateIntake onCreated={()=>setIntakeRevision(n=>n+1)}/>
         <AdminInquiries key={intakeRevision}/>
-        <AdminLegalDocuments />
+        <AdminP0Readiness />
+          <AdminLegalDocuments />
       </section>}
     {message && <p className="mt-5 text-sm" role="status">{message}</p>}
   </main></PublicShell>;
