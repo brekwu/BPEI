@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **41 migrations appliquées** au 29 octobre 2026, et la branche contient **41 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **42 migrations appliquées** au 29 octobre 2026, et la branche contient **42 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,4 +16,8 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **41
 
 ## MVP commercial (29 octobre 2026)
 
-41 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+42 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+
+## Stripe Connect — pré-intégration contrôlée
+
+La migration 42 ajoute un registre interne des tentatives de paiement, un rattachement sécurisé à un compte Stripe Connect vérifié, et un journal d'événements webhook unique. **test_checkout_enabled=false** est imposé en base et **test_enabled=false** pour chaque compte marchand. Aucun compte n'est inscrit et aucune clé n'est configurée automatiquement. Les fonctions Edge sont codées sous `supabase/functions` mais il faut vérifier leur déploiement et leurs secrets séparément. Seul un événement Stripe Connect authentifié peut confirmer un paiement de TEST ; aucun versement ni paiement réel n'est possible dans cette version. Le statut interne `payment_status=unpaid` de la facture originale demeure inchangé, conformément à la règle d'immuabilité ; l'affichage de l'éventuelle confirmation test provient séparément du registre.
