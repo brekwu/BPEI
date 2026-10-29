@@ -1,0 +1,1 @@
+GRANT SELECT ON public.service_catalog TO anon;

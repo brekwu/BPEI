@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.owner_seed_publication_consumers(uuid) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.owner_record_consumer_observation(uuid, text, integer, text, text, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.owner_mark_consumer_retry(uuid, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.owner_rollback_platform_settings_with_reason(uuid, text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.owner_list_publication_consumers(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.owner_seed_publication_consumers(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.owner_record_consumer_observation(uuid, text, integer, text, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.owner_mark_consumer_retry(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.owner_rollback_platform_settings_with_reason(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.owner_list_publication_consumers(uuid) TO authenticated;

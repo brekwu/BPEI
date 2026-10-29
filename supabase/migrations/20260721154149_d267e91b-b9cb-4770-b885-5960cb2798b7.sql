@@ -1,0 +1,1 @@
+UPDATE public.app_settings SET value = to_jsonb(true) WHERE key = 'ai_import_enabled';

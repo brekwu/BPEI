@@ -1,0 +1,1 @@
+UPDATE public.import_rows SET status='ready', entity_kind='stock' WHERE job_id='0c186965-e7aa-4035-9953-d8f16809f3cc';

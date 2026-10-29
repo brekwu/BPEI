@@ -1,0 +1,36 @@
+services:
+  - type: web
+    runtime: node
+    name: bpei-staging
+    region: frankfurt
+    plan: free
+    branch: feat/reseau-national-2026-10
+    autoDeployTrigger: "off"
+    buildCommand: bun install --frozen-lockfile && bun run build
+    startCommand: node .output/server/index.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: VITE_BPEI_PUBLIC_FORMS_ENABLED
+        value: "false"
+      - key: BPEI_FORMS_ENABLED
+        value: "false"
+      - key: BPEI_STAGING
+        value: "true"
+      - key: NODE_ENV
+        value: production
+      - key: NITRO_PRESET
+        value: render-com
+      - key: HOST
+        value: 0.0.0.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: HASH_PEPPER
+        generateValue: true

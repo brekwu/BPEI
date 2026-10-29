@@ -1,0 +1,30 @@
+name: Actualiser le verrouillage TanStack après correctif de sécurité
+on:
+  push:
+    branches:
+      - feat/reseau-national-2026-10
+    paths:
+      - package.json
+permissions:
+  contents: write
+jobs:
+  regenerate-lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: oven-sh/setup-bun@v2
+      - name: Régénérer les dépendances cohérentes
+        run: bun install
+      - name: Contrôler la version corrigée
+        run: |
+          node -e 'const p=require("./node_modules/@tanstack/react-start/package.json"); const [major,minor,patch]=p.version.split(".").map(Number); if (major !== 1 || minor < 168 || (minor === 168 && patch < 60)) { console.error("Version TanStack non vérifiée",p.version); process.exit(1) } console.log("Version corrigée:",p.version)'
+      - name: Enregistrer uniquement le lockfile
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- bun.lock
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'fix: regenerate bun lockfile for patched TanStack Start'
+          git push origin HEAD:feat/reseau-national-2026-10

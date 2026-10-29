@@ -1,0 +1,96 @@
+name: Vérification BPEI (sans publication)
+on:
+  push:
+    branches:
+      - "feat/reseau-national-2026-10"
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-secret
+      HASH_PEPPER: ci-only
+      BPEI_STAGING: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Installer les dépendances
+        run: bun install --frozen-lockfile
+      - name: Tester les règles métier
+        run: bun test tests/network-forms.test.ts
+      - name: Tester la vérification de migration des données
+        run: node --test tests/migration-inventory.test.mjs
+      - name: Construire le site sans le publier
+        run: bun run build
+      - name: Contrôler l'absence des secrets serveur dans les fichiers publics
+        run: |
+          if grep -R -F -q -- "$SUPABASE_SERVICE_ROLE_KEY" .output/public; then
+            echo "Échec : clé serveur exposée dans le code public"
+            exit 1
+          fi
+          if grep -R -F -q -- "$HASH_PEPPER" .output/public; then
+            echo "Échec : secret de limitation de débit exposé dans le code public"
+            exit 1
+          fi
+          echo "Aucun secret serveur de test dans les assets publics"
+      - name: Vérifier la sortie du serveur Nitro Node
+        run: test -f .output/server/index.mjs
+      - name: Essayer les pages avec le vrai serveur Node
+        run: |
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-ssr.log 2>&1 &
+          BPEI_PID=$!
+          trap 'kill "$BPEI_PID" 2>/dev/null || true' EXIT
+          node scripts/smoke-http.mjs || { echo 'SSR server startup logs:'; tail -80 /tmp/bpei-ssr.log; exit 1; }
+      - name: Lint ciblé du code réseau BPEI
+        run: |
+          bunx eslint src/lib/network-forms.ts src/lib/network.functions.ts \
+            src/routes/demander-une-intervention.tsx \
+            src/routes/candidature-partenaire.tsx \
+            src/routes/_authenticated/admin.interventions.tsx \
+            src/routes/_authenticated/admin.techniciens.tsx \
+            tests/network-forms.test.ts \
+            --rule 'prettier/prettier: off'
+      - name: Diagnostic TypeScript du dépôt historique
+        continue-on-error: true
+        run: bunx tsc --noEmit
+
+  build-vercel-preview:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+      BPEI_FORMS_ENABLED: "false"
+      BPEI_STAGING: "true"
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-not-a-real-secret
+      HASH_PEPPER: ci-only
+      VERCEL: "1"
+      NITRO_PRESET: vercel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Installer les dépendances
+        run: bun install --frozen-lockfile
+      - name: Compiler pour Vercel sans déployer
+        run: bun run build
+      - name: Vérifier la sortie Vercel
+        run: |
+          test -d .vercel/output
+          test -f .vercel/output/config.json
+      - name: Contrôler les secrets côté navigateur
+        run: |
+          if grep -R -F -q -- "$SUPABASE_SERVICE_ROLE_KEY" .vercel/output/static; then
+            echo "Clé serveur exposée dans les fichiers publics"
+            exit 1
+          fi
+          echo "Pas de clé serveur dans les fichiers statiques"

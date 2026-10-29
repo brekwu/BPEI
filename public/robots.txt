@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Autoriser les pages juridiques publiques sous préfixes bloqués
+Allow: /avis/politique
+Allow: /pay/politique
+
+# Espaces privés et applicatifs
+Disallow: /app/
+Disallow: /admin/
+Disallow: /owner/
+Disallow: /onboarding
+Disallow: /auth
+Disallow: /signaler-bug
+
+# Portails et liens à jeton personnel
+Disallow: /portail
+Disallow: /suivi/
+Disallow: /q/
+Disallow: /avis/
+Disallow: /pay/
+Disallow: /commande/
+Disallow: /reserver/
+
+# Endpoints serveur
+Disallow: /api/
+
+Sitemap: https://bpei.fr/sitemap.xml
