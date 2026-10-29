@@ -25,5 +25,5 @@ test("P0 interface does not declare delivery guaranteed or a session authenticat
   const pending=route.indexOf("if (!result.data.session)");
   const loggedIn=route.indexOf("setUserId(result.data.user.id)",pending);
   assert.ok(pending >= 0 && loggedIn > pending);
-  assert.match(route, /setPendingConfirmationEmail\("null"\)|setPendingConfirmationEmail\("null"\)/.test(route) ? /./ : /setPendingConfirmationEmail\(""/);
+  assert.match(route, /setPendingConfirmationEmail\(""/);
 });
