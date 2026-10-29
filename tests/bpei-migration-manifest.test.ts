@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,46,"46 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,46,
+ assert.equal(migrations.length,47,"47 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,47,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/46 migrations appliquées/);
- assert.match(readme,/46 fichiers SQL versionnés/);
+ assert.match(readme,/47 migrations appliquées/);
+ assert.match(readme,/47 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -97,4 +97,10 @@ test("Refund/dispute reports originate from signed Stripe TEST provider events o
   assert.ok(sql.includes(key),key);
  }
  assert.match(sql,/SECURITY INVOKER/);
+});
+
+test("Adjustment identity is immutable and Stripe intent has one owning merchant",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029080151_mvp_unique_payment_intent_and_immutable_adjustment_identity.sql",import.meta.url),"utf8");
+ for(const s of ["UNIQUE INDEX bpei_payment_attempts_unique_merchant_intent","prevent_adjustment_reassignment","bpei_prevent_refund_reassignment","bpei_prevent_dispute_reassignment"])
+  assert.ok(sql.includes(s),s);
 });
