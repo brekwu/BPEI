@@ -1,99 +1,63 @@
 #!/usr/bin/env node
 /**
- * BPEI P0 — bootstrap the first admin on the dedicated Supabase project.
- * Never run this in the browser, Vercel client bundle or a public workflow.
- * Does not configure SMTP, publish legal documents or open registrations.
+ * BPEI P0 — first administrator bootstrap from an EXISTING verified Auth identity.
+ *
+ * This script deliberately NEVER creates users, NEVER forces email confirmation,
+ * NEVER supplies a password, and NEVER bypasses the BPEI legal/Auth signup hook.
+ * Run locally with a privileged service key only after an individual has
+ * personally verified their actual email via the project Auth provider.
+ *
+ *   BPEI_SUPABASE_URL=https://qmbsfmcotnsxsvbigynz.supabase.co \
+ *   BPEI_SUPABASE_SERVICE_KEY=<PRIVATE_SERVICE_ROLE_KEY> \
+ *   BPEI_ADMIN_EMAIL=<ACTUAL_CONFIRMED_EMAIL> \
+ *   node scripts/p0-bootstrap-admin.mjs --execute --user-id <EXISTING_AUTH_USER_UUID>
+ *
+ * Without --execute the script validates configuration and reports no mutation.
  */
 import { createClient } from "@supabase/supabase-js";
 
 const EXPECTED_REF = "qmbsfmcotnsxsvbigynz";
 const execute = process.argv.includes("--execute");
+const userIndex = process.argv.indexOf("--user-id");
+const userId = userIndex < 0 ? "" : (process.argv[userIndex+1]??"");
 const url = process.env.BPEI_SUPABASE_URL ?? "";
 const key = process.env.BPEI_SUPABASE_SERVICE_KEY ?? "";
 const email = (process.env.BPEI_ADMIN_EMAIL ?? "").trim().toLowerCase();
-const password = process.env.BPEI_ADMIN_PASSWORD ?? "";
-const emailVerified = process.env.BPEI_ADMIN_EMAIL_VERIFIED === "true";
-const resumeFlag = process.argv.indexOf("--resume-user-id");
-const resumeId = resumeFlag >= 0 ? process.argv[resumeFlag + 1] ?? "" : "";
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function fail(message) {
-  console.error("P0 bootstrap rejected:", message);
-  process.exitCode = 1;
+ console.error("P0 bootstrap refused:",message);
+ process.exitCode=1;
 }
-
-if (!execute) {
-  console.log("Dry run only. No account created. Use --execute with the required private environment variables.");
-} else if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url) ||
-           new URL(url).hostname !== `${EXPECTED_REF}.supabase.co`) {
-  fail("Wrong Supabase project. Refusing to modify any other database.");
-} else if (!key || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-  fail("Provide BPEI_SUPABASE_SERVICE_KEY and a valid BPEI_ADMIN_EMAIL.");
-} else if (password.length < 16 || !/[a-z]/.test(password) ||
-           !/[A-Z]/.test(password) || !/[0-9]/.test(password) ||
-           !/[^a-zA-Z0-9]/.test(password)) {
-  fail("Provide BPEI_ADMIN_PASSWORD: at least 16 chars, upper/lowercase, digit and symbol.");
-} else if (!emailVerified) {
-  fail("Set BPEI_ADMIN_EMAIL_VERIFIED=true only after personally verifying ownership of the chosen email.");
-} else if (resumeFlag >= 0 && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resumeId)) {
-  fail("Provide a valid --resume-user-id UUID for an existing confirmed account.");
-} else {
-  const client = createClient(url, key, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  try {
-    let id;
-    if (resumeId) {
-      // Resume safely if Auth succeeded but the DB role grant failed.
-      const { data, error } = await client.auth.admin.getUserById(resumeId);
-      if (error || !data?.user) throw new Error("Cannot fetch the account to resume.");
-      if (data.user.email?.toLowerCase() !== email || !data.user.email_confirmed_at) {
-        throw new Error("Resumed user must have the verified intended e-mail address.");
-      }
-      id = data.user.id;
-    } else {
-      const { data, error } = await client.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        app_metadata: { bpei_admin_bootstrap: true },
-      });
-      if (error) throw new Error("Auth admin createUser failed: " + error.message);
-      if (!data?.user?.id) throw new Error("Auth returned no user ID.");
-      id = data.user.id;
-    }
-
-    // Grant admin only via the private service role, never from client-editable metadata.
-    // Upsert permits a clean retry, but not a change to the chosen user ID.
-    const { error: grantError } = await client.from("independent_admins")
-      .upsert({ user_id: id }, { onConflict: "user_id" });
-    if (grantError) {
-      throw new Error(
-        "Auth account created, but DB admin grant FAILED for user " + id +
-        ". Resolve via a privileged SQL console; do not create a duplicate user. " +
-        grantError.message
-      );
-    }
-    const { data: check, error: verifyError } = await client.from("independent_admins")
-      .select("user_id").eq("user_id", id).single();
-    if (verifyError || check?.user_id !== id) {
-      throw new Error("Admin grant could not be verified for user " + id);
-    }
-    // Remove the temporary privileged bypass marker after successful bootstrap.
-    const { data: current, error: fetchError } = await client.auth.admin.getUserById(id);
-    if (fetchError || !current?.user) {
-      throw new Error("Admin granted, but user metadata could not be rechecked for " + id);
-    }
-    if (current.user.app_metadata?.bpei_admin_bootstrap === true) {
-      const cleaned = { ...current.user.app_metadata };
-      delete cleaned.bpei_admin_bootstrap;
-      const { error: cleanupError } = await client.auth.admin.updateUserById(id, {
-        app_metadata: cleaned
-      });
-      if (cleanupError) throw new Error("Admin granted, but temporary bootstrap marker cleanup failed for " + id);
-    }
-    console.log("BPEI admin role verified and bootstrap marker removed:", email, id);
-    console.log("SMTP and an independent real email-confirmation test are STILL required for public signups.");
-  } catch (error) {
-    fail(error instanceof Error ? error.message : "Unexpected Supabase failure");
+if(!execute){
+ console.log("Dry run. No user or administrator record has been created.");
+ console.log("Use --execute --user-id for an EXISTING Auth user with a verified email.");
+}else if(!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/.test(url)
+ ||new URL(url).hostname!==EXPECTED_REF+".supabase.co"){
+ fail("Wrong project URL; this action is pinned to BPEI.");
+}else if(!key||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!uuid.test(userId)){
+ fail("Service key, explicit verified email and existing --user-id UUID required.");
+}else{
+ const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+ try{
+  const {data:u,error:lookup}=await db.auth.admin.getUserById(userId);
+  const actor=u?.user;
+  if(lookup||!actor||actor.id!==userId||actor.email?.toLowerCase()!==email
+    ||!actor.email_confirmed_at||actor.is_anonymous===true||actor.deleted_at){
+   throw Error("Existing, non-anonymous, non-deleted Auth user with verified matching email required.");
   }
+  const {data:existing,error:listed}=await db.from("independent_admins")
+   .select("user_id").limit(2);
+  if(listed)throw Error("Could not inspect current BPEI admins: "+listed.message);
+  if((existing??[]).length!==0)
+   throw Error("Bootstrap disabled: one or more administrators already exist.");
+  const {error:created}=await db.from("independent_admins").insert({user_id:userId});
+  if(created)throw Error("Privilege grant failed: "+created.message);
+  const {data:check,error:checked}=await db.from("independent_admins")
+   .select("user_id").eq("user_id",userId).single();
+  if(checked||check?.user_id!==userId)
+   throw Error("Role insert not verified; review DB manually before any retry.");
+  console.log("BPEI first administrator role granted to a genuinely verified Auth user.");
+  console.log("The account is not an indication that SMTP, legal or Stripe gates have passed.");
+ }catch(error){fail(error instanceof Error?error.message:"Unknown error");}
 }
