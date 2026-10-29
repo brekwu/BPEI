@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,64,"64 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,64,
+ assert.equal(migrations.length,65,"65 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,65,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/64 migrations appliquées/);
- assert.match(readme,/64 fichiers SQL versionnés/);
+ assert.match(readme,/65 migrations appliquées/);
+ assert.match(readme,/65 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -161,4 +161,12 @@ test("Appointment reservation and customer-verified review release migrations ar
   "20261029134842_national_verified_customer_feedback_one_time_code_and_moderation.sql",
   "20261029135034_national_review_public_attribution_collision_and_withdrawal.sql"
  ])assert.ok(migrations.includes(name),name);
+});
+
+test("Independent interregional client referral with opt-in payout proposal is versioned",()=>{
+ const name="20261029135505_national_cross_region_partner_referrals_contractual_payment_terms.sql";
+ assert.ok(migrations.includes(name),name);
+ const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
+ assert.match(sql,/bpei_partner_referral_agreements/);
+ assert.match(sql,/respond_partner_referral/);
 });
