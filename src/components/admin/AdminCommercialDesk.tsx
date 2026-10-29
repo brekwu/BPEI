@@ -215,7 +215,7 @@ export function AdminCommercialDesk(){
         paidAttempt?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé"
        }</strong></p>
        {activeDispute&&<p role="alert">Contestation du paiement : vérifier la demande dans le Dashboard Stripe du prestataire indépendant.</p>}
-       {refundedCents>0&&<p>Remboursements confirmés par Stripe TEST : {formatCents(refundedCents)}. Vérifier la nécessité d'un avoir comptable.</p>
+       {refundedCents>0&&<p>Remboursements confirmés par Stripe TEST : {formatCents(refundedCents)}. Vérifier la nécessité d'un avoir comptable.</p>}
        {testCheckoutUI&&!payments.some(p=>p.invoice_id===invoice.id&&["pending","open","paid"].includes(p.state))&&
         <Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void startTestCheckout(invoice)}>Créer un lien Stripe — TEST</Button>}
        {testLink?.invoiceId===invoice.id&&<div className="mt-2 space-y-2 rounded border p-3">
