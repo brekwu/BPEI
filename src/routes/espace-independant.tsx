@@ -1,3 +1,4 @@
+import { PartnerAvailabilityPanel } from "@/components/independent/PartnerAvailabilityPanel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -408,6 +409,7 @@ function IndependentSpace() {
           </section>
           {profile?.verified_at&&application?.status==="approved"&&legalAccepted&&<IndependentConnectPanel/>}
           <IndependentLevelStatus userId={userId}/>
+          <PartnerAvailabilityPanel userId={userId}/>
           <p className="text-sm"><Link className="underline" to="/ressources-prospection">Consulter le guide BPEI de prospection locale et les modèles de messages</Link></p>
           <PartnerProspectCRM userId={userId}/>
           <PartnerFinanceDesk userId={userId}/>
