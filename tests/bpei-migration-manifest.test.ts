@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,61,"61 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,61,
+ assert.equal(migrations.length,64,"64 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,64,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/61 migrations appliquées/);
- assert.match(readme,/61 fichiers SQL versionnés/);
+ assert.match(readme,/64 migrations appliquées/);
+ assert.match(readme,/64 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -153,4 +153,12 @@ test("The private partner accounting journal migration is tracked",()=>{
  const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
  assert.match(sql,/bpei_finance_self_read/);
  assert.match(sql,/guard_finance_entry_correction/);
+});
+
+test("Appointment reservation and customer-verified review release migrations are versioned",()=>{
+ for(const name of [
+  "20261029134501_national_partner_availability_appointments_atomic_booking.sql",
+  "20261029134842_national_verified_customer_feedback_one_time_code_and_moderation.sql",
+  "20261029135034_national_review_public_attribution_collision_and_withdrawal.sql"
+ ])assert.ok(migrations.includes(name),name);
 });
