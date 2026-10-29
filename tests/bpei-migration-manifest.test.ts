@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,38,"Migration 38 and earlier must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,38,
+ assert.equal(migrations.length,40,"Migration 38 and earlier must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,40,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/38 migrations appliquées/);
- assert.match(readme,/38 fichiers SQL versionnés/);
+ assert.match(readme,/40 migrations appliquées/);
+ assert.match(readme,/40 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -41,4 +41,12 @@ test("Mission foreign keys have covering indexes in the tracked P1 migration",()
   assert.match(sql,new RegExp("on\\s+public\\."+table+"\\s*\\(\\s*"+column+"\\s*\\)","i"),
     table+"."+column+" needs an index for FK lookups");
  }
+});
+
+test("Migrations commerciales : validation des coordonnées et numérotation atomique",()=>{
+ const a=readFileSync(new URL("../supabase/migrations/20261029071010_mvp_customer_billing_contact_details.sql",import.meta.url),"utf8");
+ assert.match(a,/bpei_intervention_billing_contact_required/);
+ const q=readFileSync(new URL("../supabase/migrations/20261029071146_mvp_quotes_accepted_invoices_atomic_numbering.sql",import.meta.url),"utf8");
+ for(const key of ["mvp_create_quote","mvp_accept_quote","mvp_issue_invoice","ON CONFLICT","ENABLE ROW LEVEL SECURITY","REVOKE ALL"])
+  assert.ok(q.includes(key),key);
 });
