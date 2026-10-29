@@ -24,7 +24,20 @@ WITH facts AS (
       AND nullif(btrim(acceptance_reference),'') IS NOT NULL) AS accepted_quotes,
     (SELECT count(*) FROM public.bpei_stripe_connected_accounts
       WHERE test_enabled IS TRUE AND test_verified_at IS NOT NULL) AS verified_test_merchants,
-    (SELECT count(*) FROM public.bpei_payment_attempts WHERE paid_at IS NOT NULL AND state='paid') AS paid_test_attempts,
+    (SELECT count(*)
+      FROM public.bpei_payment_attempts p
+      JOIN public.bpei_stripe_connected_accounts m
+        ON m.issuer_id = p.issuer_id AND m.stripe_account_id = p.connected_account_id
+      JOIN public.bpei_service_invoices i
+        ON i.id = p.invoice_id AND i.issuer_id = p.issuer_id
+      JOIN public.bpei_service_quotes q ON q.id = i.quote_id AND q.issuer_id = i.issuer_id
+      WHERE p.paid_at IS NOT NULL AND p.state = 'paid'
+        AND p.checkout_session_id LIKE 'cs_test_%'
+        AND p.currency = 'eur'
+        AND m.test_enabled IS TRUE AND m.test_verified_at IS NOT NULL
+        AND q.status = 'accepted' AND q.accepted_at IS NOT NULL
+        AND nullif(btrim(q.acceptance_reference),'') IS NOT NULL
+    ) AS paid_test_attempts,
     (SELECT count(*) FROM public.bpei_p0_attestations) AS attestation_count,
     (SELECT count(*) FROM public.bpei_p0_attestations WHERE check_key='smtp_auth_delivery') > 0 AS smtp_attested,
     (SELECT count(*) FROM public.bpei_p0_attestations WHERE check_key='legal_operator_review') > 0 AS legal_attested,
