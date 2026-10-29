@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,43,"43 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,43,
+ assert.equal(migrations.length,44,"44 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,44,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/43 migrations appliquées/);
- assert.match(readme,/43 fichiers SQL versionnés/);
+ assert.match(readme,/44 migrations appliquées/);
+ assert.match(readme,/44 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -71,4 +71,15 @@ test("Payment config, Stripe account mapping and event ledger stay inaccessible 
  for(const table of ["bpei_payment_controls","bpei_stripe_connected_accounts","bpei_payment_webhook_events"])
   assert.ok(sql.includes("ON public."+table),table);
  assert.match(sql,/TO anon,authenticated USING\(false\)/);
+});
+
+test("Manual admin intake requires publication, permission and verifiable privacy evidence",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029074253_mvp_private_administrator_phone_intake_with_consent_reference.sql",import.meta.url),"utf8");
+ for(const fragment of [
+  "bpei_private_intake_evidence","bpei_private_intake_admin_read",
+  "legal_documents_published=true","p_privacy_ack_confirmed IS DISTINCT FROM true",
+  "mvp_admin_create_inquiry","GRANT EXECUTE ON FUNCTION","consent_accepted"
+ ])assert.ok(sql.includes(fragment),fragment);
+ assert.ok(!sql.includes("UPDATE public.bpei_launch_controls SET"),
+   "Manual intake must never activate legal publication");
 });
