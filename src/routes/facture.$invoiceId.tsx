@@ -18,11 +18,13 @@ function InvoiceView(){
  const [invoice,setInvoice]=useState<Invoice|null>(null);
  const [quote,setQuote]=useState<Quote|null>(null);
  const [testPaymentConfirmed,setTestPaymentConfirmed]=useState(false);
+ const [testRefundedCents,setTestRefundedCents]=useState(0);
+ const [testDisputeStatus,setTestDisputeStatus]=useState<"open"|"won"|"lost"|null>(null);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
  useEffect(()=>{
   let active=true;
-  setLoading(true);setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setError("");
+  setLoading(true);setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setTestRefundedCents(0);setTestDisputeStatus(null);setError("");
   (async()=>{
    const db=supabase as any;
    const {data:session,error:authError}=await supabase.auth.getUser();
@@ -36,13 +38,28 @@ function InvoiceView(){
     .eq("id",i.quote_id).maybeSingle();
    if(quoteError||!q)throw new Error("Quote not available");
    const {data:verified,error:paymentError}=await db.from("bpei_payment_attempts")
-    .select("state").eq("invoice_id",i.id).eq("state","paid").limit(1);
+    .select("id,state,amount_cents").eq("invoice_id",i.id).eq("state","paid").limit(1);
    if(paymentError)throw new Error("Payment status unavailable");
-   if(active){setInvoice(i);setQuote(q);setTestPaymentConfirmed((verified??[]).length>0);}
-  })().catch(()=>{if(active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setError("Facture indisponible ou accès non autorisé.");}})
+   let refunded=0;let dispute:"open"|"won"|"lost"|null=null;
+   if(verified?.[0]){
+    const [refundResponse,disputeResponse]=await Promise.all([
+     db.from("bpei_payment_refunds").select("amount_cents,status").eq("attempt_id",verified[0].id),
+     db.from("bpei_payment_disputes").select("status").eq("attempt_id",verified[0].id)
+    ]);
+    if(refundResponse.error||disputeResponse.error)throw new Error("Payment adjustments unavailable");
+    refunded=(refundResponse.data??[]).filter((r:{status:string})=>r.status==="succeeded")
+      .reduce((total:number,r:{amount_cents:number})=>total+r.amount_cents,0);
+    const statuses=(disputeResponse.data??[]) as {status:"open"|"won"|"lost"}[];
+    dispute=statuses.some(d=>d.status==="open")?"open":
+      statuses.some(d=>d.status==="lost")?"lost":
+      statuses.some(d=>d.status==="won")?"won":null;
+   }
+   if(active){setInvoice(i);setQuote(q);setTestPaymentConfirmed((verified??[]).length>0);
+    setTestRefundedCents(refunded);setTestDisputeStatus(dispute);}
+  })().catch(()=>{if(active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setTestRefundedCents(0);setTestDisputeStatus(null);setError("Facture indisponible ou accès non autorisé.");}})
    .finally(()=>{if(active)setLoading(false)});
   const {data:{subscription}}=supabase.auth.onAuthStateChange(event=>{
-   if(event==="SIGNED_OUT"&&active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setError("Session terminée.");}
+   if(event==="SIGNED_OUT"&&active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setTestRefundedCents(0);setTestDisputeStatus(null);setError("Session terminée.");}
   });
   return ()=>{active=false;subscription.unsubscribe();};
  },[invoiceId]);
@@ -88,7 +105,14 @@ function InvoiceView(){
    </section>
    <footer className="space-y-2 border-t pt-5 text-sm">
     <p>Échéance de paiement : <strong>{date(invoice.due_date)}</strong></p>
-    <p>État du paiement : <strong>{testPaymentConfirmed?"PAIEMENT SIMULÉ CONFIRMÉ (Stripe TEST)":"Non confirmé / impayé"}</strong>. Aucun paiement TEST ne vaut encaissement réel ; rapprocher les fonds chez le prestataire avant tout reçu définitif.</p>
+    <p>État du paiement : <strong>{!testPaymentConfirmed?"Non confirmé / impayé":
+     testDisputeStatus==="open"?"CONTESTATION EN COURS (Stripe TEST)":
+     testDisputeStatus==="lost"?"CONTESTATION PERDUE (Stripe TEST)":
+     testRefundedCents>=quote.gross_cents?"REMBOURSEMENT TOTAL (Stripe TEST)":
+     testRefundedCents>0?"REMBOURSEMENT PARTIEL (Stripe TEST)":
+     "PAIEMENT SIMULÉ CONFIRMÉ (Stripe TEST)"}</strong>. Aucun paiement TEST ne vaut encaissement réel ; rapprocher les fonds chez le prestataire avant tout reçu définitif.</p>
+    {testRefundedCents>0&&<p>Montant remboursé confirmé en environnement TEST : {formatCents(testRefundedCents)}. Un éventuel avoir comptable est à établir par le prestataire après validation.</p>}
+    {testDisputeStatus==="open"&&<p>Contestation bancaire en cours : consulter Stripe et ne pas considérer les fonds comme définitifs.</p>}
     <p>Devis accepté le {quote.accepted_at?date(quote.accepted_at):"non renseigné"} · Référence du devis : {quote.id}</p>
     {quote.customer_kind==="business"&&<p>Conditions de pénalités de retard et éventuelle indemnité forfaitaire de recouvrement : à préciser par le prestataire selon ses conditions contractuelles.</p>}
    </footer>
