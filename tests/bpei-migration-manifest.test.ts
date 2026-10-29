@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,69,"69 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,69,
+ assert.equal(migrations.length,70,"70 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,70,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/69 migrations appliquées/);
- assert.match(readme,/69 fichiers SQL versionnés/);
+ assert.match(readme,/70 migrations appliquées/);
+ assert.match(readme,/70 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -181,4 +181,13 @@ test("Stripe TEST checkout must reconcile the quote, partner remuneration and VA
 
 test("The immutable invoice requires a reconciled independent HT split before numbering",()=>{
  assert.ok(migrations.includes("20261029141155_guard_immutable_invoice_against_partner_compensation_mismatch.sql"));
+});
+
+test("P0 evidence ledger and private launch readiness are in applied migration manifest",()=>{
+ const file="20261029142524_p0_verified_release_evidence_and_private_readiness_diagnostics.sql";
+ assert.ok(migrations.includes(file));
+ const sql=readFileSync(new URL("../supabase/migrations/"+file,import.meta.url),"utf8");
+ assert.match(sql,/bpei_p0_attestations/);
+ assert.match(sql,/bpei_private\.p0_readiness/);
+ assert.match(sql,/SECURITY INVOKER/);
 });
