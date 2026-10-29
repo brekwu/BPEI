@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **56 migrations appliquées** au 29 octobre 2026, et la branche contient **56 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **60 migrations appliquées** au 29 octobre 2026, et la branche contient **60 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **56
 
 ## MVP commercial (29 octobre 2026)
 
-56 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+60 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -57,3 +57,7 @@ Une fonction Edge `bpei-test-connect`, **désactivée par défaut**, peut créer
 ## Bureau des Partenaires et Entrepreneurs de l'Informatique — réseau national
 
 La nouvelle orientation de BPEI est celle d'une **enseigne nationale de techniciens indépendants**, sans boutiques obligatoires. Migrations 51–56 : profil étendu pour débutants sans SIRET, formations/expérience, téléassistance et préférences, **100 questions techniques (25 par niveau)**, corrigés disponibles uniquement aux administrateurs, évaluations motivées (écrit/cas pratique/visio), niveaux Junior/Confirmé/Expert/Master et **activation manuelle distincte de l'évaluation**. Les nouveaux accès à des missions nécessitent désormais un niveau actif, un dossier professionnel validé et les protections préexistantes. Le palier de 50/150/300 interventions est une information indicative, jamais une promotion automatique. Un CRM de prospects documente la base légale et protège contre les doublons ; chaque mission exige une rémunération HT présentée et acceptée par l'indépendant avant qu'il accepte la prestation. **Ces montants ne créent ni encaissement ni virement Stripe**, et les barèmes d'exemple doivent être confirmés contractuellement. Aucune prospection automatisée ni liste de clients fictifs n'a été ajoutée.
+
+## Recherche publique de partenaires actifs (migrations 57–60)
+
+Un intervenant choisit explicitement l'affichage public. Seuls les profils **activés, assurés, immatriculés, ayant accepté les textes juridiques en vigueur**, dont les compétences ont été documentées et validées par l'administration, peuvent être retournés par `search_active_partners`. La recherche couvre la **ville exacte**, le **code postal exact** ou les intervenants acceptant le **travail à distance**. Le rayon géographique en kilomètres n'est pas encore calculé et aucune disponibilité horaire n'est certifiée. Le filtre limite les résultats à 20 et ne renvoie ni adresse privée, ni téléphone, ni coordonnées bancaires. Un contrôle SQL avec rôle `anon` a renvoyé 0 résultat alors que le réseau n'a aucun membre opérationnel. L'entrée publique est en `SECURITY INVOKER` ; un droit limité sur une fonction privée auditée permet une recherche anonyme, sans ouvrir les autres fonctions privilégiées. L'audit sécurité Supabase ne présente plus d'alerte. L'attribution d'un prospect au canal BPEI ou à un apporteur est réservée aux administrateurs ; les indépendants enregistrent leurs propres prospects avec leur base légale et leur référence.
