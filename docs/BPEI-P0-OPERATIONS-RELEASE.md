@@ -4,7 +4,7 @@
 
 ## 1. Véritable administrateur
 
-La base Supabase P0 est vide de comptes Auth. La création d'un compte sans confirmation d'email et sa promotion automatique seraient dangereuses. Après avoir configuré un SMTP authentifié, créer ou inviter le **véritable propriétaire exploitant BPEI** via Supabase Auth, lui faire confirmer personnellement son adresse, puis exécuter à privilèges élevés `scripts/p0-bootstrap-confirmed-admin.sql` avec cette adresse confirmée. Ce script est strictement à usage unique et ne fait jamais d'auto-promotion ; sa présence dans GitHub **n'attribue aucun rôle**.
+La base Supabase P0 est vide de comptes Auth. La création d'un compte sans confirmation d'email et sa promotion automatique seraient dangereuses. Après avoir configuré un SMTP authentifié, créer ou inviter le **véritable propriétaire exploitant BPEI** via Supabase Auth, lui faire confirmer personnellement son adresse, puis exécuter à privilèges élevés `scripts/p0-bootstrap-confirmed-admin.sql` avec cette adresse confirmée, ou `node scripts/p0-bootstrap-admin.mjs --execute --user-id UUID_VERIFIE` depuis un environnement de confiance muni de la clé privée et de l'adresse correspondante. Ce script CLI **ne crée plus de compte** et n'accepte plus de déclaration manuelle d'e-mail vérifié ; il lit directement `auth.users.email_confirmed_at`. Ne jamais copier la clé de service dans le navigateur, Vercel public ou GitHub. Ce script est strictement à usage unique et ne fait jamais d'auto-promotion ; sa présence dans GitHub **n'attribue aucun rôle**.
 
 Ne pas utiliser `raw_user_meta_data` ni une adresse e-mail seule comme autorisation d'accès. Les opérations de l'administration continuent de vérifier `independent_admins`, avec RLS et droits serveur.
 
