@@ -407,6 +407,7 @@ function IndependentSpace() {
           </section>
           {profile?.verified_at&&application?.status==="approved"&&legalAccepted&&<IndependentConnectPanel/>}
           <IndependentLevelStatus userId={userId}/>
+          <p className="text-sm"><Link className="underline" to="/ressources-prospection">Consulter le guide BPEI de prospection locale et les modèles de messages</Link></p>
           <PartnerProspectCRM userId={userId}/>
           <BpeiInbox />
           <section>
