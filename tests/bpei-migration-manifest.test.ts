@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,42,"42 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,42,
+ assert.equal(migrations.length,43,"43 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,43,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/42 migrations appliquées/);
- assert.match(readme,/42 fichiers SQL versionnés/);
+ assert.match(readme,/43 migrations appliquées/);
+ assert.match(readme,/43 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -64,4 +64,11 @@ test("Test checkout is disabled by default and uses isolated provider-signed led
   assert.ok(sql.includes(guard),guard);
  }
  assert.ok(!sql.includes("sk_test_"),"No provider keys may appear in SQL migrations");
+});
+
+test("Payment config, Stripe account mapping and event ledger stay inaccessible to clients",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029073330_mvp_private_stripe_configuration_explicit_denial.sql",import.meta.url),"utf8");
+ for(const table of ["bpei_payment_controls","bpei_stripe_connected_accounts","bpei_payment_webhook_events"])
+  assert.ok(sql.includes("ON public."+table),table);
+ assert.match(sql,/TO anon,authenticated USING\(false\)/);
 });
