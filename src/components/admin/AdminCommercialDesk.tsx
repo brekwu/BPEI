@@ -4,6 +4,7 @@ import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {euroToCents,formatCents,vatChoices} from "@/lib/bpei-commercial";
+import {AdminTestCheckoutReadiness} from "@/components/admin/AdminTestCheckoutReadiness";
 
 type Inquiry={id:string;client_name:string;email:string;phone:string|null;address_line1:string|null;postal_code:string|null;city:string|null;
  subject:string;status:string;assigned_to:string|null;customer_kind:string};
@@ -269,6 +270,7 @@ export function AdminCommercialDesk(){
        {activeDispute&&<p role="alert">Contestation du paiement : vérifier la demande dans le Dashboard Stripe du prestataire indépendant.</p>}
        {paidAttempt&&<p>Commission plateforme convenue (TEST) : {formatCents(paidAttempt.application_fee_cents)}. Le total facturé au client reste inchangé.</p>}
        {refundedCents>0&&<p>Remboursements confirmés par Stripe TEST : {formatCents(refundedCents)}. Vérifier la nécessité d'un avoir comptable.</p>}
+       <AdminTestCheckoutReadiness invoiceId={invoice.id}/>
        {testCheckoutUI&&!payments.some(p=>p.invoice_id===invoice.id&&["pending","open","paid"].includes(p.state))&&
         <Button type="button" disabled={busy} size="sm" variant="outline" onClick={()=>void startTestCheckout(invoice)}>Créer un lien Stripe — TEST</Button>}
        {testLink?.invoiceId===invoice.id&&<div className="mt-2 space-y-2 rounded border p-3">
