@@ -62,3 +62,17 @@ test("CLI first administrator bootstrap refuses self-asserted email verification
   assert.ok(cli.includes(term),term);
  assert.doesNotMatch(cli,/email_confirm:\s*true|auth\.admin\.createUser|BPEI_ADMIN_EMAIL_VERIFIED/);
 });
+
+test("Admin stage-one provisioning creates only an unconfirmed Auth user without role",()=>{
+ const provision=read("scripts/p0-provision-unconfirmed-admin.mjs");
+ for(const term of ["--execute","email_confirm:false","bpei_admin_bootstrap:true",
+   "email_confirmed_at","data.user.id","maybeSingle()","UNCONFIRMED Auth identity",
+   "no administrator privilege granted"])
+   assert.ok(provision.includes(term),term);
+ assert.doesNotMatch(provision,/email_confirm:\s*true|\.from\("independent_admins"\)\s*\.insert\(/);
+ const promote=read("scripts/p0-bootstrap-admin.mjs");
+ assert.match(promote,/auth\.admin\.getUserById\(userId\)/);
+ assert.match(promote,/actor\.email_confirmed_at/);
+ assert.match(promote,/delete clean\.bpei_admin_bootstrap/);
+ assert.match(promote,/auth\.admin\.updateUserById/);
+});
