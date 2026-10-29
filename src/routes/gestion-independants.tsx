@@ -184,6 +184,7 @@ function IndependentReview() {
             </article>;
           })}
         </div>
+        <p className="mt-7"><Link to="/gestion-commerciale" className="font-medium underline">Gestion commerciale : devis et factures</Link></p>
         <AdminInquiries />
         <AdminLegalDocuments />
       </section>}
