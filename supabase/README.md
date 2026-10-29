@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **50 migrations appliquées** au 29 octobre 2026, et la branche contient **50 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **56 migrations appliquées** au 29 octobre 2026, et la branche contient **56 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **50
 
 ## MVP commercial (29 octobre 2026)
 
-50 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+56 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -53,3 +53,7 @@ La migration 50 désactive l'ancien RPC d'émission incomplet et crée `mvp_issu
 ## Onboarding Stripe Connect Accounts v2 (2026-10-29)
 
 Une fonction Edge `bpei-test-connect`, **désactivée par défaut**, peut créer à la demande du technicien préalablement validé un compte marchand **Stripe Accounts v2** en mode test. Stripe lui-même collecte l'identité et les informations de règlement, puis le serveur BPEI vérifie `charges_enabled`, `payouts_enabled` et `details_submitted`. L'activation par l'administrateur est distincte et le verrou de paiement général reste fermé sans validation du compte plateforme. Les écrans technicien et administrateur comprennent les actions, sans approbation automatique ni saisie de faux identifiants. Le projet juridique complet est disponible dans `docs/juridique` ; il n'est PAS publié et ne remplace aucune validation réglementaire.
+
+## Bureau des Partenaires et Entrepreneurs de l'Informatique — réseau national
+
+La nouvelle orientation de BPEI est celle d'une **enseigne nationale de techniciens indépendants**, sans boutiques obligatoires. Migrations 51–56 : profil étendu pour débutants sans SIRET, formations/expérience, téléassistance et préférences, **100 questions techniques (25 par niveau)**, corrigés disponibles uniquement aux administrateurs, évaluations motivées (écrit/cas pratique/visio), niveaux Junior/Confirmé/Expert/Master et **activation manuelle distincte de l'évaluation**. Les nouveaux accès à des missions nécessitent désormais un niveau actif, un dossier professionnel validé et les protections préexistantes. Le palier de 50/150/300 interventions est une information indicative, jamais une promotion automatique. Un CRM de prospects documente la base légale et protège contre les doublons ; chaque mission exige une rémunération HT présentée et acceptée par l'indépendant avant qu'il accepte la prestation. **Ces montants ne créent ni encaissement ni virement Stripe**, et les barèmes d'exemple doivent être confirmés contractuellement. Aucune prospection automatisée ni liste de clients fictifs n'a été ajoutée.
