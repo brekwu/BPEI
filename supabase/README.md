@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **60 migrations appliquées** au 29 octobre 2026, et la branche contient **60 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **61 migrations appliquées** au 29 octobre 2026, et la branche contient **61 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **60
 
 ## MVP commercial (29 octobre 2026)
 
-60 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+61 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -61,3 +61,7 @@ La nouvelle orientation de BPEI est celle d'une **enseigne nationale de technici
 ## Recherche publique de partenaires actifs (migrations 57–60)
 
 Un intervenant choisit explicitement l'affichage public. Seuls les profils **activés, assurés, immatriculés, ayant accepté les textes juridiques en vigueur**, dont les compétences ont été documentées et validées par l'administration, peuvent être retournés par `search_active_partners`. La recherche couvre la **ville exacte**, le **code postal exact** ou les intervenants acceptant le **travail à distance**. Le rayon géographique en kilomètres n'est pas encore calculé et aucune disponibilité horaire n'est certifiée. Le filtre limite les résultats à 20 et ne renvoie ni adresse privée, ni téléphone, ni coordonnées bancaires. Un contrôle SQL avec rôle `anon` a renvoyé 0 résultat alors que le réseau n'a aucun membre opérationnel. L'entrée publique est en `SECURITY INVOKER` ; un droit limité sur une fonction privée auditée permet une recherche anonyme, sans ouvrir les autres fonctions privilégiées. L'audit sécurité Supabase ne présente plus d'alerte. L'attribution d'un prospect au canal BPEI ou à un apporteur est réservée aux administrateurs ; les indépendants enregistrent leurs propres prospects avec leur base légale et leur référence.
+
+## Finances personnelles de l'indépendant (migration 61)
+
+La saisie d'un registre privé de **recettes réellement encaissées et dépenses payées** est disponible depuis l'espace indépendant. La base n'autorise la lecture qu'au propriétaire ; les montants et justificatifs restent immuables, sauf annulation motivée et tracée. Export CSV sur demande, total indicatif recettes/dépenses HT et simulation de charges sociales sur le taux **saisi par le technicien**, sans taux inventé, sans déduction automatique des frais ni déclaration officielle Urssaf. Les données sont entrées manuellement, indépendamment de Stripe. Un guide pratique de prospection 2026 existe désormais dans `/ressources-prospection`, relié à l'espace. Aucun e-mail de prospection n'est envoyé automatiquement.
