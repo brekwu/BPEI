@@ -40,3 +40,18 @@ test("Admin-only readiness returns actionable reasons without generating transac
  assert.match(component,/Il ne crée aucun paiement/);
  assert.ok(get("src/components/admin/AdminCommercialDesk.tsx").includes("<AdminTestCheckoutReadiness invoiceId={invoice.id}/>"));
 });
+
+test("Permanent invoice numbering is blocked when the quote conflicts with partner-approved HT split",()=>{
+ const sql=get("supabase/migrations/20261029141155_guard_immutable_invoice_against_partner_compensation_mismatch.sql");
+ for(const required of [
+  "mvp_issue_invoice_compliant","bpei_partner_compensation_proposals",
+  "r.status='completed'","p.status='accepted'","p.accepted_at IS NOT NULL",
+  "p.client_price_ht_cents::bigint=v_quote.net_cents",
+  "(p.technician_ht_cents::bigint+p.bpei_ht_cents::bigint)=v_quote.net_cents",
+  "Accepted quote and independent fee split must reconcile before immutable invoice issuance"
+ ])assert.ok(sql.includes(required),required);
+ const guardIndex=sql.indexOf("Accepted quote and independent fee split must reconcile");
+ const allocateIndex=sql.indexOf("INSERT INTO public.bpei_invoice_counters");
+ assert.ok(guardIndex>0 && guardIndex<allocateIndex,
+  "Reconciliation must be enforced BEFORE a permanent invoice number is allocated");
+});
