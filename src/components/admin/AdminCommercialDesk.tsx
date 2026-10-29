@@ -16,7 +16,9 @@ type Mission={inquiry_id:string;status:string};
 type PaymentAttempt={id:string;invoice_id:string;state:string;paid_at:string|null;created_at:string;amount_cents:number;application_fee_cents:number};
 type Refund={attempt_id:string;amount_cents:number;status:string};
 type Dispute={attempt_id:string;disputed_cents:number;status:string};
+type MailDelivery={kind:"quote"|"invoice";document_id:string;status:string};
 const testCheckoutUI=import.meta.env.VITE_BPEI_TEST_CHECKOUT_ENABLED==="true";
+const commercialMailUI=import.meta.env.VITE_BPEI_COMMERCIAL_MAIL_ENABLED==="true";
 
 export function AdminCommercialDesk(){
  const [inquiries,setInquiries]=useState<Inquiry[]>([]);
@@ -26,6 +28,7 @@ export function AdminCommercialDesk(){
  const [payments,setPayments]=useState<PaymentAttempt[]>([]);
  const [refunds,setRefunds]=useState<Refund[]>([]);
  const [disputes,setDisputes]=useState<Dispute[]>([]);
+ const [deliveries,setDeliveries]=useState<MailDelivery[]>([]);
  const [testLink,setTestLink]=useState<{invoiceId:string;url:string}|null>(null);
  const [loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false);
@@ -49,19 +52,20 @@ export function AdminCommercialDesk(){
   setLoading(true);setFailure("");
   try{
    const db=supabase as any;
-   const [i,q,n,m,pa,re,di]=await Promise.all([
+   const [i,q,n,m,pa,re,di,ma]=await Promise.all([
     db.from("bpei_inquiries").select("id,client_name,email,phone,address_line1,postal_code,city,subject,status,assigned_to,customer_kind").eq("kind","intervention").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_quotes").select("id,inquiry_id,issuer_id,status,issuer_legal_name,issuer_siret,customer_name,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_invoices").select("id,quote_id,invoice_number,issued_at,payment_status").order("issued_at",{ascending:false}).limit(200),
     db.from("independent_requests").select("inquiry_id,status").not("inquiry_id","is",null).limit(500),
     db.from("bpei_payment_attempts") .select("id,invoice_id,state,paid_at,created_at,amount_cents,application_fee_cents").order("created_at",{ascending:false}).limit(500),
     db.from("bpei_payment_refunds").select("attempt_id,amount_cents,status").limit(500),
-    db.from("bpei_payment_disputes").select("attempt_id,disputed_cents,status").limit(500)
+    db.from("bpei_payment_disputes").select("attempt_id,disputed_cents,status").limit(500),
+    db.from("bpei_commercial_mail_outbox").select("kind,document_id,status").limit(500)
    ]);
-   if(i.error||q.error||n.error||m.error||pa.error||re.error||di.error)throw new Error("Load failed");
-   setInquiries(i.data??[]);setQuotes(q.data??[]);setInvoices(n.data??[]);setMissions(m.data??[]);setPayments(pa.data??[]);setRefunds(re.data??[]);setDisputes(di.data??[]);
+   if(i.error||q.error||n.error||m.error||pa.error||re.error||di.error||ma.error)throw new Error("Load failed");
+   setInquiries(i.data??[]);setQuotes(q.data??[]);setInvoices(n.data??[]);setMissions(m.data??[]);setPayments(pa.data??[]);setRefunds(re.data??[]);setDisputes(di.data??[]);setDeliveries(ma.data??[]);
   }catch{
-   setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);setRefunds([]);setDisputes([]);
+   setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);setRefunds([]);setDisputes([]);setDeliveries([]);
    setFailure("Lecture de la gestion commerciale impossible. Vérifiez vos droits et recommencez.");
   }finally{setLoading(false);}
  },[]);
@@ -105,6 +109,22 @@ export function AdminCommercialDesk(){
   }catch{
    setFailure("Paiement de test indisponible : compte indépendant, clés Stripe ou validation serveur manquants.");
   }finally{setBusy(false)}
+ }
+ async function sendCommercialMail(kind:"quote"|"invoice",documentId:string){
+  if(!commercialMailUI||busy)return;
+  if(!window.confirm("Envoyer le document PDF au courriel du client enregistré ? Vérifiez les mentions légales et l'adresse professionnelle d'expédition."))return;
+  setBusy(true);setFailure("");setMessage("");
+  try{
+   const {data,error}=await supabase.functions.invoke("bpei-commercial-mail",{
+    body:{kind,document_id:documentId}
+   });
+   if(error||data?.status!=="sent")throw new Error("Delivery not confirmed");
+   setMessage("Document accepté par le prestataire e-mail. Vérifiez sa distribution réelle.");
+   await refresh();
+  }catch{
+   setFailure("Envoi impossible ou à vérifier : documents juridiques, expéditeur professionnel, fournisseur e-mail ou doublon. Contrôlez l'historique avant tout renvoi.");
+   await refresh();
+  }finally{setBusy(false);}
  }
  function submitQuote(e:FormEvent){
   e.preventDefault();
@@ -187,6 +207,10 @@ export function AdminCommercialDesk(){
       <p>Montant HT {formatCents(q.net_cents)} · TVA {formatCents(q.vat_cents)} · <strong>Total TTC {formatCents(q.gross_cents)}</strong></p>
       <p>Statut : {q.status==="accepted"?"Devis accepté":"Devis proposé"} · Mission {completed?"terminée":"non terminée"} · Paiement non confirmé</p>
       <Link to="/devis/$quoteId" params={{quoteId:q.id}} className="inline-block underline">Consulter et imprimer le devis</Link>
+      {deliveries.some(d=>d.kind==="quote"&&d.document_id===q.id)&&
+       <p>Envoi du devis : {deliveries.find(d=>d.kind==="quote"&&d.document_id===q.id)?.status==="sent"?"accepté par le fournisseur e-mail":"à vérifier manuellement"}</p>}
+      {commercialMailUI&&!deliveries.some(d=>d.kind==="quote"&&d.document_id===q.id)&&
+       <Button type="button" size="sm" variant="outline" disabled={busy} onClick={()=>void sendCommercialMail("quote",q.id)}>Envoyer le devis en PDF</Button>}
       {source&&<p className="text-muted-foreground">Dossier : {source.subject} · {source.email}</p>}
       {q.status==="proposed"&&<div className="space-y-2 border-t pt-3">
        <p>Après validation explicite du client, conservez une preuve vérifiable (e-mail ou document signé).</p>
@@ -227,6 +251,10 @@ export function AdminCommercialDesk(){
        </div>}
        {payments.some(p=>p.invoice_id===invoice.id&&["pending","open"].includes(p.state))&&<p>Session de paiement test active. Vérifiez le paiement chez Stripe avant toute nouvelle tentative.</p>}
        <Link to="/facture/$invoiceId" params={{invoiceId:invoice.id}} className="mt-2 inline-block underline">Consulter et imprimer la facture</Link>
+       {deliveries.some(d=>d.kind==="invoice"&&d.document_id===invoice.id)&&
+        <p>Envoi de la facture : {deliveries.find(d=>d.kind==="invoice"&&d.document_id===invoice.id)?.status==="sent"?"accepté par le fournisseur e-mail":"à vérifier manuellement"}</p>}
+       {commercialMailUI&&!deliveries.some(d=>d.kind==="invoice"&&d.document_id===invoice.id)&&
+        <Button type="button" size="sm" variant="outline" disabled={busy} onClick={()=>void sendCommercialMail("invoice",invoice.id)}>Envoyer la facture en PDF</Button>}
       </div>}
      </article>;
     })}
