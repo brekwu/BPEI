@@ -52,8 +52,11 @@ Deno.serve(async req=>{
   attemptId=attempt.attempt_id;
   const accountId=attempt.account_id;
   const amount=Number(attempt.amount_cents);
+  const fee=Number(attempt.application_fee_cents);
   if(!/^acct_[a-zA-Z0-9]+$/.test(accountId)||!Number.isSafeInteger(amount)
-   ||amount<100||amount>99999999)throw new Error("Invalid account or amount");
+   ||amount<100||amount>99999999||!Number.isSafeInteger(fee)
+   ||fee<0||fee>Math.floor((amount*2500+5000)/10000))
+   throw new Error("Invalid merchant, amount or documented commission");
   const accountResponse=await fetch("https://api.stripe.com/v1/accounts/"+accountId,{
    headers:{Authorization:"Bearer "+c.stripeKey}
   });
@@ -63,6 +66,7 @@ Deno.serve(async req=>{
    throw new Error("Connected test merchant not validated");
   const form=new URLSearchParams();
   form.set("mode","payment");
+  if(fee>0)form.set("payment_intent_data[application_fee_amount]",String(fee));
   form.set("payment_method_types[0]","card");
   form.set("success_url",allowedOrigin+"/paiement/retour?session_id={CHECKOUT_SESSION_ID}");
   form.set("cancel_url",allowedOrigin+"/paiement/retour?annule=1");
