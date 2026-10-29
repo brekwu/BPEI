@@ -7,13 +7,13 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,48,"48 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,48,
+ assert.equal(migrations.length,49,"49 applied migrations must be committed to GitHub");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,49,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/48 migrations appliquées/);
- assert.match(readme,/48 fichiers SQL versionnés/);
+ assert.match(readme,/49 migrations appliquées/);
+ assert.match(readme,/49 fichiers SQL versionnés/);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
@@ -109,4 +109,11 @@ test("Optional platform fee requires an explicit agreement and is zero by defaul
  const sql=readFileSync(new URL("../supabase/migrations/20261029123512_mvp_optional_documented_connect_test_commission.sql",import.meta.url),"utf8");
  for(const term of ["DEFAULT 0","test_application_fee_bps","fee_agreement_reference","fee_agreement_at","application_fee_cents","mvp_test_checkout_prepare"])
   assert.ok(sql.includes(term),term);
+});
+
+test("The prelaunch transactional email outbox is private and cannot send by default",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029123952_mvp_commercial_email_outbox_disabled_by_default.sql",import.meta.url),"utf8");
+ assert.match(sql,/UNIQUE\(kind,document_id\)/);
+ assert.match(sql,/enabled boolean NOT NULL DEFAULT false/);
+ assert.match(sql,/CREATE POLICY bpei_mail_outbox_admin_read/);
 });
