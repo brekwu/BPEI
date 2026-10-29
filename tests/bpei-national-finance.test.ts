@@ -30,5 +30,5 @@ test("Prospection resources teach current opt-in rules, personalized B2B and no 
  for(const term of ["CNIL","particuliers","sans boutique","prospection", "indépendant",
   "support.google.com/business","libre"])
   assert.ok(guide.toLowerCase().includes(term.toLowerCase()),term);
- assert.ok(guide.includes("un seul"));
+ assert.ok(guide.includes("une seule relance"));
 });
