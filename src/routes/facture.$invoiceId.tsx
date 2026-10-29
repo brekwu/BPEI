@@ -5,7 +5,9 @@ import {PublicShell} from "@/components/public/PublicShell";
 import {Button} from "@/components/ui/button";
 import {formatCents} from "@/lib/bpei-commercial";
 
-type Invoice={id:string;invoice_number:string;quote_id:string;issued_at:string;service_date:string;due_date:string;payment_status:string};
+type Invoice={id:string;invoice_number:string;quote_id:string;issued_at:string;service_date:string;due_date:string;payment_status:string;
+ issuer_vat_number:string|null;payment_terms:string|null;early_payment_discount:string|null;late_payment_penalties:string|null;
+ customer_order_reference:string|null;b2b_recovery_fee_cents:number|null};
 type Quote={id:string;issuer_legal_name:string;issuer_siret:string;issuer_address:string;issuer_email:string;
  tax_mention:string;customer_name:string;customer_email:string;customer_address:string;customer_kind:string;customer_siret:string|null;
  service_description:string;quantity:number;unit_price_cents:number;vat_basis_points:number;net_cents:number;vat_cents:number;gross_cents:number;accepted_at:string|null};
@@ -30,7 +32,7 @@ function InvoiceView(){
    const {data:session,error:authError}=await supabase.auth.getUser();
    if(authError||!session.user)throw new Error("No session");
    const {data:i,error:e}=await db.from("bpei_service_invoices")
-    .select("id,invoice_number,quote_id,issued_at,service_date,due_date,payment_status")
+    .select("id,invoice_number,quote_id,issued_at,service_date,due_date,payment_status,issuer_vat_number,payment_terms,early_payment_discount,late_payment_penalties,customer_order_reference,b2b_recovery_fee_cents")
     .eq("id",invoiceId).maybeSingle();
    if(e||!i)throw new Error("Invoice not available");
    const {data:q,error:quoteError}=await db.from("bpei_service_quotes")
@@ -83,7 +85,9 @@ function InvoiceView(){
     <div><h2 className="font-semibold">Prestataire / Émetteur</h2>
      <p className="whitespace-pre-wrap">{quote.issuer_legal_name}</p>
      <p className="whitespace-pre-wrap">{quote.issuer_address}</p>
-     <p>SIRET : {quote.issuer_siret}</p><p>{quote.issuer_email}</p>
+     <p>SIRET : {quote.issuer_siret}</p>
+     {invoice.issuer_vat_number&&<p>TVA intracommunautaire : {invoice.issuer_vat_number}</p>}
+     <p>{quote.issuer_email}</p>
     </div>
    </header>
    <section><h2 className="mb-2 font-semibold">Facturé à</h2>
@@ -105,6 +109,13 @@ function InvoiceView(){
    </section>
    <footer className="space-y-2 border-t pt-5 text-sm">
     <p>Échéance de paiement : <strong>{date(invoice.due_date)}</strong></p>
+    {invoice.customer_order_reference&&<p>Bon de commande : {invoice.customer_order_reference}</p>}
+    {invoice.payment_terms&&<p>Conditions de règlement : {invoice.payment_terms}</p>}
+    {invoice.early_payment_discount&&<p>Escompte pour paiement anticipé : {invoice.early_payment_discount}</p>}
+    {quote.customer_kind==="business"&&invoice.late_payment_penalties&&
+     <p>Pénalités de retard : {invoice.late_payment_penalties}</p>}
+    {quote.customer_kind==="business"&&invoice.b2b_recovery_fee_cents===4000&&
+     <p>Indemnité forfaitaire pour frais de recouvrement (en cas de retard) : 40 EUR</p>}
     <p>État du paiement : <strong>{!testPaymentConfirmed?"Non confirmé / impayé":
      testDisputeStatus==="open"?"CONTESTATION EN COURS (Stripe TEST)":
      testDisputeStatus==="lost"?"CONTESTATION PERDUE (Stripe TEST)":
@@ -114,7 +125,7 @@ function InvoiceView(){
     {testRefundedCents>0&&<p>Montant remboursé confirmé en environnement TEST : {formatCents(testRefundedCents)}. Un éventuel avoir comptable est à établir par le prestataire après validation.</p>}
     {testDisputeStatus==="open"&&<p>Contestation bancaire en cours : consulter Stripe et ne pas considérer les fonds comme définitifs.</p>}
     <p>Devis accepté le {quote.accepted_at?date(quote.accepted_at):"non renseigné"} · Référence du devis : {quote.id}</p>
-    {quote.customer_kind==="business"&&<p>Conditions de pénalités de retard et éventuelle indemnité forfaitaire de recouvrement : à préciser par le prestataire selon ses conditions contractuelles.</p>}
+    
    </footer>
    <p className="text-xs print:hidden">Document interne de préproduction : identité, mentions obligatoires et régime de TVA à vérifier avant tout usage commercial. Ce PDF imprimé n'est pas une facture électronique structurée.</p>
   </article>}
