@@ -6,6 +6,7 @@ import { MissionIncidentPanel } from "@/components/independent/MissionIncidentPa
 import { MissionTimeline } from "@/components/shared/MissionTimeline";
 import { BpeiInbox } from "@/components/shared/BpeiInbox";
 import { IndependentConnectPanel } from "@/components/independent/IndependentConnectPanel";
+import { IndependentLevelStatus } from "@/components/independent/IndependentLevelStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +30,12 @@ type Profile = {
   bio: string | null;
   skills: string[];
   verified_at: string | null;
+  training_details:string;
+  experience_years:number|null;
+  remote_available:boolean;
+  availability_notes:string;
+  mission_types:string[];
+  professional_stage:"preparing"|"registered";
 };
 
 function IndependentSpace() {
@@ -228,6 +235,12 @@ function IndependentSpace() {
         service_radius_km:profile.service_radius_km,
         bio:profile.bio?.trim()||null,
         skills:profile.skills,
+        training_details:profile.training_details.trim(),
+        experience_years:profile.experience_years,
+        remote_available:profile.remote_available,
+        availability_notes:profile.availability_notes.trim(),
+        mission_types:profile.mission_types,
+        professional_stage:profile.professional_stage,
       };
       const {error:saveError}=await (supabase as any).from("independent_profiles").update(payload).eq("user_id",userId);
       if(saveError){setError("Enregistrement impossible. Vérifiez les champs et vos autorisations.");return;}
@@ -240,7 +253,7 @@ function IndependentSpace() {
   return <PublicShell>
     <section className="mx-auto max-w-3xl px-4 py-12 md:px-6">
       <h1 className="text-3xl font-bold">Espace technicien indépendant</h1>
-      <p className="mt-3 text-muted-foreground">Gérez votre profil et consultez vos demandes personnelles. Les comptes existants sur l'ancienne plateforme ne sont pas transférés automatiquement.</p>
+      <p className="mt-3 text-muted-foreground">Développez votre activité d’indépendant, valorisez vos compétences et consultez vos demandes personnelles. Les comptes existants sur l'ancienne plateforme ne sont pas transférés automatiquement.</p>
       {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
       {notice && <p role="status" className="mt-4 text-sm">{notice}</p>}
       {loading ? <p className="mt-8">Chargement…</p> : !userId ?
@@ -321,6 +334,23 @@ function IndependentSpace() {
             <label className="block text-sm">Code postal <Input maxLength={12} value={profile.postal_code ?? ""} onChange={e => update("postal_code", e.target.value)} /></label>
             <label className="block text-sm">Rayon d'intervention (km) <Input type="number" min={0} max={500} value={profile.service_radius_km ?? ""} onChange={e => update("service_radius_km", e.target.value === "" ? null : Number(e.target.value))} /></label>
             <label className="block text-sm">Présentation <Textarea maxLength={2000} value={profile.bio ?? ""} onChange={e => update("bio", e.target.value)} /></label>
+            <label className="block text-sm">Formation et expérience professionnelle
+             <Textarea maxLength={2000} value={profile.training_details??""} onChange={e=>update("training_details",e.target.value)} placeholder="Diplômes, formations, interventions réellement pratiquées…"/></label>
+            <label className="block text-sm">Années d'expérience (facultatif)
+             <Input type="number" min={0} max={70} value={profile.experience_years??""} onChange={e=>update("experience_years",e.target.value===""?null:Number(e.target.value))}/></label>
+            <label className="block text-sm">Situation professionnelle
+             <select className="mt-1 w-full rounded border bg-background p-2" value={profile.professional_stage}
+              onChange={e=>update("professional_stage",e.target.value as "preparing"|"registered")}>
+              <option value="preparing">En création d'activité / sans SIRET pour l'instant</option>
+              <option value="registered">Entreprise immatriculée (justificatifs à contrôler)</option>
+             </select></label>
+            <label className="flex items-start gap-2 text-sm"><input className="mt-1" type="checkbox" checked={profile.remote_available} onChange={e=>update("remote_available",e.target.checked)}/>
+             Je peux proposer des interventions informatiques à distance.</label>
+            <label className="block text-sm">Disponibilités et types de missions souhaités
+             <Textarea maxLength={800} value={profile.availability_notes??""} onChange={e=>update("availability_notes",e.target.value)} placeholder="Indiquez vos préférences librement ; aucun quota ni horaire imposé."/></label>
+            <label className="block text-sm">Types de missions (séparés par une virgule)
+             <Input value={(profile.mission_types??[]).join(", ")} onChange={e=>update("mission_types",e.target.value.split(",").map(v=>v.trim()).filter(Boolean).slice(0,20))}
+              placeholder="PC, réseaux, sauvegarde, support, distance…"/></label>
             <Button type="submit" disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
           </form>}
           <section className="rounded-xl border bg-card p-6">
@@ -359,6 +389,7 @@ function IndependentSpace() {
             </form>}
           </section>
           {profile?.verified_at&&application?.status==="approved"&&legalAccepted&&<IndependentConnectPanel/>}
+          <IndependentLevelStatus userId={userId}/>
           <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
