@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **69 migrations appliquées** au 29 octobre 2026, et la branche contient **69 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **70 migrations appliquées** au 29 octobre 2026, et la branche contient **70 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **69
 
 ## MVP commercial (29 octobre 2026)
 
-69 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+70 migrations versionnées et appliquées. Les deux dernières ajoutent les coordonnées client, des devis privés et leur validation documentée, puis des factures numérotées séparément pour chaque indépendant par transaction atomique. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -81,3 +81,7 @@ Le serveur refuse maintenant une création de lien Stripe TEST si la facture n'a
 ## Factures définitives cohérentes (migration 69)
 
 La création de facture définitive (numéro chronologique immuable) exige désormais que le devis accepté corresponde exactement au prix HT **et** au partage accepté par le technicien dans la mission terminée. Le contrôle se fait avant la réservation d'un numéro définitif. Toute incohérence est refusée, sans falsifier le contenu de la facture ni modifier les événements de paiement. Les factures préexistantes restent immuables et ne sont pas requalifiées. Le circuit de paiement Stripe demeure exclusivement de TEST, verrouillé globalement et conditionné à une validation contractuelle du vrai vendeur et du régime fiscal de la plateforme.
+
+## P0 — preuves et état de lancement (migration 70)
+
+La migration 70 crée un registre privé de **sept attestations documentées**, toutes liées à un administrateur possédant une adresse Auth réellement confirmée, et un RPC `p0_readiness` en lecture seule. Les **six grandes catégories P0** (administrateur, SMTP/notifications, juridique, facturation/commission, Stripe TEST et recette complète) sont contrôlées avec une granularité distincte pour les envois de devis/factures. Le tableau dans `/gestion-independants` montre le statut réel et les preuves manuelles qu'il reste à obtenir, sans inventer d'utilisateurs, de clients ou de paiements. L'authentification Auth SMTP reste un paramètre externe inaccessible à la base : une attestation manuelle **ne vérifie pas automatiquement le fournisseur**. Les preuves peuvent être révoquées ; **aucun RPC de diagnostic ou d'attestation n'active la publication, les encaissements ou le recrutement public**. Un script d'amorçage vérifie explicitement l'existence d'un compte Auth confirmé puis attribue le rôle administrateur une seule fois, uniquement sur décision humaine : `scripts/p0-bootstrap-confirmed-admin.sql`. Des trames non signées CGV et convention de partenariat sont dans `docs/juridique/`. Procédure détaillée : `docs/BPEI-P0-OPERATIONS-RELEASE.md`. Test non destructif sur deux vrais comptes : `node scripts/p0-verify-existing-accounts.mjs` avec variables `BPEI_P0_URL`, `BPEI_P0_PUBLISHABLE_KEY`, `BPEI_P0_ADMIN_EMAIL/PASSWORD` et `BPEI_P0_PARTNER_EMAIL/PASSWORD` ; aucun secret n'est conservé dans GitHub.
