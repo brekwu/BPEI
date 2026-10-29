@@ -12,6 +12,7 @@ function MissionManagement(){
   <h1 className="text-3xl font-bold">Gestion des missions BPEI</h1>
   <p className="mt-2 text-sm text-muted-foreground">Suivi et historique des interventions du réseau. Données réservées aux administrateurs autorisés.</p>
   <Link to="/gestion-independants" className="mt-3 inline-block text-sm underline">Revenir à l'administration</Link>
+  <p><Link to="/gestion-commerciale" className="mt-2 inline-block text-sm underline">Devis et facturation des missions</Link></p>
   {access==="loading"?<p className="mt-8" role="status">Vérification de l'accès…</p>:
    access==="denied"?<p className="mt-8" role="alert">Accès administrateur non autorisé.</p>:
    <div className="mt-8"><AdminMissionBoardServer/></div>}
