@@ -5,6 +5,11 @@ export type BpeiInquiryDraft = {
   email: string;
   phone: string;
   city: string;
+  address_line1: string;
+  postal_code: string;
+  customer_kind: "individual"|"business";
+  company_name: string;
+  company_siret: string;
   subject: string;
   description: string;
   consent_accepted: boolean;
@@ -15,6 +20,11 @@ export type BpeiInquiryPayload = {
   email: string;
   phone: string | null;
   city: string | null;
+  address_line1: string | null;
+  postal_code: string | null;
+  customer_kind: "individual"|"business";
+  company_name: string | null;
+  company_siret: string | null;
   subject: string;
   description: string;
   consent_accepted: true;
@@ -25,14 +35,33 @@ export function validateBpeiInquiry(input: BpeiInquiryDraft): { ok: true; data: 
   const email = input.email.trim().toLowerCase();
   const phone = input.phone.trim();
   const city = input.city.trim();
+  const address = input.address_line1.trim();
+  const postal = input.postal_code.trim();
+  const company = input.company_name.trim();
+  const siret = input.company_siret.trim();
   const subject = input.subject.trim();
   const description = input.description.trim();
   if (name.length < 2 || name.length > 120) return {ok:false,error:"Le nom doit contenir entre 2 et 120 caractères."};
-  if (email.length < 5 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok:false,error:"Adresse e-mail invalide."};
-  if (phone.length > 40 || city.length > 120) return {ok:false,error:"Téléphone ou ville trop long."};
+  const [localPart,domainPart]=email.split("@");
+  if(email.length<5||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ||email.includes("..")||localPart.startsWith(".")||localPart.endsWith(".")
+    ||domainPart.startsWith(".")||domainPart.endsWith("."))
+    return {ok:false,error:"Adresse e-mail invalide."};
+  if(phone.length>40||city.length>120)return {ok:false,error:"Téléphone ou ville trop long."};
+  if(phone){
+    const digits=phone.replace(/[^0-9]/g,"").length;
+    if(!/^\+?[0-9() ./-]+$/.test(phone)||digits<6||digits>15)
+      return {ok:false,error:"Numéro de téléphone invalide : utilisez 6 à 15 chiffres et des séparateurs usuels."};
+  }
+  if (input.customer_kind !== "individual" && input.customer_kind !== "business") return {ok:false,error:"Type de client invalide."};
+  if (address.length > 200 || postal.length > 5 || company.length > 160) return {ok:false,error:"Coordonnées de facturation trop longues."};
+  if (siret && !/^[0-9]{14}$/.test(siret))return {ok:false,error:"Le SIRET doit comporter 14 chiffres."};
+  if (postal && !/^[0-9]{5}$/.test(postal))return {ok:false,error:"Code postal invalide."};
+  if (input.kind === "intervention" && (phone.length < 6 || phone.length > 40 || address.length < 5 || !/^[0-9]{5}$/.test(postal)))return {ok:false,error:"Pour une intervention, téléphone, adresse complète et code postal sont obligatoires."};
+  if (input.kind === "intervention" && input.customer_kind === "business" && company.length < 2)return {ok:false,error:"La raison sociale est obligatoire pour une entreprise."};
   if (input.kind === "intervention" && city.length < 2) return {ok:false,error:"La ville d'intervention est obligatoire."};
   if (subject.length < 3 || subject.length > 160) return {ok:false,error:"Le sujet doit contenir entre 3 et 160 caractères."};
   if (description.length < 15 || description.length > 3000) return {ok:false,error:"La description doit contenir entre 15 et 3000 caractères."};
   if (input.consent_accepted !== true) return {ok:false,error:"Vous devez confirmer avoir pris connaissance des informations de traitement des données."};
-  return {ok:true,data:{kind:input.kind,client_name:name,email,phone:phone||null,city:city||null,subject,description,consent_accepted:true}};
+  return {ok:true,data:{kind:input.kind,client_name:name,email,phone:phone||null,city:city||null,address_line1:address||null,postal_code:postal||null,customer_kind:input.customer_kind,company_name:company||null,company_siret:siret||null,subject,description,consent_accepted:true}};
 }

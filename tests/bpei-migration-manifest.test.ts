@@ -7,16 +7,46 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,38,"Migration 38 and earlier must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,38,
+ const declared=readme.match(/\*\*(\d+) migrations appliquées\*\*/);
+ assert.ok(declared,"README must declare the exact number of applied migrations");
+ const expected=Number(declared[1]);
+ assert.ok(expected>0,"Declared migration count must be positive");
+ assert.equal(migrations.length,expected,
+  "Every declared applied Supabase migration must have a GitHub SQL file");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,expected,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/38 migrations appliquées/);
- assert.match(readme,/38 fichiers SQL versionnés/);
+ assert.match(readme,new RegExp(expected+" fichiers SQL versionnés"));
+ for(const latest of [
+  "20261030080119_p0_admin_readiness_strict_reconciliation.sql",
+  "20261030085218_p0_quote_requires_current_partner_verification.sql",
+  "20261030100238_p0_validate_customer_contact_before_intake.sql"
+ ])assert.ok(migrations.includes(latest),"Recent P0 migration missing: "+latest);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
+test("The technician authorization foreign key has an applied and tracked covering index",()=>{
+ const file="20261030111826_index_technician_level_authorizer.sql";
+ assert.ok(migrations.includes(file),"Applied index migration must match Supabase version");
+ const sql=readFileSync(new URL("../supabase/migrations/"+file,import.meta.url),"utf8");
+ assert.match(sql,/CREATE INDEX IF NOT EXISTS bpei_technician_levels_authorized_by_idx/i);
+ assert.match(sql,/ON public\.bpei_technician_levels \(authorized_by\)/i);
+});
+
+test("Public intake legal version race prevention has an applied migration",()=>{
+ const name="20261030114150_p0_refuse_stale_public_legal_consent.sql";
+ assert.ok(migrations.includes(name),"Public consent gate must exist at its applied version");
+ const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
+ for(const fragment of [
+  "stamp_public_inquiry_legal_version",
+  "NEW.legal_version IS NULL",
+  "public.independent_admins",
+  "NEW.legal_version IS DISTINCT FROM v_version",
+  "NEW.legal_version := v_version"
+ ])assert.ok(sql.includes(fragment),"Missing fail-closed legal version condition: "+fragment);
+});
+
 test("The admin roster migration enforces administrator isolation",()=>{
  const sql=readFileSync(new URL("../supabase/migrations/20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql",import.meta.url),"utf8");
  assert.match(sql,/bpei_private\.is_bpei_admin/);
@@ -41,4 +71,153 @@ test("Mission foreign keys have covering indexes in the tracked P1 migration",()
   assert.match(sql,new RegExp("on\\s+public\\."+table+"\\s*\\(\\s*"+column+"\\s*\\)","i"),
     table+"."+column+" needs an index for FK lookups");
  }
+});
+
+test("Migrations commerciales : validation des coordonnées et numérotation atomique",()=>{
+ const a=readFileSync(new URL("../supabase/migrations/20261029071010_mvp_customer_billing_contact_details.sql",import.meta.url),"utf8");
+ assert.match(a,/bpei_intervention_billing_contact_required/);
+ const q=readFileSync(new URL("../supabase/migrations/20261029071146_mvp_quotes_accepted_invoices_atomic_numbering.sql",import.meta.url),"utf8");
+ for(const key of ["mvp_create_quote","mvp_accept_quote","mvp_issue_invoice","ON CONFLICT","ENABLE ROW LEVEL SECURITY","REVOKE ALL"])
+  assert.ok(q.includes(key),key);
+});
+
+test("Issued invoices are immutable and counters remain private",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029071946_mvp_invoice_immutability_and_counter_privacy.sql",import.meta.url),"utf8");
+ assert.match(sql,/bpei_invoice_immutable/);
+ assert.match(sql,/bpei_invoice_counters_no_direct_read/);
+ assert.match(sql,/BEFORE UPDATE OR DELETE/);
+});
+
+test("Test checkout is disabled by default and uses isolated provider-signed ledger",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029072951_mvp_test_stripe_connect_webhook_ledger_disabled.sql",import.meta.url),"utf8");
+ for(const guard of ["test_checkout_enabled boolean NOT NULL DEFAULT false","test_enabled boolean NOT NULL DEFAULT false","mvp_test_checkout_prepare","mvp_test_checkout_attach","mvp_test_checkout_webhook","service_role","FOR UPDATE","Payment session, amount or merchant mismatch","bpei_payment_webhook_events"]){
+  assert.ok(sql.includes(guard),guard);
+ }
+ assert.ok(!sql.includes("sk_test_"),"No provider keys may appear in SQL migrations");
+});
+
+test("Payment config, Stripe account mapping and event ledger stay inaccessible to clients",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029073330_mvp_private_stripe_configuration_explicit_denial.sql",import.meta.url),"utf8");
+ for(const table of ["bpei_payment_controls","bpei_stripe_connected_accounts","bpei_payment_webhook_events"])
+  assert.ok(sql.includes("ON public."+table),table);
+ assert.match(sql,/TO anon,authenticated USING\(false\)/);
+});
+
+test("Manual admin intake requires publication, permission and verifiable privacy evidence",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029074253_mvp_private_administrator_phone_intake_with_consent_reference.sql",import.meta.url),"utf8");
+ for(const fragment of [
+  "bpei_private_intake_evidence","bpei_private_intake_admin_read",
+  "legal_documents_published=true","p_privacy_ack_confirmed IS DISTINCT FROM true",
+  "mvp_admin_create_inquiry","GRANT EXECUTE ON FUNCTION","consent_accepted"
+ ])assert.ok(sql.includes(fragment),fragment);
+ assert.ok(!sql.includes("UPDATE public.bpei_launch_controls SET"),
+   "Manual intake must never activate legal publication");
+});
+
+test("Privileged manual client intake cannot run as public SECURITY DEFINER",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029074651_mvp_private_schema_for_privileged_manual_intake.sql",import.meta.url),"utf8");
+ assert.match(sql,/SET SCHEMA bpei_private/);
+ assert.match(sql,/SECURITY INVOKER/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION public\.mvp_admin_create_inquiry/);
+});
+
+test("Refund/dispute reports originate from signed Stripe TEST provider events only",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029075543_mvp_test_stripe_refund_dispute_reconciliation.sql",import.meta.url),"utf8");
+ for(const key of ["bpei_payment_refunds","bpei_payment_disputes","bpei_payment_adjustment_events","mvp_test_payment_adjustment_event","p_account_id","p_payment_intent_id","p_amount_cents>v_attempt.amount_cents","service_role","ON CONFLICT"]){
+  assert.ok(sql.includes(key),key);
+ }
+ assert.match(sql,/SECURITY INVOKER/);
+});
+
+test("Adjustment identity is immutable and Stripe intent has one owning merchant",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029080151_mvp_unique_payment_intent_and_immutable_adjustment_identity.sql",import.meta.url),"utf8");
+ for(const s of ["UNIQUE INDEX bpei_payment_attempts_unique_merchant_intent","prevent_adjustment_reassignment","bpei_prevent_refund_reassignment","bpei_prevent_dispute_reassignment"])
+  assert.ok(sql.includes(s),s);
+});
+
+test("Optional platform fee requires an explicit agreement and is zero by default",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029123512_mvp_optional_documented_connect_test_commission.sql",import.meta.url),"utf8");
+ for(const term of ["DEFAULT 0","test_application_fee_bps","fee_agreement_reference","fee_agreement_at","application_fee_cents","mvp_test_checkout_prepare"])
+  assert.ok(sql.includes(term),term);
+});
+
+test("The prelaunch transactional email outbox is private and cannot send by default",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029123952_mvp_commercial_email_outbox_disabled_by_default.sql",import.meta.url),"utf8");
+ assert.match(sql,/UNIQUE\(kind,document_id\)/);
+ assert.match(sql,/enabled boolean NOT NULL DEFAULT false/);
+ assert.match(sql,/CREATE POLICY bpei_mail_outbox_admin_read/);
+});
+
+test("Incomplete invoice RPC is disabled and detailed issuer-specific payment terms are mandatory",()=>{
+ const sql=readFileSync(new URL("../supabase/migrations/20261029125501_mvp_invoice_real_issuer_tax_and_payment_terms_without_legacy_bypass.sql",import.meta.url),"utf8");
+ for(const part of ["mvp_issue_invoice_compliant","mvp_issue_invoice(p_quote_id","Old incomplete invoice issue path disabled",
+  "issuer_vat_number","p_payment_terms","p_early_payment_discount","p_late_payment_penalties",
+  "b2b_recovery_fee_cents","v_quote.vat_basis_points>0"])
+  assert.ok(sql.includes(part),part);
+ assert.match(sql,/SECURITY INVOKER/);
+});
+
+test("National partner network migration files are tracked and complete",()=>{
+ for(const name of [
+ "20261029131257_national_partner_profiles_assessments_and_authorization.sql",
+ "20261029131348_network_assessment_level_1_question_bank.sql",
+ "20261029131401_network_assessment_level_2_question_bank.sql",
+ "20261029131455_network_assessment_level_3_question_bank.sql",
+ "20261029131503_network_assessment_level_4_question_bank.sql",
+ "20261029131827_national_partner_prospect_registry_and_mission_compensation_offer.sql"
+ ])assert.ok(migrations.includes(name),name);
+});
+
+test("Opt-in partner discovery and trusted lead attribution migrations are tracked",()=>{
+ for(const name of [
+  "20261029132434_national_lead_trusted_origin_and_client_category_immutability.sql",
+  "20261029132619_national_public_partner_discovery_opt_in_verified_capabilities.sql",
+  "20261029132717_national_search_safe_public_definer_without_private_schema_usage.sql",
+  "20261029132803_national_discovery_invoker_scoped_private_schema_access.sql"
+ ])assert.ok(migrations.includes(name),name);
+});
+
+test("The private partner accounting journal migration is tracked",()=>{
+ const name="20261029133526_national_partner_private_cashflow_and_expense_journal.sql";
+ assert.ok(migrations.includes(name));
+ const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
+ assert.match(sql,/bpei_finance_self_read/);
+ assert.match(sql,/guard_finance_entry_correction/);
+});
+
+test("Appointment reservation and customer-verified review release migrations are versioned",()=>{
+ for(const name of [
+  "20261029134501_national_partner_availability_appointments_atomic_booking.sql",
+  "20261029134842_national_verified_customer_feedback_one_time_code_and_moderation.sql",
+  "20261029135034_national_review_public_attribution_collision_and_withdrawal.sql"
+ ])assert.ok(migrations.includes(name),name);
+});
+
+test("Independent interregional client referral with opt-in payout proposal is versioned",()=>{
+ const name="20261029135505_national_cross_region_partner_referrals_contractual_payment_terms.sql";
+ assert.ok(migrations.includes(name),name);
+ const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
+ assert.match(sql,/bpei_partner_referral_agreements/);
+ assert.match(sql,/respond_partner_referral/);
+});
+
+test("Stripe TEST checkout must reconcile the quote, partner remuneration and VAT",()=>{
+ for(const name of [
+  "20261029140639_strict_stripe_test_checkout_invoice_compensation_reconciliation.sql",
+  "20261029140800_admin_test_checkout_readiness_reconciliation_explanations.sql",
+  "20261029140847_checkout_readiness_typed_optional_rows.sql"
+ ])assert.ok(migrations.includes(name),name);
+});
+
+test("The immutable invoice requires a reconciled independent HT split before numbering",()=>{
+ assert.ok(migrations.includes("20261029141155_guard_immutable_invoice_against_partner_compensation_mismatch.sql"));
+});
+
+test("P0 evidence ledger and private launch readiness are in applied migration manifest",()=>{
+ const file="20261029142524_p0_verified_release_evidence_and_private_readiness_diagnostics.sql";
+ assert.ok(migrations.includes(file));
+ const sql=readFileSync(new URL("../supabase/migrations/"+file,import.meta.url),"utf8");
+ assert.match(sql,/bpei_p0_attestations/);
+ assert.match(sql,/bpei_private\.p0_readiness/);
+ assert.match(sql,/SECURITY INVOKER/);
 });

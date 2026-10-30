@@ -1,3 +1,5 @@
+import { PartnerReferralPanel } from "@/components/independent/PartnerReferralPanel";
+import { PartnerAvailabilityPanel } from "@/components/independent/PartnerAvailabilityPanel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -5,10 +7,15 @@ import { PublicShell } from "@/components/public/PublicShell";
 import { MissionIncidentPanel } from "@/components/independent/MissionIncidentPanel";
 import { MissionTimeline } from "@/components/shared/MissionTimeline";
 import { BpeiInbox } from "@/components/shared/BpeiInbox";
+import { IndependentConnectPanel } from "@/components/independent/IndependentConnectPanel";
+import { IndependentLevelStatus } from "@/components/independent/IndependentLevelStatus";
+import { PartnerProspectCRM } from "@/components/independent/PartnerProspectCRM";
+import { PartnerFinanceDesk } from "@/components/independent/PartnerFinanceDesk";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { missionStatusLabel, nextMissionStatus, canReadMissionClientContact } from "@/lib/bpei-mission-status";
+import {formatCents} from "@/lib/bpei-commercial";
 import { canRegisterIndependent, isPublishedLegalVersion } from "@/lib/bpei-launch-policy";
 import { bpeiAuthRedirect } from "@/lib/bpei-auth-redirect";
 
@@ -28,17 +35,27 @@ type Profile = {
   bio: string | null;
   skills: string[];
   verified_at: string | null;
+  training_details:string;
+  experience_years:number|null;
+  remote_available:boolean;
+  availability_notes:string;
+  mission_types:string[];
+  professional_stage:"preparing"|"registered";
+  public_listing_opt_in:boolean;
 };
 
 function IndependentSpace() {
   const [userId, setUserId] = useState<string | null>(null);
   const dataEpoch=useRef(0);
+  const sessionUserId=useRef<string|null>(null);
   const [loading, setLoading] = useState(true);
   const [spaceReady, setSpaceReady] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [pendingConfirmationEmail, setPendingConfirmationEmail] = useState("");
+  const [resendingConfirmation, setResendingConfirmation] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [registration, setRegistration] = useState(false);
   const [launch, setLaunch] = useState<{legal_documents_published:boolean;independent_registration_enabled:boolean;legal_version:string|null}|null>(null);
@@ -50,16 +67,27 @@ function IndependentSpace() {
   const [saving, setSaving] = useState(false);
   const [requests, setRequests] = useState<Array<{ id: string; title: string; status: string; created_at: string; inquiry_id: string | null }>>([]);
   const [clientContacts, setClientContacts] = useState<Record<string,{ client_name:string; email:string; phone:string|null; city:string|null }>>({});
+  const [remunerations,setRemunerations]=useState<Record<string,{
+   id:string;request_id:string;status:string;client_price_ht_cents:number;
+   technician_ht_cents:number;bpei_ht_cents:number;expense_policy:string;source:string
+  }>>({});
   const [application, setApplication] = useState<{ id: string; status: string; created_at: string; message: string } | null>(null);
 
   function clearPrivateState() {
     setSpaceReady(false);
     setLaunch(null);
     setLegalAccepted(false);
+    setAcceptChecked(false);
+    setPrivacyChecked(false);
+    setNotice("");
+    setPassword("");
+    setPasswordConfirm("");
+    setPendingConfirmationEmail("");
     setProfile(null);
     setRequests([]);
     setApplication(null);
     setClientContacts({});
+    setRemunerations({});
   }
 
   async function load(id: string): Promise<boolean> {
@@ -112,7 +140,12 @@ function IndependentSpace() {
         }
       }
 
+      const paymentOfferResult=await db.from("bpei_partner_compensation_proposals")
+       .select("id,request_id,status,client_price_ht_cents,technician_ht_cents,bpei_ht_cents,expense_policy,source")
+       .eq("partner_id",id).limit(100);
       if(epoch!==dataEpoch.current)return false;
+      if(paymentOfferResult.error){clearPrivateState();setError("Rémunération des missions indisponible. Réessayez.");return false;}
+      setRemunerations(Object.fromEntries((paymentOfferResult.data??[]).map((o:any)=>[o.request_id,o])));
       setLaunch(currentGate);
       setLegalAccepted(accepted);
       setProfile(p.data ?? null);
@@ -137,14 +170,52 @@ function IndependentSpace() {
   useEffect(() => {
     let active = true;
     const initialEpoch=dataEpoch.current;
-    const {data:{subscription}}=supabase.auth.onAuthStateChange((event)=>{
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
       if(!active)return;
       if(event==="SIGNED_OUT"){
-        // Includes sign-out from another tab; no pending request may restore old data.
+        // Cross-tab sign-out invalidates every pending profile, mission and client read.
         dataEpoch.current+=1;
+        sessionUserId.current=null;
         clearPrivateState();
         setUserId(null);
         setLoading(false);
+        return;
+      }
+      if(event==="SIGNED_IN" && session?.user?.id && session.user.id!==sessionUserId.current){
+        // A different user signed in (possibly in another tab). Hide all previous
+        // private records synchronously, before checking the new identity.
+        const expectedUserId=session.user.id;
+        const authEpoch=++dataEpoch.current;
+        sessionUserId.current=expectedUserId;
+        clearPrivateState();
+        setUserId(null);
+        setLoading(true);
+        setError("");
+        // Supabase documents that async SDK calls must not run inside the Auth
+        // callback while its internal auth lock is held. Defer verification.
+        window.setTimeout(()=>{
+          if(!active||dataEpoch.current!==authEpoch||sessionUserId.current!==expectedUserId)return;
+          void supabase.auth.getUser().then(async ({data,error})=>{
+            if(!active||dataEpoch.current!==authEpoch||sessionUserId.current!==expectedUserId)return;
+            if(error||data.user?.id!==expectedUserId){
+              sessionUserId.current=null;
+              clearPrivateState();
+              setUserId(null);
+              setLoading(false);
+              setError("Impossible de confirmer la nouvelle session. Reconnectez-vous.");
+              return;
+            }
+            setUserId(expectedUserId);
+            await load(expectedUserId);
+          }).catch(()=>{
+            if(!active||dataEpoch.current!==authEpoch||sessionUserId.current!==expectedUserId)return;
+            sessionUserId.current=null;
+            clearPrivateState();
+            setUserId(null);
+            setLoading(false);
+            setError("Impossible de confirmer la nouvelle session. Reconnectez-vous.");
+          });
+        },0);
       }
     });
     (supabase as any).from("bpei_launch_controls").select("legal_documents_published,independent_registration_enabled,legal_version").eq("id",true).maybeSingle().then(({data}:any)=>{
@@ -153,11 +224,13 @@ function IndependentSpace() {
     supabase.auth.getUser().then(async ({ data, error }) => {
       if (!active||initialEpoch!==dataEpoch.current) return;
       if (error) throw error;
+      sessionUserId.current=data.user?.id ?? null;
       setUserId(data.user?.id ?? null);
       if (data.user) await load(data.user.id);
       else setLoading(false);
     }).catch(() => {
       if (active&&initialEpoch===dataEpoch.current) {
+        sessionUserId.current=null;
         clearPrivateState();
         setUserId(null);
         setError("Impossible de vérifier votre session. Réessayez.");
@@ -167,6 +240,7 @@ function IndependentSpace() {
     return () => {
       active = false;
       dataEpoch.current+=1;
+      sessionUserId.current=null;
       subscription.unsubscribe();
     };
   }, []);
@@ -174,6 +248,7 @@ function IndependentSpace() {
   async function signIn(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+    setPendingConfirmationEmail("");
     if(registration && (!canRegisterIndependent(launch) || !privacyChecked)){
       setError("L'inscription n'est pas ouverte ou les informations juridiques n'ont pas été acceptées.");
       return;
@@ -185,23 +260,83 @@ function IndependentSpace() {
     setLoading(true);
     setNotice("");
     try {
-      const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
+      const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant", import.meta.env.VITE_BPEI_AUTH_ORIGIN), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
       if (result.error || !result.data.user) {
+        if (!registration && result.error?.code === "email_not_confirmed") {
+          setPendingConfirmationEmail(email.trim().toLowerCase());
+          setError("Confirmez votre adresse e-mail pour vous connecter. Vous pouvez demander un nouvel envoi.");
+          return;
+        }
         setError("Connexion impossible. Vérifiez vos identifiants et le service d'authentification.");
         return;
       }
       setPassword("");
       setPasswordConfirm("");
       if (!result.data.session) {
+        setPendingConfirmationEmail(email.trim().toLowerCase());
         setNotice("Vérifiez votre e-mail pour confirmer le compte.");
         return;
       }
+      setPendingConfirmationEmail("");
+      sessionUserId.current=result.data.user.id;
       setUserId(result.data.user.id);
       await load(result.data.user.id);
     } catch {
       setError("Service d'authentification indisponible. Réessayez.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!pendingConfirmationEmail || resendingConfirmation) return;
+    setResendingConfirmation(true);
+    setError("");
+    setNotice("");
+    try {
+      const {error: resendError} = await supabase.auth.resend({
+        type: "signup",
+        email: pendingConfirmationEmail,
+        options: {emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant", import.meta.env.VITE_BPEI_AUTH_ORIGIN)}
+      });
+      if (resendError) {
+        setError("Renvoi impossible pour le moment. Vérifiez votre boîte e-mail ou réessayez plus tard.");
+      } else {
+        setNotice("Si votre inscription est en attente et que le service e-mail est disponible, un nouveau message de confirmation sera envoyé.");
+      }
+    } catch {
+      setError("Service e-mail indisponible. Réessayez plus tard.");
+    } finally {
+      setResendingConfirmation(false);
+    }
+  }
+
+  async function requestExistingAccountVerificationLink() {
+    // Only available after a password login specifically reported
+    // email_not_confirmed. Never create a new Auth user through this path.
+    if (!pendingConfirmationEmail || resendingConfirmation || loading) return;
+    setResendingConfirmation(true);
+    setError("");
+    setNotice("");
+    try {
+      const {error: linkError}=await supabase.auth.signInWithOtp({
+        email:pendingConfirmationEmail,
+        options:{
+          shouldCreateUser:false,
+          emailRedirectTo:bpeiAuthRedirect(window.location.origin,"/espace-independant", import.meta.env.VITE_BPEI_AUTH_ORIGIN)
+        }
+      });
+      if(linkError) {
+        setError("Lien de vérification indisponible. Le service e-mail doit être configuré avant de pouvoir confirmer ce compte.");
+      }else{
+        // A successful API response only means the request was accepted.
+        // It does NOT establish delivery, email ownership or an admin role.
+        setNotice("Si ce compte existe et que l'envoi d'e-mails fonctionne, un lien de vérification sera transmis à son adresse. Ouvrez le lien reçu pour confirmer votre identité.");
+      }
+    } catch {
+      setError("Service de vérification e-mail indisponible. Réessayez ultérieurement.");
+    } finally {
+      setResendingConfirmation(false);
     }
   }
 
@@ -227,6 +362,13 @@ function IndependentSpace() {
         service_radius_km:profile.service_radius_km,
         bio:profile.bio?.trim()||null,
         skills:profile.skills,
+        training_details:profile.training_details.trim(),
+        experience_years:profile.experience_years,
+        remote_available:profile.remote_available,
+        availability_notes:profile.availability_notes.trim(),
+        mission_types:profile.mission_types,
+        professional_stage:profile.professional_stage,
+        public_listing_opt_in:profile.public_listing_opt_in,
       };
       const {error:saveError}=await (supabase as any).from("independent_profiles").update(payload).eq("user_id",userId);
       if(saveError){setError("Enregistrement impossible. Vérifiez les champs et vos autorisations.");return;}
@@ -239,13 +381,13 @@ function IndependentSpace() {
   return <PublicShell>
     <section className="mx-auto max-w-3xl px-4 py-12 md:px-6">
       <h1 className="text-3xl font-bold">Espace technicien indépendant</h1>
-      <p className="mt-3 text-muted-foreground">Gérez votre profil et consultez vos demandes personnelles. Les comptes existants sur l'ancienne plateforme ne sont pas transférés automatiquement.</p>
+      <p className="mt-3 text-muted-foreground">Développez votre activité d’indépendant, valorisez vos compétences et consultez vos demandes personnelles. Les comptes existants sur l'ancienne plateforme ne sont pas transférés automatiquement.</p>
       {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
       {notice && <p role="status" className="mt-4 text-sm">{notice}</p>}
       {loading ? <p className="mt-8">Chargement…</p> : !userId ?
         <form onSubmit={signIn} className="mt-8 space-y-4 rounded-xl border bg-card p-6">
           <h2 className="font-semibold">{registration ? "Inscription indépendant" : "Connexion"}</h2>
-          <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => setEmail(e.target.value)} />
+          <Input type="email" autoComplete="email" required placeholder="Adresse e-mail" value={email} onChange={e => {setEmail(e.target.value);setPendingConfirmationEmail("");}} />
           <div className="space-y-3">
             <Input type={showPassword ? "text" : "password"} autoComplete={registration ? "new-password" : "current-password"} minLength={registration ? 12 : 1} required placeholder="Mot de passe" value={password} onChange={e => setPassword(e.target.value)} />
             {registration && <Input type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={12} required placeholder="Confirmer le mot de passe" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} />}
@@ -261,6 +403,16 @@ function IndependentSpace() {
                 <span>J'ai pris connaissance de la <Link className="underline" to="/confidentialite">politique de confidentialité</Link> et des <Link className="underline" to="/cgu">conditions d'utilisation</Link> (version {launch?.legal_version}).</span>
               </label> :
               <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
+          </div>}
+          {pendingConfirmationEmail && <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" disabled={resendingConfirmation || loading}
+              onClick={() => void resendConfirmation()}>
+              {resendingConfirmation ? "Envoi en cours…" : "Renvoyer l'e-mail de confirmation"}
+            </Button>
+            {!registration && <Button type="button" variant="outline" disabled={resendingConfirmation || loading}
+              onClick={() => void requestExistingAccountVerificationLink()}>
+              Recevoir un lien de vérification du compte existant
+            </Button>}
           </div>}
           <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked || password.length<12 || password !== passwordConfirm)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => {setRegistration(v => !v);setPasswordConfirm("");setPrivacyChecked(false);setError("");}}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
@@ -320,6 +472,26 @@ function IndependentSpace() {
             <label className="block text-sm">Code postal <Input maxLength={12} value={profile.postal_code ?? ""} onChange={e => update("postal_code", e.target.value)} /></label>
             <label className="block text-sm">Rayon d'intervention (km) <Input type="number" min={0} max={500} value={profile.service_radius_km ?? ""} onChange={e => update("service_radius_km", e.target.value === "" ? null : Number(e.target.value))} /></label>
             <label className="block text-sm">Présentation <Textarea maxLength={2000} value={profile.bio ?? ""} onChange={e => update("bio", e.target.value)} /></label>
+            <label className="block text-sm">Formation et expérience professionnelle
+             <Textarea maxLength={2000} value={profile.training_details??""} onChange={e=>update("training_details",e.target.value)} placeholder="Diplômes, formations, interventions réellement pratiquées…"/></label>
+            <label className="block text-sm">Années d'expérience (facultatif)
+             <Input type="number" min={0} max={70} value={profile.experience_years??""} onChange={e=>update("experience_years",e.target.value===""?null:Number(e.target.value))}/></label>
+            <label className="block text-sm">Situation professionnelle
+             <select className="mt-1 w-full rounded border bg-background p-2" value={profile.professional_stage}
+              onChange={e=>update("professional_stage",e.target.value as "preparing"|"registered")}>
+              <option value="preparing">En création d'activité / sans SIRET pour l'instant</option>
+              <option value="registered">Entreprise immatriculée (justificatifs à contrôler)</option>
+             </select></label>
+            <label className="flex items-start gap-2 text-sm"><input className="mt-1" type="checkbox" checked={profile.remote_available} onChange={e=>update("remote_available",e.target.checked)}/>
+             Je peux proposer des interventions informatiques à distance.</label>
+            <label className="block text-sm">Disponibilités et types de missions souhaités
+             <Textarea maxLength={800} value={profile.availability_notes??""} onChange={e=>update("availability_notes",e.target.value)} placeholder="Indiquez vos préférences librement ; aucun quota ni horaire imposé."/></label>
+            <label className="flex items-start gap-2 text-sm"><input type="checkbox" className="mt-1" checked={profile.public_listing_opt_in??false}
+             onChange={e=>update("public_listing_opt_in",e.target.checked)}/>
+             J'autorise BPEI à afficher publiquement mon nom professionnel, mon niveau, ma ville et mes compétences effectivement validées. Cette autorisation n'active pas mon profil sans contrôle professionnel.</label>
+            <label className="block text-sm">Types de missions (séparés par une virgule)
+             <Input value={(profile.mission_types??[]).join(", ")} onChange={e=>update("mission_types",e.target.value.split(",").map(v=>v.trim()).filter(Boolean).slice(0,20))}
+              placeholder="PC, réseaux, sauvegarde, support, distance…"/></label>
             <Button type="submit" disabled={saving}>{saving ? "Enregistrement…" : "Enregistrer"}</Button>
           </form>}
           <section className="rounded-xl border bg-card p-6">
@@ -357,6 +529,13 @@ function IndependentSpace() {
               <Button type="submit" disabled={saving}>Envoyer ma candidature</Button>
             </form>}
           </section>
+          {profile?.verified_at&&application?.status==="approved"&&legalAccepted&&<IndependentConnectPanel/>}
+          <IndependentLevelStatus userId={userId}/>
+          <PartnerAvailabilityPanel userId={userId}/>
+          <p className="text-sm"><Link className="underline" to="/ressources-prospection">Consulter le guide BPEI de prospection locale et les modèles de messages</Link></p>
+          <PartnerProspectCRM userId={userId}/>
+          <PartnerFinanceDesk userId={userId}/>
+          <PartnerReferralPanel userId={userId}/>
           <BpeiInbox />
           <section>
             <h2 className="text-xl font-semibold">Mes demandes</h2>
@@ -380,14 +559,46 @@ function IndependentSpace() {
                   },"Service indisponible pendant le changement de statut.");
                 }}>{r.status==="accepted"?"Démarrer l'intervention":"Marquer l'intervention terminée"}</Button>
               </div>}
+              {r.status==="new"&&remunerations[r.id]&&<div className="mt-3 rounded-md border p-3 text-sm">
+               <h4 className="font-semibold">Rémunération proposée, HT</h4>
+               <p>Prix client : {formatCents(remunerations[r.id].client_price_ht_cents)}
+                · Votre part : <strong>{formatCents(remunerations[r.id].technician_ht_cents)}</strong>
+                · BPEI : {formatCents(remunerations[r.id].bpei_ht_cents)}</p>
+               <p>Origine : {remunerations[r.id].source==="partner"?"Client apporté par le technicien":remunerations[r.id].source==="bpei"?"Client apporté par BPEI":"Client apporté par un autre partenaire"}</p>
+               <p>Déplacements et frais : {remunerations[r.id].expense_policy}</p>
+               <p>Accord : {remunerations[r.id].status==="accepted"?"Votre rémunération est acceptée":remunerations[r.id].status==="declined"?"Rémunération refusée":"Votre décision est nécessaire"}</p>
+               {remunerations[r.id].status==="proposed"&&<div className="mt-2 flex gap-2">
+                <Button type="button" size="sm" disabled={saving} onClick={async()=>{
+                 if(!userId||!window.confirm("Accepter les conditions de rémunération proposées avant de décider pour la mission ?"))return;
+                 await withSaveGuard(async()=>{
+                  const {error:e}=await (supabase as any).rpc("respond_partner_compensation",{
+                   p_proposal_id:remunerations[r.id].id,p_decision:"accepted"});
+                  if(e){setError("Rémunération non acceptée.");return;}
+                  await load(userId);
+                 },"Service indisponible pendant l'accord de rémunération.");
+                }}>Accepter cette rémunération</Button>
+                <Button type="button" size="sm" variant="outline" disabled={saving} onClick={async()=>{
+                 if(!userId||!window.confirm("Refuser cette rémunération ? Vous restez libre de refuser la mission."))return;
+                 await withSaveGuard(async()=>{
+                  const {error:e}=await (supabase as any).rpc("respond_partner_compensation",{
+                   p_proposal_id:remunerations[r.id].id,p_decision:"declined"});
+                  if(e){setError("Refus non enregistré.");return;}
+                  await load(userId);
+                 },"Service indisponible pendant la décision de rémunération.");
+                }}>Refuser cette rémunération</Button>
+               </div>}
+              </div>}
+              {r.status==="new"&&!remunerations[r.id]&&<p className="mt-3 text-sm text-muted-foreground">
+               Les conditions de rémunération et de déplacement doivent être transmises avant que vous puissiez accepter cette mission.
+              </p>}
               {r.status==="new" && <div className="mt-3 flex flex-wrap gap-2">
-                <Button size="sm" disabled={saving} onClick={async()=>{
+                <Button size="sm" disabled={saving||remunerations[r.id]?.status!=="accepted"} onClick={async()=>{
                   if(!userId)return;await withSaveGuard(async()=>{
                     const {error:e}=await (supabase as any).rpc("respond_independent_request",{p_request_id:r.id,p_response:"accepted"});
                     if(e){setError("Impossible d'accepter cette mission.");return;}
                     await load(userId);
                   },"Service indisponible pendant l'acceptation de la mission.");
-                }}>Accepter</Button>
+                }}>Accepter la mission</Button>
                 <Button variant="outline" size="sm" disabled={saving} onClick={async()=>{
                   if(!userId||!window.confirm("Refuser cette mission ? Elle pourra être réattribuée."))return;
                   await withSaveGuard(async()=>{

@@ -4,16 +4,24 @@ on:
     branches:
       - feat/bpei-independent-release-clean
       - feat/p1-mission-operations
+      - feat/mvp-commercial-foundation
       - feat/independants-sans-boutiques-2026-10
   pull_request:
     branches:
       - main
+      - feat/mvp-commercial-foundation
+# Keep the latest run for each workflow/branch; previous commits are superseded.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
   build-and-smoke:
     runs-on: ubuntu-latest
     env:
+      VITE_BPEI_AUTH_ORIGIN: https://bpei-preview.vercel.app
       VITE_SUPABASE_URL: https://placeholder.supabase.co
       VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
       SUPABASE_URL: https://placeholder.supabase.co
@@ -48,6 +56,11 @@ jobs:
           node scripts/browser-p1-admin-missions-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-role-isolation-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p0-profile-resilience-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-quote-signout-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-admin-session-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-inbox-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-mvp-commercial-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-mvp-manual-intake-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-readiness-recheck-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-auth-prelaunch-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-existing-account-verification-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }

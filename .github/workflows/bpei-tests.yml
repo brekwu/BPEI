@@ -4,9 +4,16 @@ on:
     branches:
       - feat/bpei-independent-release-clean
       - feat/p1-mission-operations
+      - feat/mvp-commercial-foundation
   pull_request:
     branches:
       - main
+      - feat/mvp-commercial-foundation
+
+# Keep the latest run for each workflow/branch; previous commits are superseded.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -21,6 +28,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install frozen dependencies for unit tests
+        run: bun install --frozen-lockfile
       - name: Check first-admin bootstrap script syntax
         run: node --check scripts/p0-bootstrap-admin.mjs
       - name: Verify live RLS smoke script syntax without using secrets
@@ -57,11 +70,12 @@ jobs:
           BPEI_STAGING: "true"
           VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
 
-  macos-webkit-smoke:
-    # Apple WebKit engine on macOS; user devices and real Auth/RLS need separate acceptance.
-    runs-on: macos-latest
+  webkit-ubuntu-smoke:
+    # WebKit browser engine on an available Linux runner; real macOS/Safari acceptance remains separate.
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      VITE_BPEI_AUTH_ORIGIN: https://bpei-preview.vercel.app
       VITE_SUPABASE_URL: https://placeholder.supabase.co
       VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
       SUPABASE_URL: https://placeholder.supabase.co
@@ -83,14 +97,14 @@ jobs:
           bun-version: "1.4.4"
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
-      - name: Unit tests on macOS
+      - name: Unit tests on Linux WebKit runner
         run: npm test
-      - name: Build P1 SSR on macOS
+      - name: Build P1 SSR for WebKit
         run: bun run build
       - name: Install WebKit
         run: |
           npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install webkit
+          npx playwright install --with-deps webkit
       - name: Prelaunch WebKit and cross-tab admin privacy
         shell: bash
         run: |
@@ -108,3 +122,14 @@ jobs:
           node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p1-admin-session-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p1-inbox-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-mvp-commercial-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-mvp-manual-intake-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-legal-version-race-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-admin-retry-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-existing-account-verification-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-readiness-recheck-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-invoice-signout-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-quote-signout-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-inquiries-retry-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-commercial-draft-isolation-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-commercial-readback-failure-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }

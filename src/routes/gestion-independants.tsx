@@ -5,8 +5,11 @@ import { useBpeiAdminAccess } from "@/lib/use-bpei-admin-access";
 import { PublicShell } from "@/components/public/PublicShell";
 import { Button } from "@/components/ui/button";
 import { AdminInquiries } from "@/components/admin/AdminInquiries";
+import { AdminPrivateIntake } from "@/components/admin/AdminPrivateIntake";
 import { AdminLegalDocuments } from "@/components/admin/AdminLegalDocuments";
+import { AdminP0Readiness } from "@/components/admin/AdminP0Readiness";
 import { ProfessionalVerificationPanel } from "@/components/admin/ProfessionalVerificationPanel";
+import { AdminPartnerAssessment } from "@/components/admin/AdminPartnerAssessment";
 import { isVerificationCurrent, type ProfessionalCheck } from "@/lib/bpei-professional-verification";
 
 export const Route = createFileRoute("/gestion-independants")({
@@ -27,11 +30,13 @@ function IndependentReview() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [applications, setApplications] = useState<Candidate[]>([]);
+  const [intakeRevision,setIntakeRevision]=useState(0);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [checks, setChecks] = useState<Record<string, ProfessionalCheck>>({});
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const access = useBpeiAdminAccess();
+  const [accessRetryKey, setAccessRetryKey] = useState(0);
+  const access = useBpeiAdminAccess(accessRetryKey);
   const loadEpoch = useRef(0);
 
   function clearAdminData() {
@@ -154,7 +159,10 @@ function IndependentReview() {
       access !== "allowed" || !authorized ? <div className="mt-8 rounded-lg border bg-muted/30 p-5" role="alert">
         <p>Accès administrateur non autorisé pour ce compte.</p>
         {message && <p className="mt-2 text-sm">La vérification a échoué temporairement. Vous pouvez réessayer.</p>}
-        <Button variant="outline" className="mt-3" onClick={() => void load()}>Réessayer</Button>
+        <Button variant="outline" className="mt-3" onClick={() => {
+          if(access !== "allowed")setAccessRetryKey(key => key + 1);
+          else void load();
+        }}>Réessayer</Button>
       </div> :
       <section className="mt-8">
         <div className="flex items-center justify-between gap-4">
@@ -175,6 +183,7 @@ function IndependentReview() {
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm">{a.message}</p>
               <p className="mt-3 text-xs text-muted-foreground">Déposée le {new Date(a.created_at).toLocaleDateString("fr-FR")}</p>
+              <AdminPartnerAssessment userId={a.user_id} displayName={p?.display_name??"Candidat"}/>
               <ProfessionalVerificationPanel userId={a.user_id} siret={p?.siret??null} check={checks[a.user_id]} onRecorded={async () => { await load(); }}/>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button variant="outline" disabled={!!busyId || a.status === "under_review"} onClick={() => void review(a.id, "under_review")}>Examiner</Button>
@@ -184,8 +193,11 @@ function IndependentReview() {
             </article>;
           })}
         </div>
-        <AdminInquiries />
-        <AdminLegalDocuments />
+        <p className="mt-7"><Link to="/gestion-commerciale" className="font-medium underline">Gestion commerciale : devis et factures</Link></p>
+        <AdminPrivateIntake onCreated={()=>setIntakeRevision(n=>n+1)}/>
+        <AdminInquiries key={intakeRevision}/>
+        <AdminP0Readiness />
+          <AdminLegalDocuments />
       </section>}
     {message && <p className="mt-5 text-sm" role="status">{message}</p>}
   </main></PublicShell>;
