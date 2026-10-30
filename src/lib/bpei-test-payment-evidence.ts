@@ -7,6 +7,7 @@
  * only governs how those server records are shown to an authorized admin.
  */
 export type TestPaymentEvidence={
+ id:string;
  invoice_id:string;
  state:string;
  paid_at:string|null;

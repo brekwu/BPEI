@@ -100,6 +100,16 @@ try{
  // Invoicing is immutable: the paid TEST ledger must be the only display source.
  assert.equal(invoice.payment_status,"unpaid");
  mockTestPaymentConfirmed=true;
+ // A signed-looking TEST ledger row with the WRONG amount must not mark a
+ // customer's printable invoice as paid.
+ stripeTestEvidence.amount_cents=10799;
+ await page.getByRole("link",{name:"Consulter et imprimer la facture"}).click();
+ await page.getByRole("heading",{name:"FACTURE",exact:true}).waitFor({timeout:15000});
+ await page.getByText("Non confirmé / impayé",{exact:false}).waitFor({timeout:15000});
+ await page.goto(base+"/gestion-commerciale",{waitUntil:"domcontentloaded"});
+ await page.getByRole("heading",{name:"Devis et factures — MVP"}).waitFor({timeout:15000});
+ // Only an exact gross amount with paid_at may unlock TEST payment display.
+ stripeTestEvidence.amount_cents=10800;
  await page.locator('section[aria-label="Gestion commerciale BPEI"]')
    .getByRole("button",{name:"Actualiser"}).click();
  await page.getByText("Paiement Stripe confirmé (TEST uniquement)",{exact:false}).first()
