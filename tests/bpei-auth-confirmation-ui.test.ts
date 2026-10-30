@@ -32,7 +32,7 @@ test("Unconfirmed preprovisioned operator can request an email proof without cre
  assert.match(route,/supabase\.auth\.signInWithOtp\(\{/);
  assert.match(route,/shouldCreateUser:false/);
  assert.match(route,/email:pendingConfirmationEmail/);
- assert.match(route,/emailRedirectTo:bpeiAuthRedirect\(window\.location\.origin,"\/espace-independant"\)/);
+ assert.match(route,/emailRedirectTo:bpeiAuthRedirect\(window\.location\.origin,"\/espace-independant", import\.meta\.env\.VITE_BPEI_AUTH_ORIGIN\)/);
  assert.match(route,/Recevoir un lien de vérification du compte existant/);
  assert.match(route,/!registration && <Button type="button"/);
  assert.match(route,/if \(!pendingConfirmationEmail \|\| resendingConfirmation \|\| loading\) return/);
@@ -50,4 +50,10 @@ test("Operator provisioning makes no unsubstantiated email-delivery claim",()=>{
  assert.match(src,/email_confirmed_at/);
  assert.match(src,/UNCONFIRMED Auth identity/);
  assert.doesNotMatch(src,/email_confirm:true|auth\.admin\.inviteUserByEmail/);
+});
+
+test("Auth signup, resend, existing verification and recovery use configured stable origin",()=>{
+ const reset=readFileSync(new URL("../src/routes/reinitialiser-mot-de-passe.tsx",import.meta.url),"utf8");
+ assert.equal((route.match(/import\.meta\.env\.VITE_BPEI_AUTH_ORIGIN/g)||[]).length,3);
+ assert.equal((reset.match(/import\.meta\.env\.VITE_BPEI_AUTH_ORIGIN/g)||[]).length,1);
 });
