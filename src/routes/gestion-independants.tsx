@@ -35,7 +35,8 @@ function IndependentReview() {
   const [checks, setChecks] = useState<Record<string, ProfessionalCheck>>({});
   const [message, setMessage] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
-  const access = useBpeiAdminAccess();
+  const [accessRetryKey, setAccessRetryKey] = useState(0);
+  const access = useBpeiAdminAccess(accessRetryKey);
   const loadEpoch = useRef(0);
 
   function clearAdminData() {
@@ -158,7 +159,10 @@ function IndependentReview() {
       access !== "allowed" || !authorized ? <div className="mt-8 rounded-lg border bg-muted/30 p-5" role="alert">
         <p>Accès administrateur non autorisé pour ce compte.</p>
         {message && <p className="mt-2 text-sm">La vérification a échoué temporairement. Vous pouvez réessayer.</p>}
-        <Button variant="outline" className="mt-3" onClick={() => void load()}>Réessayer</Button>
+        <Button variant="outline" className="mt-3" onClick={() => {
+          if(access !== "allowed")setAccessRetryKey(key => key + 1);
+          else void load();
+        }}>Réessayer</Button>
       </div> :
       <section className="mt-8">
         <div className="flex items-center justify-between gap-4">
