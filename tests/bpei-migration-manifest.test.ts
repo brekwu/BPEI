@@ -34,6 +34,19 @@ test("The technician authorization foreign key has an applied and tracked coveri
  assert.match(sql,/ON public\.bpei_technician_levels \(authorized_by\)/i);
 });
 
+test("Public intake legal version race prevention has an applied migration",()=>{
+ const name="20261030114150_p0_refuse_stale_public_legal_consent.sql";
+ assert.ok(migrations.includes(name),"Public consent gate must exist at its applied version");
+ const sql=readFileSync(new URL("../supabase/migrations/"+name,import.meta.url),"utf8");
+ for(const fragment of [
+  "stamp_public_inquiry_legal_version",
+  "NEW.legal_version IS NULL",
+  "public.independent_admins",
+  "NEW.legal_version IS DISTINCT FROM v_version",
+  "NEW.legal_version := v_version"
+ ])assert.ok(sql.includes(fragment),"Missing fail-closed legal version condition: "+fragment);
+});
+
 test("The admin roster migration enforces administrator isolation",()=>{
  const sql=readFileSync(new URL("../supabase/migrations/20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql",import.meta.url),"utf8");
  assert.match(sql,/bpei_private\.is_bpei_admin/);
