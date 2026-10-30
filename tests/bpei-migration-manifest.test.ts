@@ -7,13 +7,21 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- assert.equal(migrations.length,70,"70 applied migrations must be committed to GitHub");
- assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,70,
+ const declared=readme.match(/\\*\\*(\\d+) migrations appliquées\\*\\*/);
+ assert.ok(declared,"README must declare the exact number of applied migrations");
+ const expected=Number(declared[1]);
+ assert.ok(expected>0,"Declared migration count must be positive");
+ assert.equal(migrations.length,expected,
+  "Every declared applied Supabase migration must have a GitHub SQL file");
+ assert.equal(new Set(migrations.map(name=>name.slice(0,14))).size,expected,
   "Supabase migration timestamps must be unique");
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
- assert.match(readme,/70 migrations appliquées/);
- assert.match(readme,/70 fichiers SQL versionnés/);
+ assert.match(readme,new RegExp(expected+" fichiers SQL versionnés"));
+ for(const latest of [
+  "20261030080119_p0_admin_readiness_strict_reconciliation.sql",
+  "20261030085218_p0_quote_requires_current_partner_verification.sql"
+ ])assert.ok(migrations.includes(latest),"Recent P0 migration missing: "+latest);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
