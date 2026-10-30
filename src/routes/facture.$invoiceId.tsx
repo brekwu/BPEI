@@ -26,44 +26,83 @@ function InvoiceView(){
  const [error,setError]=useState("");
  useEffect(()=>{
   let active=true;
-  setLoading(true);setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setTestRefundedCents(0);setTestDisputeStatus(null);setError("");
-  (async()=>{
-   const db=supabase as any;
-   const {data:session,error:authError}=await supabase.auth.getUser();
-   if(authError||!session.user)throw new Error("No session");
-   const {data:i,error:e}=await db.from("bpei_service_invoices")
-    .select("id,invoice_number,quote_id,issued_at,service_date,due_date,payment_status,issuer_vat_number,payment_terms,early_payment_discount,late_payment_penalties,customer_order_reference,b2b_recovery_fee_cents")
-    .eq("id",invoiceId).maybeSingle();
-   if(e||!i)throw new Error("Invoice not available");
-   const {data:q,error:quoteError}=await db.from("bpei_service_quotes")
-    .select("id,issuer_legal_name,issuer_siret,issuer_address,issuer_email,tax_mention,customer_name,customer_email,customer_address,customer_kind,customer_siret,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at")
-    .eq("id",i.quote_id).maybeSingle();
-   if(quoteError||!q)throw new Error("Quote not available");
-   const {data:verified,error:paymentError}=await db.from("bpei_payment_attempts")
-    .select("id,state,amount_cents").eq("invoice_id",i.id).eq("state","paid").limit(1);
-   if(paymentError)throw new Error("Payment status unavailable");
-   let refunded=0;let dispute:"open"|"won"|"lost"|null=null;
-   if(verified?.[0]){
-    const [refundResponse,disputeResponse]=await Promise.all([
-     db.from("bpei_payment_refunds").select("amount_cents,status").eq("attempt_id",verified[0].id),
-     db.from("bpei_payment_disputes").select("status").eq("attempt_id",verified[0].id)
-    ]);
-    if(refundResponse.error||disputeResponse.error)throw new Error("Payment adjustments unavailable");
-    refunded=(refundResponse.data??[]).filter((r:{status:string})=>r.status==="succeeded")
-      .reduce((total:number,r:{amount_cents:number})=>total+r.amount_cents,0);
-    const statuses=(disputeResponse.data??[]) as {status:"open"|"won"|"lost"}[];
-    dispute=statuses.some(d=>d.status==="open")?"open":
-      statuses.some(d=>d.status==="lost")?"lost":
-      statuses.some(d=>d.status==="won")?"won":null;
+  let requestEpoch=0;
+  let visibleUserId:string|null=null;
+  function clearInvoice(){
+   setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);
+   setTestRefundedCents(0);setTestDisputeStatus(null);
+  }
+  async function loadInvoice(){
+   const run=++requestEpoch;
+   const current=()=>active&&run===requestEpoch;
+   setLoading(true);clearInvoice();setError("");
+   try{
+    const db=supabase as any;
+    const {data:session,error:authError}=await supabase.auth.getUser();
+    if(!current())return;
+    if(authError||!session.user)throw new Error("No session");
+    visibleUserId=session.user.id;
+    const {data:i,error:e}=await db.from("bpei_service_invoices")
+     .select("id,invoice_number,quote_id,issued_at,service_date,due_date,payment_status,issuer_vat_number,payment_terms,early_payment_discount,late_payment_penalties,customer_order_reference,b2b_recovery_fee_cents")
+     .eq("id",invoiceId).maybeSingle();
+    if(!current())return;
+    if(e||!i)throw new Error("Invoice not available");
+    const {data:q,error:quoteError}=await db.from("bpei_service_quotes")
+     .select("id,issuer_legal_name,issuer_siret,issuer_address,issuer_email,tax_mention,customer_name,customer_email,customer_address,customer_kind,customer_siret,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at")
+     .eq("id",i.quote_id).maybeSingle();
+    if(!current())return;
+    if(quoteError||!q)throw new Error("Quote not available");
+    const {data:verified,error:paymentError}=await db.from("bpei_payment_attempts")
+     .select("id,state,amount_cents").eq("invoice_id",i.id).eq("state","paid").limit(1);
+    if(!current())return;
+    if(paymentError)throw new Error("Payment status unavailable");
+    let refunded=0;let dispute:"open"|"won"|"lost"|null=null;
+    if(verified?.[0]){
+     const [refundResponse,disputeResponse]=await Promise.all([
+      db.from("bpei_payment_refunds").select("amount_cents,status").eq("attempt_id",verified[0].id),
+      db.from("bpei_payment_disputes").select("status").eq("attempt_id",verified[0].id)
+     ]);
+     if(!current())return;
+     if(refundResponse.error||disputeResponse.error)throw new Error("Payment adjustments unavailable");
+     refunded=(refundResponse.data??[]).filter((r:{status:string})=>r.status==="succeeded")
+       .reduce((total:number,r:{amount_cents:number})=>total+r.amount_cents,0);
+     const statuses=(disputeResponse.data??[]) as {status:"open"|"won"|"lost"}[];
+     dispute=statuses.some(d=>d.status==="open")?"open":
+       statuses.some(d=>d.status==="lost")?"lost":
+       statuses.some(d=>d.status==="won")?"won":null;
+    }
+    if(current()){
+     setInvoice(i);setQuote(q);setTestPaymentConfirmed((verified??[]).length>0);
+     setTestRefundedCents(refunded);setTestDisputeStatus(dispute);
+    }
+   }catch{
+    if(current()){clearInvoice();setError("Facture indisponible ou accès non autorisé.");}
+   }finally{if(current())setLoading(false);}
+  }
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
+   if(!active)return;
+   if(event==="SIGNED_OUT"){
+    // Immediately invalidate even a database response already in flight.
+    ++requestEpoch;visibleUserId=null;
+    clearInvoice();setLoading(false);setError("Session terminée.");
+   }else if(event==="SIGNED_IN"&&session?.user?.id&&session.user.id!==visibleUserId){
+    // On a cross-tab account replacement, never show the prior account's invoice.
+    const nextEpoch=++requestEpoch;
+    visibleUserId=session.user.id;
+    clearInvoice();setLoading(true);setError("");
+    // Supabase Auth callbacks must not await SDK calls under the auth lock.
+    window.setTimeout(()=>{
+     if(active&&requestEpoch===nextEpoch)void loadInvoice();
+    },0);
    }
-   if(active){setInvoice(i);setQuote(q);setTestPaymentConfirmed((verified??[]).length>0);
-    setTestRefundedCents(refunded);setTestDisputeStatus(dispute);}
-  })().catch(()=>{if(active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setTestRefundedCents(0);setTestDisputeStatus(null);setError("Facture indisponible ou accès non autorisé.");}})
-   .finally(()=>{if(active)setLoading(false)});
-  const {data:{subscription}}=supabase.auth.onAuthStateChange(event=>{
-   if(event==="SIGNED_OUT"&&active){setInvoice(null);setQuote(null);setTestPaymentConfirmed(false);setTestRefundedCents(0);setTestDisputeStatus(null);setError("Session terminée.");}
   });
-  return ()=>{active=false;subscription.unsubscribe();};
+  void loadInvoice();
+  return ()=>{
+   active=false;
+   ++requestEpoch;
+   visibleUserId=null;
+   subscription.unsubscribe();
+  };
  },[invoiceId]);
  const date=(value:string)=>new Date(value).toLocaleDateString("fr-FR");
  return <PublicShell><main className="mx-auto max-w-4xl px-4 py-10 print:m-0 print:max-w-none print:p-0">
