@@ -311,6 +311,35 @@ function IndependentSpace() {
     }
   }
 
+  async function requestExistingAccountVerificationLink() {
+    // Only available after a password login specifically reported
+    // email_not_confirmed. Never create a new Auth user through this path.
+    if (!pendingConfirmationEmail || resendingConfirmation || loading) return;
+    setResendingConfirmation(true);
+    setError("");
+    setNotice("");
+    try {
+      const {error: linkError}=await supabase.auth.signInWithOtp({
+        email:pendingConfirmationEmail,
+        options:{
+          shouldCreateUser:false,
+          emailRedirectTo:bpeiAuthRedirect(window.location.origin,"/espace-independant")
+        }
+      });
+      if(linkError) {
+        setError("Lien de vérification indisponible. Le service e-mail doit être configuré avant de pouvoir confirmer ce compte.");
+      }else{
+        // A successful API response only means the request was accepted.
+        // It does NOT establish delivery, email ownership or an admin role.
+        setNotice("Si ce compte existe et que l'envoi d'e-mails fonctionne, un lien de vérification sera transmis à son adresse. Ouvrez le lien reçu pour confirmer votre identité.");
+      }
+    } catch {
+      setError("Service de vérification e-mail indisponible. Réessayez ultérieurement.");
+    } finally {
+      setResendingConfirmation(false);
+    }
+  }
+
   async function withSaveGuard(action:()=>Promise<void>,fallbackMessage:string) {
     if(saving)return;
     setSaving(true);
@@ -375,10 +404,16 @@ function IndependentSpace() {
               </label> :
               <p role="status">Les nouvelles inscriptions sont suspendues tant que les informations juridiques du réseau n'ont pas été validées et publiées.</p>}
           </div>}
-          {pendingConfirmationEmail && <Button type="button" variant="outline" disabled={resendingConfirmation || loading}
-            onClick={() => void resendConfirmation()}>
-            {resendingConfirmation ? "Envoi en cours…" : "Renvoyer l'e-mail de confirmation"}
-          </Button>}
+          {pendingConfirmationEmail && <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" disabled={resendingConfirmation || loading}
+              onClick={() => void resendConfirmation()}>
+              {resendingConfirmation ? "Envoi en cours…" : "Renvoyer l'e-mail de confirmation"}
+            </Button>
+            {!registration && <Button type="button" variant="outline" disabled={resendingConfirmation || loading}
+              onClick={() => void requestExistingAccountVerificationLink()}>
+              Recevoir un lien de vérification du compte existant
+            </Button>}
+          </div>}
           <Button type="submit" disabled={registration && (!canRegisterIndependent(launch) || !privacyChecked || password.length<12 || password !== passwordConfirm)}>{registration ? "Créer mon compte" : "Se connecter"}</Button><button type="button" className="ml-3 underline text-sm" onClick={() => {setRegistration(v => !v);setPasswordConfirm("");setPrivacyChecked(false);setError("");}}>{registration ? "Se connecter" : "Créer un compte"}</button>
           <p className="text-sm text-muted-foreground">L'inscription ne donne pas le statut vérifié ni accès à des missions. Validation professionnelle obligatoire.</p>
           {!registration && <Link to="/reinitialiser-mot-de-passe" className="block text-sm underline">Mot de passe oublié ?</Link>}

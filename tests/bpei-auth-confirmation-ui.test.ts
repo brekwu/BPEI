@@ -27,3 +27,27 @@ test("P0 interface does not declare delivery guaranteed or a session authenticat
   assert.ok(pending >= 0 && loggedIn > pending);
   assert.match(route, /setPendingConfirmationEmail\(""/);
 });
+
+test("Unconfirmed preprovisioned operator can request an email proof without creating any user",()=>{
+ assert.match(route,/supabase\.auth\.signInWithOtp\(\{/);
+ assert.match(route,/shouldCreateUser:false/);
+ assert.match(route,/email:pendingConfirmationEmail/);
+ assert.match(route,/emailRedirectTo:bpeiAuthRedirect\(window\.location\.origin,"\/espace-independant"\)/);
+ assert.match(route,/Recevoir un lien de vérification du compte existant/);
+ assert.match(route,/!registration && <Button type="button"/);
+ assert.match(route,/if \(!pendingConfirmationEmail \|\| resendingConfirmation \|\| loading\) return/);
+ assert.match(route,/Si ce compte existe et que l'envoi d'e-mails fonctionne/);
+ assert.doesNotMatch(route,/signInWithOtp\(\{[\s\S]*?shouldCreateUser:true/);
+ const browser=readFileSync(new URL("../scripts/browser-p0-existing-account-verification-smoke.mjs",import.meta.url),"utf8");
+ assert.match(browser,/body\.create_user,false/);
+ assert.match(browser,/assert\.equal\(signupCalls,0/);
+ assert.match(browser,/authenticated:false/);
+});
+
+test("Operator provisioning makes no unsubstantiated email-delivery claim",()=>{
+ const src=readFileSync(new URL("../scripts/p0-provision-unconfirmed-admin.mjs",import.meta.url),"utf8");
+ assert.match(src,/email_confirm:false/);
+ assert.match(src,/email_confirmed_at/);
+ assert.match(src,/UNCONFIRMED Auth identity/);
+ assert.doesNotMatch(src,/email_confirm:true|auth\.admin\.inviteUserByEmail/);
+});
