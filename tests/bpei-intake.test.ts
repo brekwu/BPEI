@@ -19,6 +19,25 @@ test("contact sans ville ni téléphone accepté",()=>{
 test("intervention sans ville refusée",()=>assert.equal(validateBpeiInquiry({...valid,city:" "}).ok,false));
 test("consentement manquant refusé",()=>assert.equal(validateBpeiInquiry({...valid,consent_accepted:false}).ok,false));
 test("e-mail invalide refusé",()=>assert.equal(validateBpeiInquiry({...valid,email:"foo.example.fr"}).ok,false));
+test("adresses invalides refusées même si elles contiennent @",()=>{
+ for(const email of [
+  "person..dot@example.fr","person@example..fr",
+  ".person@example.fr","person.@example.fr","person@.example.fr",
+  "person@example.fr."
+ ])assert.equal(validateBpeiInquiry({...valid,email}).ok,false,email);
+});
+
+test("téléphones invalides rejetés avant appel à Supabase",()=>{
+ for(const phone of ["ABC1234","0612abc789","123","12345678901234567890","+33 6 11 22 ext.55"])
+  assert.equal(validateBpeiInquiry({...valid,phone}).ok,false,phone);
+});
+
+test("formats téléphoniques usuels acceptés et contact sans téléphone conservé",()=>{
+ for(const phone of ["06 12 34 56 78","+33 (0)6 12 34 56 78","01.23.45.67.89"])
+  assert.equal(validateBpeiInquiry({...valid,phone}).ok,true,phone);
+ assert.equal(validateBpeiInquiry({...valid,kind:"contact",phone:""}).ok,true);
+});
+
 test("nom trop court refusé",()=>assert.equal(validateBpeiInquiry({...valid,client_name:"A"}).ok,false));
 test("description trop courte refusée",()=>assert.equal(validateBpeiInquiry({...valid,description:"trop court"}).ok,false));
 test("sujet trop long refusé",()=>assert.equal(validateBpeiInquiry({...valid,subject:"x".repeat(161)}).ok,false));
