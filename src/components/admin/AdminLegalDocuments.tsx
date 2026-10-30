@@ -21,27 +21,34 @@ export function AdminLegalDocuments(){
  const [lockedVersions,setLockedVersions]=useState<string[]>([]);
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
- async function refresh(){
+ async function refresh():Promise<boolean>{
    const requestedVersion=version;
    const epoch=++refreshEpoch.current;
    setLoadedVersion(null);
-   const db=supabase as any;
-   const [d,c,h]=await Promise.all([
+   try{
+    const db=supabase as any;
+    const [d,c,h]=await Promise.all([
       db.from("bpei_legal_documents").select("kind,version,content,approved_at").eq("version",requestedVersion).limit(3),
       db.from("bpei_launch_controls").select("legal_documents_published,legal_version").eq("id",true).maybeSingle(),
       db.from("bpei_legal_releases").select("version").limit(100)
    ]);
    // Only the response for the active version may change legal drafts or locks.
-   if(epoch!==refreshEpoch.current||latestVersion.current!==requestedVersion)return;
+   if(epoch!==refreshEpoch.current||latestVersion.current!==requestedVersion)return false;
    if(d.error||c.error||h.error){
      setNotice("Impossible de charger la configuration juridique.");
-     return;
+     return false;
    }
    setLockedVersions((h.data??[]).map((v:{version:string})=>v.version));
    setDocs(d.data??[]);
    setDrafts(Object.fromEntries(DOCS.map(x=>[x.kind,(d.data??[]).find((doc:Doc)=>doc.kind===x.kind)?.content??""])) as Record<Kind,string>);
    setPublished(c.data?.legal_documents_published?c.data.legal_version:null);
    setLoadedVersion(requestedVersion);
+   return true;
+   }catch{
+     if(epoch===refreshEpoch.current&&latestVersion.current===requestedVersion)
+       setNotice("Service juridique indisponible. Changez de version ou actualisez la page pour réessayer.");
+     return false;
+   }
  }
  useEffect(()=>{void refresh();},[version]);
  async function approve(kind:Kind){
@@ -49,25 +56,29 @@ export function AdminLegalDocuments(){
    if(busy||loadedVersion!==version||lockedVersions.includes(version)||!content||content.length<300||content.length>50000)return;
    if(!window.confirm("Confirmez-vous avoir vérifié les informations juridiques et validé personnellement ce document ?"))return;
    setBusy(true);setNotice("");
-   const {error}=await (supabase as any).rpc("approve_bpei_legal_document",{p_kind:kind,p_version:version,p_content:content});
-   if(error)setNotice("Validation refusée : vérifiez le compte administrateur et le contenu.");
-   else{await refresh();setNotice("Document validé. Il n'est pas encore publié.");}
-   setBusy(false);
+   try{
+     const {error}=await (supabase as any).rpc("approve_bpei_legal_document",{p_kind:kind,p_version:version,p_content:content});
+     if(error)setNotice("Validation refusée : vérifiez le compte administrateur et le contenu.");
+     else if(await refresh())setNotice("Document validé. Il n'est pas encore publié.");
+   }catch{setNotice("Service juridique indisponible. Vérifiez le statut du document avant de recommencer.");}
+   finally{setBusy(false);}
  }
  async function publish(){
    if(busy||loadedVersion!==version||docs.length!==3||lockedVersions.includes(version)||DOCS.some(({kind})=>docs.find(d=>d.kind===kind)?.content!==drafts[kind].trim()))return;
    if(!window.confirm("CONFIRMATION : publier les trois documents juridiques de cette version ? Les inscriptions resteront fermées. Les documents publiés deviendront non modifiables."))return;
    setBusy(true);setNotice("");
-   const {error}=await (supabase as any).rpc("publish_bpei_legal_documents",{p_version:version});
-   if(error)setNotice("Publication refusée. Vérifiez les trois documents approuvés.");
-   else {await refresh();setNotice("Documents publiés. Les inscriptions restent fermées jusqu'à la recette SMTP et l'autorisation explicite.");}
-   setBusy(false);
+   try{
+     const {error}=await (supabase as any).rpc("publish_bpei_legal_documents",{p_version:version});
+     if(error)setNotice("Publication refusée. Vérifiez les trois documents approuvés.");
+     else if(await refresh())setNotice("Documents publiés. Les inscriptions restent fermées jusqu'à la recette SMTP et l'autorisation explicite.");
+   }catch{setNotice("Publication non confirmée. Vérifiez les documents et la version avant toute nouvelle tentative.");}
+   finally{setBusy(false);}
  }
  return <section aria-label="Documents juridiques BPEI" className="mt-12 space-y-4 border-t pt-8">
    <h2 className="text-xl font-semibold">Documents juridiques et publication</h2>
    <p className="text-sm text-muted-foreground">Réservé aux administrateurs BPEI. Toute version publiée est non modifiable ; créez une nouvelle version pour les changements. La validation des documents doit être effectuée par une personne autorisée et informée des obligations de l'exploitant.</p>
    <label className="block max-w-sm text-sm font-medium">Version juridique (3 à 90 caractères)
-     <input className="mt-1 block w-full rounded-md border bg-background p-2" required minLength={3} maxLength={90} pattern="[A-Za-z0-9._-]+" value={version} onChange={e=>{
+     <input className="mt-1 block w-full rounded-md border bg-background p-2" required minLength={3} maxLength={90} pattern="[A-Za-z0-9._-]+" value={version} disabled={busy} onChange={e=>{
        const next=e.target.value.replace(/[^A-Za-z0-9._-]/g,"");
        if(next!==version){
          ++refreshEpoch.current;
