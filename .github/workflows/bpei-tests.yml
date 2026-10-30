@@ -111,3 +111,4 @@ jobs:
           node scripts/browser-p1-inbox-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-mvp-commercial-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-mvp-manual-intake-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-legal-version-race-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
