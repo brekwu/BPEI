@@ -18,6 +18,15 @@ type PaymentAttempt={id:string;invoice_id:string;state:string;paid_at:string|nul
 type Refund={attempt_id:string;amount_cents:number;status:string};
 type Dispute={attempt_id:string;disputed_cents:number;status:string};
 type MailDelivery={kind:"quote"|"invoice";document_id:string;status:string};
+type AcceptanceDraft={method:"signed"|"email";reference:string};
+type InvoiceDraft={
+ serviceDate:string;dueDate:string;issuerVatNumber:string;paymentTerms:string;
+ earlyPaymentDiscount:string;latePaymentPenalties:string;orderReference:string
+};
+const emptyInvoiceDraft:InvoiceDraft={
+ serviceDate:"",dueDate:"",issuerVatNumber:"",paymentTerms:"",
+ earlyPaymentDiscount:"",latePaymentPenalties:"",orderReference:""
+};
 const testCheckoutUI=import.meta.env.VITE_BPEI_TEST_CHECKOUT_ENABLED==="true";
 const commercialMailUI=import.meta.env.VITE_BPEI_COMMERCIAL_MAIL_ENABLED==="true";
 
@@ -44,15 +53,12 @@ export function AdminCommercialDesk(){
  const [price,setPrice]=useState("");
  const [quantity,setQuantity]=useState("1");
  const [vat,setVat]=useState("");
- const [evidenceMethod,setEvidenceMethod]=useState("email");
- const [evidenceReference,setEvidenceReference]=useState("");
- const [serviceDate,setServiceDate]=useState("");
- const [dueDate,setDueDate]=useState("");
- const [issuerVatNumber,setIssuerVatNumber]=useState("");
- const [paymentTerms,setPaymentTerms]=useState("");
- const [earlyPaymentDiscount,setEarlyPaymentDiscount]=useState("");
- const [latePaymentPenalties,setLatePaymentPenalties]=useState("");
- const [orderReference,setOrderReference]=useState("");
+ // Evidence and invoice terms are scoped to one specific quote ID.
+ const [acceptanceDrafts,setAcceptanceDrafts]=useState<Record<string,AcceptanceDraft>>({});
+ const [invoiceDrafts,setInvoiceDrafts]=useState<Record<string,InvoiceDraft>>({});
+ function updateInvoiceDraft(id:string,patch:Partial<InvoiceDraft>){
+  setInvoiceDrafts(prev=>({...prev,[id]:{...(prev[id]??emptyInvoiceDraft),...patch}}));
+ }
 
  const refresh=useCallback(async()=>{
   setLoading(true);setFailure("");
@@ -144,13 +150,16 @@ export function AdminCommercialDesk(){
    }),"Devis enregistré. Transmettez-le au client par un canal sécurisé ; attendez une acceptation vérifiable.");
  }
  function accept(quote:Quote){
-  if(evidenceReference.trim().length<10)return;
+  const draft=acceptanceDrafts[quote.id]??{method:"email",reference:""};
+  if(draft.reference.trim().length<10)return;
   if(!window.confirm("Avez-vous réellement obtenu et conservé la preuve de l'accord du client ?"))return;
   void run(()=> (supabase as any).rpc("mvp_accept_quote",{
-   p_quote_id:quote.id,p_method:evidenceMethod,p_evidence_reference:evidenceReference.trim()
+   p_quote_id:quote.id,p_method:draft.method,p_evidence_reference:draft.reference.trim()
   }),"Acceptation du client enregistrée avec sa référence justificative.");
  }
  function issue(quote:Quote){
+  const {serviceDate,dueDate,issuerVatNumber,paymentTerms,earlyPaymentDiscount,
+   latePaymentPenalties,orderReference}=invoiceDrafts[quote.id]??emptyInvoiceDraft;
   if(!serviceDate||!dueDate||paymentTerms.trim().length<10
    ||earlyPaymentDiscount.trim().length<10
    ||(quote.customer_kind==="business"&&latePaymentPenalties.trim().length<10)
@@ -215,6 +224,8 @@ export function AdminCommercialDesk(){
      const lostDispute=disputesForPayment.some(d=>d.status==="lost");
      const source=inquiries.find(i=>i.id===q.inquiry_id);
      const completed=workDone(q.inquiry_id);
+     const acceptanceDraft=acceptanceDrafts[q.id]??{method:"email",reference:""};
+     const invoiceDraft=invoiceDrafts[q.id]??emptyInvoiceDraft;
      return <article key={q.id} className="rounded-lg border p-4 space-y-3 text-sm">
       <p><strong>{q.customer_name}</strong> · {q.service_description}</p>
       <p>Prestataire : {q.issuer_legal_name} (SIRET {q.issuer_siret})</p>
@@ -229,34 +240,38 @@ export function AdminCommercialDesk(){
       {q.status==="proposed"&&<div className="space-y-2 border-t pt-3">
        <p>Après validation explicite du client, conservez une preuve vérifiable (e-mail ou document signé).</p>
        <label className="block">Mode de validation
-        <select className="mt-1 rounded border bg-background p-2" value={evidenceMethod} onChange={e=>setEvidenceMethod(e.target.value)}>
+        <select className="mt-1 rounded border bg-background p-2" value={acceptanceDraft.method} onChange={e=>setAcceptanceDrafts(prev=>({
+         ...prev,[q.id]:{...acceptanceDraft,method:e.target.value as AcceptanceDraft["method"]}
+        }))}>
          <option value="email">Accord par e-mail</option><option value="signed">Document signé</option>
         </select>
        </label>
        <label className="block">Référence de la preuve (10 caractères minimum)
-        <Input value={evidenceReference} maxLength={300} onChange={e=>setEvidenceReference(e.target.value)} placeholder="Identifiant du courriel ou du document archivé"/>
+        <Input value={acceptanceDraft.reference} maxLength={300} onChange={e=>setAcceptanceDrafts(prev=>({
+         ...prev,[q.id]:{...acceptanceDraft,reference:e.target.value}
+        }))} placeholder="Identifiant du courriel ou du document archivé"/>
        </label>
-       <Button type="button" disabled={busy||evidenceReference.trim().length<10} onClick={()=>accept(q)}>Enregistrer l'acceptation</Button>
+       <Button type="button" disabled={busy||acceptanceDraft.reference.trim().length<10} onClick={()=>accept(q)}>Enregistrer l'acceptation</Button>
       </div>}
       {q.status==="accepted"&&!invoice&&<div className="space-y-2 border-t pt-3">
        <p>La facture définitive peut être émise après clôture de la mission. Vérifiez les dates avant confirmation.</p>
-       <label className="block">Date réelle de prestation <Input type="date" value={serviceDate} onChange={e=>setServiceDate(e.target.value)}/></label>
-       <label className="block">Date limite de paiement <Input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label>
+       <label className="block">Date réelle de prestation <Input type="date" value={invoiceDraft.serviceDate} onChange={e=>updateInvoiceDraft(q.id,{serviceDate:e.target.value})}/></label>
+       <label className="block">Date limite de paiement <Input type="date" value={invoiceDraft.dueDate} onChange={e=>updateInvoiceDraft(q.id,{dueDate:e.target.value})}/></label>
        <p className="text-xs text-muted-foreground">Reprenez les véritables conditions fiscales et commerciales du prestataire, sans valeur supposée.</p>
        <label className="block">TVA intracommunautaire du prestataire {q.vat_basis_points>0?"(obligatoire)":"(si applicable)"}
-        <Input value={issuerVatNumber} maxLength={13} onChange={e=>setIssuerVatNumber(e.target.value.toUpperCase())} placeholder="FR + clé + 9 chiffres"/></label>
+        <Input value={invoiceDraft.issuerVatNumber} maxLength={13} onChange={e=>updateInvoiceDraft(q.id,{issuerVatNumber:e.target.value.toUpperCase()})} placeholder="FR + clé + 9 chiffres"/></label>
        <label className="block">Conditions de règlement exactes *
-        <Input value={paymentTerms} maxLength={500} onChange={e=>setPaymentTerms(e.target.value)} placeholder="Mode et échéance du règlement"/></label>
+        <Input value={invoiceDraft.paymentTerms} maxLength={500} onChange={e=>updateInvoiceDraft(q.id,{paymentTerms:e.target.value})} placeholder="Mode et échéance du règlement"/></label>
        <label className="block">Conditions d'escompte (ou absence d'escompte) *
-        <Input value={earlyPaymentDiscount} maxLength={250} onChange={e=>setEarlyPaymentDiscount(e.target.value)}/></label>
+        <Input value={invoiceDraft.earlyPaymentDiscount} maxLength={250} onChange={e=>updateInvoiceDraft(q.id,{earlyPaymentDiscount:e.target.value})}/></label>
        {q.customer_kind==="business"&&<label className="block">Pénalités de retard B2B *
-        <Input value={latePaymentPenalties} maxLength={400} onChange={e=>setLatePaymentPenalties(e.target.value)}/></label>}
+        <Input value={invoiceDraft.latePaymentPenalties} maxLength={400} onChange={e=>updateInvoiceDraft(q.id,{latePaymentPenalties:e.target.value})}/></label>}
        <label className="block">Bon de commande client (si existant)
-        <Input value={orderReference} maxLength={160} onChange={e=>setOrderReference(e.target.value)}/></label>
-       <Button type="button" disabled={busy||!completed||!serviceDate||!dueDate
-        ||paymentTerms.trim().length<10||earlyPaymentDiscount.trim().length<10
-        ||(q.customer_kind==="business"&&latePaymentPenalties.trim().length<10)
-        ||(q.vat_basis_points>0&&!/^FR[0-9A-Z]{2}[0-9]{9}$/.test(issuerVatNumber.trim().toUpperCase()))}
+        <Input value={invoiceDraft.orderReference} maxLength={160} onChange={e=>updateInvoiceDraft(q.id,{orderReference:e.target.value})}/></label>
+       <Button type="button" disabled={busy||!completed||!invoiceDraft.serviceDate||!invoiceDraft.dueDate
+        ||invoiceDraft.paymentTerms.trim().length<10||invoiceDraft.earlyPaymentDiscount.trim().length<10
+        ||(q.customer_kind==="business"&&invoiceDraft.latePaymentPenalties.trim().length<10)
+        ||(q.vat_basis_points>0&&!/^FR[0-9A-Z]{2}[0-9]{9}$/.test(invoiceDraft.issuerVatNumber.trim().toUpperCase()))}
         onClick={()=>issue(q)}>Émettre la facture définitive</Button>
       </div>}
       {invoice&&<div className="border-t pt-3">
