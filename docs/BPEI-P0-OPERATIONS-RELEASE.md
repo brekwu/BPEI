@@ -2,6 +2,14 @@
 
 **Ne pas publier les brouillons juridiques, ouvrir bpei.fr ni activer Stripe LIVE.** La branche `feat/mvp-commercial-foundation` reste séparée de `main`. Le tableau privé `/gestion-independants` affiche les sept contrôles P0 ; il est en lecture seule pour les preuves de base, sauf les attestations demandées à l'administrateur confirmé.
 
+## 0. Vérifier le verrou Auth côté serveur AVANT toute invitation
+
+Le fichier `supabase/config.toml` versionne le hook `before_user_created` pour les développements locaux. **Il ne configure PAS automatiquement l'instance Supabase hébergée.** Dans le tableau de bord du projet `qmbsfmcotnsxsvbigynz`, vérifier sous **Authentication → Hooks → Before User Created** que la fonction Postgres `bpei_private.before_bpei_user_created` est réellement sélectionnée et activée. Une simple présence de la fonction dans la base ne prouve pas que le moteur Auth l'exécute.
+
+Exécuter `tests/p0-auth-hook-gate.sql` depuis le SQL Editor autorisé : ce test en transaction **READ ONLY** vérifie que l'inscription publique fermée est refusée, qu'une prétendue autorisation dans `user_metadata` ne débloque rien, et que seul le marqueur `app_metadata` prévu pour le bootstrap est autorisé par la fonction. Il contrôle aussi les droits `supabase_auth_admin` et le refus des rôles `anon` / `authenticated`. **Résultat SQL positif = fonction et permissions testées ; pas activation du hook hébergé ni test SMTP réel.**
+
+Ne jamais ouvrir les inscriptions ou émettre une invitation avant confirmation de ce paramètre et du fournisseur SMTP. Référence : https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook.
+
 ## 1. Véritable administrateur
 
 La base Supabase P0 est vide de comptes Auth. La création d'un compte sans confirmation d'email et sa promotion automatique seraient dangereuses. Après avoir configuré un SMTP authentifié, créer ou inviter le **véritable propriétaire exploitant BPEI** via Supabase Auth, lui faire confirmer personnellement son adresse, puis exécuter à privilèges élevés `scripts/p0-bootstrap-confirmed-admin.sql` avec cette adresse confirmée, ou `node scripts/p0-bootstrap-admin.mjs --execute --user-id UUID_VERIFIE` depuis un environnement de confiance muni de la clé privée et de l'adresse correspondante. Ce script CLI **ne crée plus de compte** et n'accepte plus de déclaration manuelle d'e-mail vérifié ; il lit directement `auth.users.email_confirmed_at`. Ne jamais copier la clé de service dans le navigateur, Vercel public ou GitHub. Ce script est strictement à usage unique et ne fait jamais d'auto-promotion ; sa présence dans GitHub **n'attribue aucun rôle**.
