@@ -43,7 +43,8 @@ Deno.serve(async req=>{
    return json({error:"Invalid invoice"},400,allowedOrigin);
   admin=createClient(c.supabaseUrl,c.serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:auth,error:authErr}=await admin.auth.getUser(token);
-  if(authErr||!auth.user)return json({error:"Unauthorized"},401,allowedOrigin);
+  if(authErr||!auth.user||auth.user.is_anonymous||!auth.user.email_confirmed_at)
+   return json({error:"Confirmed account required"},401,allowedOrigin);
   const {data:role,error:roleErr}=await admin.from("independent_admins")
    .select("user_id").eq("user_id",auth.user.id).maybeSingle();
   if(roleErr||!role)return json({error:"Administrator required"},403,allowedOrigin);
