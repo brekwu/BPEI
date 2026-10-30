@@ -55,6 +55,7 @@ jobs:
           node scripts/browser-p1-admin-missions-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-role-isolation-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p0-profile-resilience-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-quote-signout-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-admin-session-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-inbox-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-mvp-commercial-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
