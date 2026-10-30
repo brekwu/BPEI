@@ -22,8 +22,9 @@ test("The denied admin page retries the permission check, rather than a blocked 
 });
 
 test("The browser retry check requires a fresh permission query before showing applications",()=>{
- assert.match(browser,/if\(adminChecks===1\)return route\.fulfill\(json/);
+ assert.match(browser,/if\(!grantPermission\)return route\.fulfill\(json/);
+ assert.match(browser,/grantPermission=true/);
  assert.match(browser,/getByRole\("button",\{name:"Réessayer"\}\)\.click\(\)/);
- assert.match(browser,/assert\.ok\(adminChecks>=3/);
+ assert.match(browser,/assert\.ok\(adminChecks>initialChecks/);
  assert.doesNotMatch(browser,/service_role|auth\.admin\.createUser|stripe\.charges/);
 });
