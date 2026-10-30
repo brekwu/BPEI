@@ -1,10 +1,11 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { validateBpeiInquiry, type BpeiInquiryKind, type BpeiInquiryDraft } from "@/lib/bpei-intake-validation";
+import { classifyPublicInquiryFailure } from "@/lib/bpei-public-submission";
 
 export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   const [availability,setAvailability] = useState<"loading"|"open"|"closed"|"error">("loading");
@@ -14,6 +15,8 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   });
   const [trap,setTrap] = useState("");
   const [saving,setSaving] = useState(false);
+  const [uncertain,setUncertain] = useState(false);
+  const inFlight=useRef(false);
   const [message,setMessage] = useState("");
   const [sent,setSent] = useState(false);
   useEffect(()=>{
@@ -31,15 +34,36 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
   },[kind]);
   const set=(k:keyof BpeiInquiryDraft,v:string|boolean)=>setDraft(p=>({...p,[k]:v}));
   async function submit(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();if(saving)return;
+    e.preventDefault();
+    // A state update is asynchronous. The ref is the immediate double-click lock.
+    if(saving||inFlight.current||uncertain)return;
     if(trap){setMessage("Votre demande n'a pas pu être reçue.");return}
     const checked=validateBpeiInquiry(draft);
     if(!checked.ok){setMessage(checked.error);return}
+    inFlight.current=true;
     setSaving(true);setMessage("");
-    const {error}=await (supabase as any).from("bpei_inquiries").insert(checked.data);
-    setSaving(false);
-    if(error){setMessage("Envoi impossible. Le service est peut-être encore fermé. Réessayez ultérieurement.");return}
-    setSent(true);setMessage("Votre demande a été enregistrée. BPEI pourra vous contacter si le service est disponible dans votre secteur.");
+    try{
+      const {error}=await (supabase as any).from("bpei_inquiries").insert(checked.data);
+      if(error){
+        if(classifyPublicInquiryFailure(error)==="rejected"){
+          setMessage("Envoi refusé. Le service est peut-être fermé ou certaines informations ne sont pas valides.");
+        }else{
+          // A transport error (or the server's duplicate guard) can follow a committed insert.
+          // Never retry an ambiguous public request automatically.
+          setUncertain(true);
+          setMessage("Résultat non confirmé : votre demande a peut-être été enregistrée. Ne l'envoyez pas de nouveau ; contactez BPEI pour vérifier sa réception.");
+        }
+        return;
+      }
+      setSent(true);
+      setMessage("Votre demande a été enregistrée. BPEI pourra vous contacter si le service est disponible dans votre secteur.");
+    }catch{
+      setUncertain(true);
+      setMessage("Connexion interrompue : votre demande a peut-être été enregistrée. Ne l'envoyez pas de nouveau ; contactez BPEI pour vérifier sa réception.");
+    }finally{
+      inFlight.current=false;
+      setSaving(false);
+    }
   }
   if(availability==="loading")return <p role="status" className="mt-8 text-muted-foreground">Vérification de la disponibilité du formulaire…</p>;
   if(availability==="error")return <p role="alert" className="mt-8 rounded-lg border p-5">Le formulaire est temporairement indisponible. Aucune donnée n'est collectée.</p>;
@@ -68,6 +92,6 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
     <div className="absolute -left-[9999px]" aria-hidden="true"><label htmlFor="bpei-hidden-address">Site web</label><input id="bpei-hidden-address" autoComplete="off" tabIndex={-1} value={trap} onChange={e=>setTrap(e.target.value)} /></div>
     <label className="flex gap-3 text-sm"><input type="checkbox" required checked={draft.consent_accepted} onChange={e=>set("consent_accepted",e.target.checked)}/><span>J'ai pris connaissance des informations relatives à ma demande et de la <Link to="/confidentialite" className="underline">politique de confidentialité</Link> (version {legalVersion}).</span></label>
     {message&&<p role="alert" className="text-sm text-destructive">{message}</p>}
-    <Button type="submit" disabled={saving}>{saving?"Envoi…":kind==="contact"?"Envoyer le message":"Envoyer la demande d'intervention"}</Button>
+    <Button type="submit" disabled={saving||uncertain}>{saving?"Envoi…":uncertain?"Envoi à vérifier":kind==="contact"?"Envoyer le message":"Envoyer la demande d'intervention"}</Button>
   </form>;
 }
