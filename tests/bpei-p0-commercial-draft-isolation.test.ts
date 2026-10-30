@@ -50,3 +50,21 @@ test("Stale data and private draft values are purged on a failed commercial refr
  ])assert.ok(src.includes(guard),"Missing commercial privacy boundary: "+guard);
  assert.match(src,/finally\{if\(current\(\)\)setLoading\(false\);\}/);
 });
+
+test("Only the completing technician can enable the associated invoice action",()=>{
+ for(const guard of [
+  "type Mission={inquiry_id:string;independent_id:string;status:string}",
+  '.select("inquiry_id,independent_id,status")',
+  "const workDone=(inquiryId:string,issuerId:string)",
+  'm.inquiry_id===inquiryId&&m.independent_id===issuerId&&m.status==="completed"',
+  "const completed=workDone(q.inquiry_id,q.issuer_id)",
+  'disabled={busy||!completed'
+ ])assert.ok(src.includes(guard),"Missing issuer-specific completion check: "+guard);
+});
+
+test("All commercial payment summaries reflect the reconciled TEST status",()=>{
+ assert.match(src,/const testPaymentLabel=!invoice\?"Aucune facture émise"/);
+ assert.match(src,/paidAttempt\?"Paiement Stripe confirmé \(TEST uniquement\)":"Paiement non confirmé"/);
+ assert.match(src,/Mission \{completed\?"terminée":"non terminée"\} · \{testPaymentLabel\}/);
+ assert.match(src,/Facture \{invoice\.invoice_number\}[\s\S]*?<strong>\{testPaymentLabel\}<\/strong>/);
+});
