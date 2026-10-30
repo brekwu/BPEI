@@ -21,21 +21,54 @@ function QuoteView(){
  const [loading,setLoading]=useState(true);
  useEffect(()=>{
   let active=true;
-  setQuote(null);setLoading(true);setError("");
-  (async()=>{
-   const {data:user,error:authError}=await supabase.auth.getUser();
-   if(authError||!user.user)throw new Error("Session required");
-   const {data,error:e}=await (supabase as any).from("bpei_service_quotes")
-    .select("id,status,created_at,issuer_legal_name,issuer_siret,issuer_address,issuer_email,customer_name,customer_email,customer_address,service_description,quantity,unit_price_cents,vat_basis_points,tax_mention,net_cents,vat_cents,gross_cents")
-    .eq("id",quoteId).maybeSingle();
-   if(e||!data)throw new Error("Quote unavailable");
-   if(active)setQuote(data);
-  })().catch(()=>{if(active){setError("Devis inaccessible ou session non autorisée.");setQuote(null);}})
-   .finally(()=>{if(active)setLoading(false);});
-  const {data:{subscription}}=supabase.auth.onAuthStateChange(event=>{
-   if(event==="SIGNED_OUT"&&active){setQuote(null);setError("Session terminée.");}
+  let requestEpoch=0;
+  let visibleUserId:string|null=null;
+  function clearQuote(){setQuote(null);}
+  async function loadQuote(){
+   const run=++requestEpoch;
+   const current=()=>active&&run===requestEpoch;
+   clearQuote();setLoading(true);setError("");
+   try{
+    const {data:user,error:authError}=await supabase.auth.getUser();
+    if(!current())return;
+    if(authError||!user.user)throw new Error("Session required");
+    visibleUserId=user.user.id;
+    const {data,error:e}=await (supabase as any).from("bpei_service_quotes")
+     .select("id,status,created_at,issuer_legal_name,issuer_siret,issuer_address,issuer_email,customer_name,customer_email,customer_address,service_description,quantity,unit_price_cents,vat_basis_points,tax_mention,net_cents,vat_cents,gross_cents")
+     .eq("id",quoteId).maybeSingle();
+    if(!current())return;
+    if(e||!data)throw new Error("Quote unavailable");
+    setQuote(data);
+   }catch{
+    if(current()){clearQuote();setError("Devis inaccessible ou session non autorisée.");}
+   }finally{
+    if(current())setLoading(false);
+   }
+  }
+  const {data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
+   if(!active)return;
+   if(event==="SIGNED_OUT"){
+    // Invalidate pending responses before hiding any private customer data.
+    ++requestEpoch;visibleUserId=null;
+    clearQuote();setLoading(false);setError("Session terminée.");
+   }else if(event==="SIGNED_IN"&&session?.user?.id&&session.user.id!==visibleUserId){
+    // A session switch must never leave another account's quote visible.
+    const nextEpoch=++requestEpoch;
+    visibleUserId=session.user.id;
+    clearQuote();setLoading(true);setError("");
+    // Defer the SDK call outside the Supabase Auth callback to avoid a lock.
+    window.setTimeout(()=>{
+     if(active&&requestEpoch===nextEpoch)void loadQuote();
+    },0);
+   }
   });
-  return ()=>{active=false;subscription.unsubscribe();};
+  void loadQuote();
+  return ()=>{
+   active=false;
+   ++requestEpoch;
+   visibleUserId=null;
+   subscription.unsubscribe();
+  };
  },[quoteId]);
  return <PublicShell><main className="mx-auto max-w-4xl px-4 py-10 print:m-0 print:p-0">
   <div className="mb-5 flex items-center justify-between print:hidden">
