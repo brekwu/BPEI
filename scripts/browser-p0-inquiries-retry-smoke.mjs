@@ -26,17 +26,24 @@ let failAllReads=false;
 let failedReadCount=0;
 let assignCalls=0;
 const errors=[];
+const cors={
+ "access-control-allow-origin":new URL(base).origin,
+ "access-control-allow-credentials":"true",
+ "access-control-allow-methods":"GET,POST,PATCH,PUT,DELETE,OPTIONS",
+ "access-control-allow-headers":"authorization,apikey,content-type,x-client-info",
+ "access-control-expose-headers":"content-range,range",
+ "vary":"Origin"
+};
 const json=(data,status=200)=>({
- status,contentType:"application/json",
- headers:{
-  "access-control-allow-origin":"*",
-  "access-control-allow-methods":"GET,POST,OPTIONS",
-  "access-control-allow-headers":"authorization,apikey,content-type,x-client-info"
- },
- body:JSON.stringify(data)
+ status,contentType:"application/json",headers:cors,body:JSON.stringify(data)
 });
 await context.route("https://placeholder.supabase.co/**",async route=>{
  const req=route.request(),u=new URL(req.url()),p=u.pathname;
+ if(req.method()==="OPTIONS")return route.fulfill({
+  status:204,body:"",
+  headers:{...cors,"access-control-allow-headers":
+    req.headers()["access-control-request-headers"]??cors["access-control-allow-headers"]}
+ });
  const single=(req.headers().accept??"").includes("application/vnd.pgrst.object+json");
  if(p==="/auth/v1/token")return route.fulfill(json({user,
   access_token:"mock-inquiry-retry.token.signature",refresh_token:"mock-inquiry-retry-refresh",
