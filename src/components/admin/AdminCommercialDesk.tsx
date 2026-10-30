@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState,type FormEvent} from "react";
+import {useCallback,useEffect,useRef,useState,type FormEvent} from "react";
 import {Link} from "@tanstack/react-router";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
@@ -31,6 +31,8 @@ const testCheckoutUI=import.meta.env.VITE_BPEI_TEST_CHECKOUT_ENABLED==="true";
 const commercialMailUI=import.meta.env.VITE_BPEI_COMMERCIAL_MAIL_ENABLED==="true";
 
 export function AdminCommercialDesk(){
+ const mounted=useRef(false);
+ const refreshEpoch=useRef(0);
  const [inquiries,setInquiries]=useState<Inquiry[]>([]);
  const [quotes,setQuotes]=useState<Quote[]>([]);
  const [invoices,setInvoices]=useState<Invoice[]>([]);
@@ -61,6 +63,9 @@ export function AdminCommercialDesk(){
  }
 
  const refresh=useCallback(async():Promise<boolean>=>{
+  if(!mounted.current)return false;
+  const epoch=++refreshEpoch.current;
+  const current=()=>mounted.current&&epoch===refreshEpoch.current;
   setLoading(true);setFailure("");
   try{
    const db=supabase as any;
@@ -74,16 +79,32 @@ export function AdminCommercialDesk(){
     db.from("bpei_payment_disputes").select("attempt_id,disputed_cents,status").limit(500),
     db.from("bpei_commercial_mail_outbox").select("kind,document_id,status").limit(500)
    ]);
+   if(!current())return false;
    if(i.error||q.error||n.error||m.error||pa.error||re.error||di.error||ma.error)throw new Error("Load failed");
    setInquiries(i.data??[]);setQuotes(q.data??[]);setInvoices(n.data??[]);setMissions(m.data??[]);setPayments(pa.data??[]);setRefunds(re.data??[]);setDisputes(di.data??[]);setDeliveries(ma.data??[]);
    return true;
   }catch{
-   setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);setRefunds([]);setDisputes([]);setDeliveries([]);
-   setFailure("Lecture de la gestion commerciale impossible. Vérifiez vos droits et recommencez.");
+   if(current()){
+    setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);setRefunds([]);setDisputes([]);setDeliveries([]);
+    // Never leave draft invoice terms, acceptance evidence or TEST URLs attached
+    // to a dossier whose identity/permission could no longer be rechecked.
+    setAcceptanceDrafts({});setInvoiceDrafts({});
+    setTestLink(null);setInquiryId("");
+    setIssuerName("");setIssuerAddress("");setIssuerEmail("");
+    setDescription("");setPrice("");setTaxMention("");
+    setFailure("Lecture de la gestion commerciale impossible. Vérifiez vos droits et recommencez.");
+   }
    return false;
-  }finally{setLoading(false);}
+  }finally{if(current())setLoading(false);}
  },[]);
- useEffect(()=>{void refresh()},[refresh]);
+ useEffect(()=>{
+  mounted.current=true;
+  void refresh();
+  return ()=>{
+   mounted.current=false;
+   ++refreshEpoch.current;
+  };
+ },[refresh]);
 
  const selected=inquiries.find(i=>i.id===inquiryId);
  const currentHasQuote=!!selected&&quotes.some(q=>q.inquiry_id===selected.id);
