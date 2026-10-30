@@ -34,3 +34,19 @@ test("The admin must not see a confirmed invoice/quote when post-write readback 
  assert.match(src,/Action potentiellement enregistrée, mais lecture de confirmation indisponible/);
  assert.match(src,/Actualisez le dossier avant toute nouvelle tentative/);
 });
+
+test("Stale data and private draft values are purged on a failed commercial refresh",()=>{
+ for(const guard of [
+  "const mounted=useRef(false)",
+  "const refreshEpoch=useRef(0)",
+  "const epoch=++refreshEpoch.current",
+  "const current=()=>mounted.current&&epoch===refreshEpoch.current",
+  "if(!current())return false",
+  "if(current()){",
+  "setAcceptanceDrafts({});setInvoiceDrafts({});",
+  "setTestLink(null);setInquiryId(\"\");",
+  "mounted.current=false;",
+  "++refreshEpoch.current;"
+ ])assert.ok(src.includes(guard),"Missing commercial privacy boundary: "+guard);
+ assert.match(src,/finally\{if\(current\(\)\)setLoading\(false\);\}/);
+});
