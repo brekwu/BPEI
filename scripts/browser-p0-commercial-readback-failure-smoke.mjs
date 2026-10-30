@@ -64,7 +64,7 @@ await ctx.route("https://placeholder.supabase.co/**",async route=>{
  }
  if(p==="/rest/v1/bpei_service_quotes")return route.fulfill(json(created?[quote]:[]));
  if(p==="/rest/v1/independent_requests")
-  return route.fulfill(json([{inquiry_id:inquiryId,status:"completed"}]));
+  return route.fulfill(json([{inquiry_id:inquiryId,independent_id:id,status:"completed"}]));
  if(p.startsWith("/rest/v1/rpc/"))return route.fulfill(json({message:"Denied"},403));
  return route.fulfill(json(single?null:[]));
 });
