@@ -8,7 +8,7 @@ export type BpeiAdminAccess = "loading" | "allowed" | "denied";
  * A cross-tab logout or account switch must immediately unmount private views.
  * In-flight permission checks are invalidated on every auth transition.
  */
-export function useBpeiAdminAccess(): BpeiAdminAccess {
+export function useBpeiAdminAccess(retryKey = 0): BpeiAdminAccess {
   const [access, setAccess] = useState<BpeiAdminAccess>("loading");
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export function useBpeiAdminAccess(): BpeiAdminAccess {
       ++generation;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [retryKey]);
 
   return access;
 }
