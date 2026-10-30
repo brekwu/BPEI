@@ -36,3 +36,30 @@ test("implicit recovery requires matching fragment and session tokens",()=>{
  assert.equal(isMatchingBpeiImplicitRecoverySession("#type=signup&access_token=x&refresh_token=y","x"),false);
  assert.equal(isMatchingBpeiImplicitRecoverySession("#type=recovery","x"),false);
 });
+
+test("ephemeral Vercel preview links use the configured fixed first-party callback",()=>{
+ const preview="https://bpei-preview-abc123-brekwu.vercel.app";
+ const canonical="https://bpei-preview.vercel.app";
+ assert.equal(bpeiAuthRedirect(preview,"/espace-independant",canonical),
+  "https://bpei-preview.vercel.app/espace-independant");
+ assert.equal(bpeiAuthRedirect(preview,"/reinitialiser-mot-de-passe",canonical),
+  "https://bpei-preview.vercel.app/reinitialiser-mot-de-passe");
+ assert.equal(bpeiAuthRedirect("http://127.0.0.1:3000","/espace-independant",canonical),
+  "https://bpei-preview.vercel.app/espace-independant");
+ assert.equal(bpeiAuthRedirect(preview,"/espace-independant","https://bpei.fr"),
+  "https://bpei.fr/espace-independant");
+});
+
+test("untrusted configuration never redirects an Auth email to another domain",()=>{
+ for(const unsafe of [
+  "https://attacker.example",
+  "https://bpei-preview.vercel.app.attacker.example",
+  "https://bpei.fr.attacker.example",
+  "http://bpei-preview.vercel.app",
+  "https://bpei-preview.vercel.app/redirect",
+  "https://bpei-preview.vercel.app?next=https://attacker.example",
+  "https://user@bpei.fr",
+  "javascript:alert(1)"
+ ])assert.throws(()=>bpeiAuthRedirect("https://bpei-preview.vercel.app",
+  "/espace-independant",unsafe));
+});
