@@ -34,6 +34,7 @@ WITH facts AS (
       WHERE p.paid_at IS NOT NULL AND p.state = 'paid'
         AND p.checkout_session_id LIKE 'cs_test_%'
         AND p.currency = 'eur'
+        AND p.amount_cents = q.gross_cents
         AND m.test_enabled IS TRUE AND m.test_verified_at IS NOT NULL
         AND q.status = 'accepted' AND q.accepted_at IS NOT NULL
         AND nullif(btrim(q.acceptance_reference),'') IS NOT NULL
