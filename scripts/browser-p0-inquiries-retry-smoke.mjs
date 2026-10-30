@@ -22,7 +22,8 @@ const inquiry={id:inquiryId,kind:"intervention",client_name:"Client sensible de 
  company_name:null,company_siret:null,subject:"PC en panne",
  description:"Demande fictive de dépannage informatique",status:"new",
  created_at:"2026-10-29T12:00:00Z",assigned_to:null};
-let failNextRead=false;
+let failAllReads=false;
+let failedReadCount=0;
 let assignCalls=0;
 const errors=[];
 const json=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
@@ -40,7 +41,7 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
   id:true,legal_documents_published:false,independent_registration_enabled:false,legal_version:null
  }));
  if(p==="/rest/v1/bpei_inquiries"){
-  if(failNextRead){failNextRead=false;return route.fulfill(json({message:"Temporary unavailable"},503));}
+  if(failAllReads){failedReadCount+=1;return route.fulfill(json({code:"PGRST301",message:"Temporary read denied"},403));}
   return route.fulfill(json(single?inquiry:[inquiry]));
  }
  if(p==="/rest/v1/independent_profiles"){
@@ -78,13 +79,15 @@ try{
  await section.getByText("Client sensible de test",{exact:false}).waitFor({timeout:15000});
 
  // First simulated provider outage hides all previously loaded personal details.
- failNextRead=true;
+ failAllReads=true;
  await section.getByRole("button",{name:"Actualiser"}).click();
  await section.getByText("La lecture des demandes et des indépendants a échoué.",{exact:false}).waitFor({timeout:15000});
+ assert.ok(failedReadCount>=1,"The simulated provider denied at least one request");
  assert.equal(await section.getByText("Client sensible de test",{exact:false}).count(),0);
  assert.equal(await section.getByText("Aucun message ou demande d'intervention.").count(),0);
 
- // A healthy retry can reload the same inquiry.
+ // Restore the provider only after the failed read has been rendered.
+ failAllReads=false;
  await section.getByRole("button",{name:"Actualiser"}).click();
  await section.getByText("Client sensible de test",{exact:false}).waitFor({timeout:15000});
  await section.locator('select[id^="tech-"]').selectOption(techId);
