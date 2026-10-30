@@ -1,3 +1,4 @@
+import {stubMockInboxNotifications} from "./mock-hidden-inbox-notifications.mjs";
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 
@@ -39,6 +40,7 @@ async function expectRequested(promise,label){
 }
 const errors=[];
 const context=await browser.newContext();
+await stubMockInboxNotifications(context);
 const cors={
  "access-control-allow-origin":new URL(base).origin,
  "access-control-allow-credentials":"true",
