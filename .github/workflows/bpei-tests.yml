@@ -125,6 +125,7 @@ jobs:
           node scripts/browser-mvp-manual-intake-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p0-legal-version-race-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p0-admin-retry-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
+          node scripts/browser-p0-readiness-recheck-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p0-invoice-signout-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p0-inquiries-retry-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }
           node scripts/browser-p0-commercial-draft-isolation-smoke.mjs || { tail -80 /tmp/bpei-p1-webkit.log; exit 1; }

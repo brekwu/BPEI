@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -39,15 +39,41 @@ export function AdminP0Readiness(){
  const [references,setReferences]=useState<Record<string,string>>({});
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState("");const [notice,setNotice]=useState("");
- const load=useCallback(async()=>{
-  const {data,error}=await (supabase as any).rpc("p0_readiness");
-  if(error||data?.mode!=="preproduction"||!data.checks)throw Error("readiness unavailable");
-  setData(data as Status);
+ const mounted=useRef(false);
+ const readEpoch=useRef(0);
+ const clearPrivateData=useCallback(()=>{
+  setData(null);
+  setReferences({});
+  setNotice("");
  },[]);
+ const load=useCallback(async():Promise<boolean>=>{
+  const run=++readEpoch.current;
+  const current=()=>mounted.current&&run===readEpoch.current;
+  // A previous P0 "ready" result must disappear while authorization is rechecked.
+  setData(null);
+  setError("");
+  try{
+   const {data:result,error:readError}=await (supabase as any).rpc("p0_readiness");
+   if(!current())return false;
+   if(readError||result?.mode!=="preproduction"||!result.checks){
+    clearPrivateData();
+    setError("Tableau P0 inaccessible : droits ou données non confirmés. Aucune validation antérieure n'est affichée.");
+    return false;
+   }
+   setData(result as Status);
+   return true;
+  }catch{
+   if(current()){
+    clearPrivateData();
+    setError("Tableau P0 inaccessible : session ou connexion non confirmée. Actualisez pour revérifier vos droits.");
+   }
+   return false;
+  }
+ },[clearPrivateData]);
  useEffect(()=>{
-  let mounted=true;
-  load().catch(()=>{if(mounted)setError("Tableau P0 inaccessible : session ou rôle administrateur non confirmé.")});
-  return ()=>{mounted=false;setData(null);setReferences({})};
+  mounted.current=true;
+  void load();
+  return ()=>{mounted.current=false;++readEpoch.current;};
  },[load]);
  async function attest(key:string,pass:boolean){
   if(busy)return;
@@ -63,11 +89,17 @@ export function AdminP0Readiness(){
     p_check_key:key,p_evidence_reference:pass?reference:"",p_passed:pass
    });
    if(error)throw Error("attestation denied");
-   await load();
+   if(!mounted.current)return;
+   const confirmed=await load();
+   if(!confirmed)return; // Never announce success when the authorized readback failed.
    if(pass)setReferences(v=>({...v,[key]:""}));
    setNotice(pass?"Preuve déclarée et associée à votre compte administrateur. Elle ne prouve pas automatiquement le résultat d'un fournisseur externe.":"Preuve retirée ; le verrou reste fermé.");
-  }catch{setError("Impossible de modifier cette attestation : preuve manquante ou accès refusé.")}
-  finally{setBusy(false);}
+  }catch{
+   if(mounted.current){
+    clearPrivateData();
+    setError("Attestation non confirmée : actualisez l'audit avant toute nouvelle tentative.");
+   }
+  }finally{if(mounted.current)setBusy(false);}
  }
  return <section className="mt-8 rounded-xl border bg-card p-5" aria-label="Audit P0 de lancement BPEI">
   <h2 className="text-xl font-semibold">Audit P0 — lancement commercial</h2>
@@ -116,7 +148,7 @@ export function AdminP0Readiness(){
     </article>
    })}</div>
   </>}
-  <Button type="button" variant="outline" className="mt-4" disabled={busy} onClick={()=>void load().catch(()=>setError("Actualisation indisponible."))}>Actualiser les contrôles</Button>
+  <Button type="button" variant="outline" className="mt-4" disabled={busy} onClick={()=>void load()}>Actualiser les contrôles</Button>
   {error&&<p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
   {notice&&<p role="status" className="mt-3 text-sm">{notice}</p>}
  </section>;
