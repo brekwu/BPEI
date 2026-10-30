@@ -26,6 +26,17 @@ let releaseSecond;
 const firstGate=new Promise(resolve=>{releaseFirst=resolve;});
 const secondGate=new Promise(resolve=>{releaseSecond=resolve;});
 let firstReceived=false,secondReceived=false;
+let notifyFirst,notifySecond;
+const firstRequested=new Promise(resolve=>{notifyFirst=resolve;});
+const secondRequested=new Promise(resolve=>{notifySecond=resolve;});
+async function expectRequested(promise,label){
+ let timer;
+ try{
+  await Promise.race([promise,new Promise((_,reject)=>{
+   timer=setTimeout(()=>reject(new Error(label+" request missing")),12000);
+  })]);
+ } finally { clearTimeout(timer); }
+}
 const errors=[];
 const context=await browser.newContext();
 const json=(data,status=200)=>({
@@ -50,12 +61,12 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
  if(path==="/rest/v1/bpei_legal_documents"){
   const selected=url.searchParams.get("version");
   if(selected==="eq."+initialVersion){
-   firstReceived=true;
+   firstReceived=true;notifyFirst();
    await firstGate;
    return route.fulfill(json(docs(initialVersion,firstDoc)));
   }
   if(selected==="eq."+nextVersion){
-   secondReceived=true;
+   secondReceived=true;notifySecond();
    await secondGate;
    return route.fulfill(json(docs(nextVersion,secondDoc)));
   }
@@ -78,11 +89,11 @@ try{
  const version=section.getByLabel("Version juridique (3 à 90 caractères)");
  const approve=section.getByRole("button",{name:"Valider ce document"}).first();
  const firstText=section.locator("textarea").first();
- await page.waitForFunction(()=>true);
+ await expectRequested(firstRequested,"Initial legal version");
  await version.fill(nextVersion);
  // The new version must remain locked while it is still loading.
  assert.equal(await approve.isDisabled(),true);
- await page.waitForTimeout(100);
+ await expectRequested(secondRequested,"New legal version");
  assert.equal(secondReceived,true,"New version's request must be issued");
  releaseSecond();
  await page.waitForFunction(
