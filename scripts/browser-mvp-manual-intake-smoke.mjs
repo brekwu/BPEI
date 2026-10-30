@@ -6,7 +6,7 @@ const ctx=await browser.newContext();
 const base=process.env.BPEI_SMOKE_ORIGIN??"http://127.0.0.1:3000";
 const id="99999999-9999-4999-8999-999999999999";
 const user={id,email:"intake-admin@example.invalid",role:"authenticated",aud:"authenticated",user_metadata:{},app_metadata:{provider:"email",providers:["email"]}};
-let legalPublished=false,attempts=0,created=0;
+let legalPublished=false,attempts=0,created=0,dropNextAck=false;
 const pageErrors=[];
 const ok=(body,status=200)=>({status,contentType:"application/json",body:JSON.stringify(body)});
 await ctx.route("https://placeholder.supabase.co/**",async route=>{
@@ -28,6 +28,7 @@ await ctx.route("https://placeholder.supabase.co/**",async route=>{
   assert.equal(data.p_source,"phone");
   if(!legalPublished)return route.fulfill(ok({code:"42501",message:"Legal publication required"},403));
   created++;
+  if(dropNextAck){dropNextAck=false;return route.abort("failed");}
   return route.fulfill(ok("ffffffff-ffff-4fff-8fff-ffffffffffff"));
  }
  return route.fulfill(ok(single?null:[]));
@@ -64,9 +65,31 @@ try{
  await send.click();
  await section.getByText("Demande enregistrée dans l'administration.",{exact:false}).waitFor({timeout:15000});
  assert.equal(attempts,2);assert.equal(created,1);
+
+ // A committed write can lose its HTTP response. An automatic second write
+ // would create a customer duplicate. Require an explicit visual dossier check.
+ dropNextAck=true;
+ await section.getByRole("textbox",{name:"Nom du client"}).fill("Bob Dupont");
+ await section.getByRole("textbox",{name:"Téléphone du client"}).fill("0611223344");
+ await section.getByRole("textbox",{name:"E-mail du client"}).fill("bob@example.invalid");
+ await section.getByRole("textbox",{name:"Ville"}).fill("Nice");
+ await section.getByRole("textbox",{name:"Adresse d'intervention"}).fill("12 rue de France");
+ await section.getByRole("textbox",{name:"Code postal"}).fill("06000");
+ await section.getByRole("textbox",{name:"Objet de l'intervention"}).fill("Dépannage informatique");
+ await section.getByRole("textbox",{name:"Description de la demande"}).fill("Le PC portable ne démarre plus correctement.");
+ await section.getByRole("textbox",{name:/Référence de l'accord/}).fill("ref-preuve-test-2026-10-30");
+ await section.getByRole("checkbox").check();
+ await send.click();
+ await section.getByText("Connexion interrompue : la demande a peut-être été enregistrée.",{exact:false}).waitFor({timeout:15000});
+ assert.equal(attempts,3);assert.equal(created,2);
+ assert.equal(await section.getByRole("button",{name:"Vérification du dossier requise"}).isDisabled(),true);
+ assert.equal(await section.getByText("J'ai vérifié : autoriser une nouvelle tentative").isVisible(),true);
+ await section.getByRole("button",{name:"J'ai vérifié : autoriser une nouvelle tentative"}).click();
+ assert.equal(await send.isEnabled(),true);
+ assert.equal(attempts,3,"Checking the dossier must never resubmit a customer write");
  await login.getByRole("button",{name:"Se déconnecter"}).click();
  await page.getByText("Accès administrateur non autorisé").first().waitFor({timeout:15000});
  assert.equal(await section.count(),0,"Manual customer form must be hidden after cross-tab logout");
  assert.deepEqual(pageErrors,[]);
- console.log(JSON.stringify({ok:true,mode:"mocked-private-admin-intake",attempts,created,legalGate:true,crossTabSignout:true}));
+ console.log(JSON.stringify({ok:true,mode:"mocked-private-admin-intake",attempts,created,legalGate:true,ackLostNoAutomaticRetry:true,crossTabSignout:true}));
 }finally{await ctx.close();await browser.close();}
