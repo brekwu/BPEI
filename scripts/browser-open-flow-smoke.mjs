@@ -105,6 +105,7 @@ try {
     await page.getByText(/Votre demande a été enregistrée/).waitFor();
     assert.equal(inquiryBody?.kind, "contact");
     assert.equal(inquiryBody?.consent_accepted, true);
+    assert.equal(inquiryBody?.legal_version, gate.legal_version, "The submitted legal version must equal the version displayed on the form");
     assert.equal(inquiryBody?.email, "client@example.test");
     await context.close();
   }

@@ -38,12 +38,13 @@ export function BpeiIntakeForm({kind}: {kind:BpeiInquiryKind}) {
     // A state update is asynchronous. The ref is the immediate double-click lock.
     if(saving||inFlight.current||uncertain)return;
     if(trap){setMessage("Votre demande n'a pas pu être reçue.");return}
+    if(availability!=="open"||!legalVersion){setMessage("Formulaire indisponible : rechargez la page avant tout envoi.");return;}
     const checked=validateBpeiInquiry(draft);
     if(!checked.ok){setMessage(checked.error);return}
     inFlight.current=true;
     setSaving(true);setMessage("");
     try{
-      const {error}=await (supabase as any).from("bpei_inquiries").insert(checked.data);
+      const {error}=await (supabase as any).from("bpei_inquiries").insert({...checked.data,legal_version:legalVersion});
       if(error){
         if(classifyPublicInquiryFailure(error)==="rejected"){
           setMessage("Envoi refusé. Le service est peut-être fermé ou certaines informations ne sont pas valides.");
