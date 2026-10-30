@@ -21,10 +21,19 @@ export function AdminLegalDocuments(){
  const [lockedVersions,setLockedVersions]=useState<string[]>([]);
  const [busy,setBusy]=useState(false);
  const [notice,setNotice]=useState("");
+ // Drafts and approval history are private admin records. When a readback
+ // cannot be verified, fail closed instead of displaying stale documents.
+ function clearLoadedLegalData(){
+   setLoadedVersion(null);
+   setDocs([]);
+   setDrafts({"mentions-legales":"","confidentialite":"","cgu":""});
+   setPublished(null);
+   setLockedVersions([]);
+ }
  async function refresh():Promise<boolean>{
    const requestedVersion=version;
    const epoch=++refreshEpoch.current;
-   setLoadedVersion(null);
+   clearLoadedLegalData();
    try{
     const db=supabase as any;
     const [d,c,h]=await Promise.all([
@@ -34,8 +43,9 @@ export function AdminLegalDocuments(){
    ]);
    // Only the response for the active version may change legal drafts or locks.
    if(epoch!==refreshEpoch.current||latestVersion.current!==requestedVersion)return false;
-   if(d.error||c.error||h.error){
-     setNotice("Impossible de charger la configuration juridique.");
+   if(d.error||c.error||h.error||!c.data){
+     clearLoadedLegalData();
+     setNotice("Lecture juridique refusée ou incomplète : anciens documents masqués. Actualisez ou changez de version après avoir vérifié votre session.");
      return false;
    }
    setLockedVersions((h.data??[]).map((v:{version:string})=>v.version));
@@ -45,12 +55,17 @@ export function AdminLegalDocuments(){
    setLoadedVersion(requestedVersion);
    return true;
    }catch{
-     if(epoch===refreshEpoch.current&&latestVersion.current===requestedVersion)
-       setNotice("Service juridique indisponible. Changez de version ou actualisez la page pour réessayer.");
+     if(epoch===refreshEpoch.current&&latestVersion.current===requestedVersion){
+       clearLoadedLegalData();
+       setNotice("Service juridique indisponible : anciens documents masqués. Changez de version ou rechargez la page pour réessayer.");
+     }
      return false;
    }
  }
- useEffect(()=>{void refresh();},[version]);
+ useEffect(()=>{
+   void refresh();
+   return ()=>{++refreshEpoch.current;};
+ },[version]);
  async function approve(kind:Kind){
    const content=drafts[kind]?.trim();
    if(busy||loadedVersion!==version||lockedVersions.includes(version)||!content||content.length<300||content.length>50000)return;
@@ -60,6 +75,7 @@ export function AdminLegalDocuments(){
      const {error}=await (supabase as any).rpc("approve_bpei_legal_document",{p_kind:kind,p_version:version,p_content:content});
      if(error)setNotice("Validation refusée : vérifiez le compte administrateur et le contenu.");
      else if(await refresh())setNotice("Document validé. Il n'est pas encore publié.");
+     else setNotice("Validation potentiellement enregistrée, mais relecture indisponible. Aucun document précédent n'est affiché : vérifiez avant de recommencer.");
    }catch{setNotice("Service juridique indisponible. Vérifiez le statut du document avant de recommencer.");}
    finally{setBusy(false);}
  }
@@ -71,6 +87,7 @@ export function AdminLegalDocuments(){
      const {error}=await (supabase as any).rpc("publish_bpei_legal_documents",{p_version:version});
      if(error)setNotice("Publication refusée. Vérifiez les trois documents approuvés.");
      else if(await refresh())setNotice("Documents publiés. Les inscriptions restent fermées jusqu'à la recette SMTP et l'autorisation explicite.");
+     else setNotice("Publication potentiellement enregistrée, mais impossible à relire. Vérifiez la version avant toute nouvelle tentative.");
    }catch{setNotice("Publication non confirmée. Vérifiez les documents et la version avant toute nouvelle tentative.");}
    finally{setBusy(false);}
  }
@@ -91,6 +108,7 @@ export function AdminLegalDocuments(){
      }}/>
    </label>
    {loadedVersion!==version&&<p className="text-sm" role="status">Chargement ou validation des documents de cette version en cours. Les actions sont désactivées.</p>}
+   <Button type="button" size="sm" variant="outline" disabled={busy} onClick={()=>void refresh()}>Recharger les documents</Button>
    {published&&<p className="text-sm" role="status">Version actuellement publiée : <strong>{published}</strong>. Les inscriptions ne sont pas ouvertes automatiquement.</p>}
    {DOCS.map(({kind,label})=>(
     <div key={kind} className="rounded-lg border bg-card p-4">

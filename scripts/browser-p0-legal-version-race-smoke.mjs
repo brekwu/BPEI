@@ -27,6 +27,8 @@ let releaseSecond;
 const firstGate=new Promise(resolve=>{releaseFirst=resolve;});
 const secondGate=new Promise(resolve=>{releaseSecond=resolve;});
 let firstReceived=false,secondReceived=false;
+let approveRecorded=false;
+let deniedLegalReads=0;
 let notifyFirst,notifySecond;
 const firstRequested=new Promise(resolve=>{notifyFirst=resolve;});
 const secondRequested=new Promise(resolve=>{notifySecond=resolve;});
@@ -91,11 +93,19 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
    return route.fulfill(json(docs(initialVersion,firstDoc)));
   }
   if(selected==="eq."+nextVersion){
+   if(approveRecorded){
+    deniedLegalReads++;
+    return route.fulfill(json({message:"Authorization lost during legal readback"},403));
+   }
    secondReceived=true;notifySecond();
    await secondGate;
    return route.fulfill(json(docs(nextVersion,secondDoc)));
   }
   return route.fulfill(json([]));
+ }
+ if(path==="/rest/v1/rpc/approve_bpei_legal_document"){
+  approveRecorded=true;
+  return route.fulfill(json(null,200));
  }
  if(path.startsWith("/rest/v1/rpc/"))return route.fulfill(json({message:"Not available"},403));
  return route.fulfill(json(single?null:[]));
@@ -131,8 +141,24 @@ try{
  assert.ok((await firstText.inputValue()).startsWith("Nouveau document de test."),
   "Old async read replaced drafts for a different version");
  assert.equal(await version.inputValue(),nextVersion);
+ // A write can be committed while the following privileged read fails.
+ // Do not leave last-known legal drafts visible after such a failure.
+ page.on("dialog",dialog=>dialog.accept());
+ await approve.click();
+ await section.getByText("Validation potentiellement enregistrée",{exact:false}).waitFor({timeout:15000});
+ assert.ok(approveRecorded&&deniedLegalReads>=1,
+  "The test must exercise a successful write followed by refused readback");
+ assert.equal(await firstText.inputValue(),"",
+  "Private legal draft remained visible after an unauthorized readback");
+ assert.equal(await approve.isDisabled(),true,
+  "Approval must stay disabled after a failed admin readback");
+ assert.equal(await section.getByText("Validé pour cette version").count(),0,
+  "Stale approval history must not be presented as verified");
+ await section.getByRole("button",{name:"Recharger les documents"}).click();
+ await section.getByText("Lecture juridique refusée ou incomplète",{exact:false}).waitFor({timeout:15000});
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({ok:true,mode:"mocked-legal-race",firstReceived,secondReceived,staleDrafts:0}));
+ console.log(JSON.stringify({ok:true,mode:"mocked-legal-race-and-readback-denied",
+  firstReceived,secondReceived,deniedLegalReads,staleDrafts:0}));
 } finally {
  releaseFirst?.();
  releaseSecond?.();

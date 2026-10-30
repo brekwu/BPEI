@@ -28,3 +28,32 @@ test("Legal administrator never remains permanently busy after provider exceptio
  assert.match(browser,/Old async read replaced drafts for a different version/);
  assert.doesNotMatch(browser,/auth\.admin|sendEmail|stripe\.charges\.create/);
 });
+
+test("Legal admin clears all cached drafts, approvals and publication when access readback fails",()=>{
+ for(const guard of [
+  "function clearLoadedLegalData()",
+  "setDocs([])",
+  'setDrafts({"mentions-legales":"","confidentialite":"","cgu":""})',
+  "setPublished(null)",
+  "setLockedVersions([])",
+  "setLoadedVersion(null)",
+  "if(d.error||c.error||h.error||!c.data)",
+  "clearLoadedLegalData();",
+  "return ()=>{++refreshEpoch.current;};",
+  'onClick={()=>void refresh()}>Recharger les documents'
+ ])assert.ok(source.includes(guard),"Legal readback safety missing: "+guard);
+ assert.match(source,/else if\(await refresh\(\)\)setNotice\("Document validé/);
+ assert.match(source,/else setNotice\("Validation potentiellement enregistrée/);
+ assert.match(source,/else setNotice\("Publication potentiellement enregistrée/);
+});
+test("Mock browser denies legal readback after successful write and clears previous approval view",()=>{
+ for(const guard of [
+  "let approveRecorded=false",
+  'if(path==="/rest/v1/rpc/approve_bpei_legal_document")',
+  "Authorization lost during legal readback",
+  "assert.ok(approveRecorded&&deniedLegalReads>=1",
+  '"Private legal draft remained visible after an unauthorized readback"',
+  '"Stale approval history must not be presented as verified"',
+  '"Recharger les documents"'
+ ])assert.ok(browser.includes(guard),"Legal browser regression missing: "+guard);
+});
