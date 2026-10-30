@@ -42,7 +42,7 @@ await ctx.route("https://placeholder.supabase.co/**",async route=>{
  if(path==="/rest/v1/bpei_launch_controls")return route.fulfill(json({id:true,legal_documents_published:false,independent_registration_enabled:false,legal_version:null}));
  if(path==="/rest/v1/independent_admins")return route.fulfill(json(single?{user_id:id}:[{user_id:id}]));
  if(path==="/rest/v1/bpei_inquiries")return route.fulfill(json([customer]));
- if(path==="/rest/v1/independent_requests")return route.fulfill(json([{inquiry_id:inquiryId,status:"completed"}]));
+ if(path==="/rest/v1/independent_requests")return route.fulfill(json([{inquiry_id:inquiryId,independent_id:id,status:"completed"}]));
  if(path==="/rest/v1/bpei_service_quotes")return route.fulfill(json(single?quote:step>0?[quote]:[]));
  if(path==="/rest/v1/bpei_service_invoices")return route.fulfill(json(single?invoice:step>2?[invoice]:[]));
  if(path==="/rest/v1/rpc/mvp_create_quote"){rpcCreates++;step=1;return route.fulfill(json(quoteId));}
