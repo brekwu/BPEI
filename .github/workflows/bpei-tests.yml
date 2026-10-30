@@ -22,6 +22,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install frozen dependencies for unit tests
+        run: bun install --frozen-lockfile
       - name: Check first-admin bootstrap script syntax
         run: node --check scripts/p0-bootstrap-admin.mjs
       - name: Verify live RLS smoke script syntax without using secrets
