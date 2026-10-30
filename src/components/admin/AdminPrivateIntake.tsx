@@ -1,4 +1,4 @@
-import {useState,type FormEvent} from "react";
+import {useRef,useState,type FormEvent} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -16,6 +16,8 @@ export function AdminPrivateIntake({onCreated}:{onCreated:()=>void}){
  const [source,setSource]=useState<Source>("phone");
  const [reference,setReference]=useState("");
  const [busy,setBusy]=useState(false);
+ const [uncertain,setUncertain]=useState(false);
+ const inFlight=useRef(false);
  const [error,setError]=useState("");
  const [success,setSuccess]=useState("");
  function set<K extends keyof BpeiInquiryDraft>(name:K,value:BpeiInquiryDraft[K]){
@@ -23,7 +25,7 @@ export function AdminPrivateIntake({onCreated}:{onCreated:()=>void}){
  }
  async function submit(e:FormEvent){
   e.preventDefault();
-  if(busy)return;
+  if(busy||inFlight.current||uncertain)return;
   setError("");setSuccess("");
   const check=validateBpeiInquiry(draft);
   if(!check.ok){setError(check.error);return;}
@@ -31,23 +33,45 @@ export function AdminPrivateIntake({onCreated}:{onCreated:()=>void}){
    setError("Indiquez une référence vérifiable du consentement ou de l'information transmise (12 caractères minimum).");return;
   }
   if(!window.confirm("Confirmez-vous que le client a reçu les informations de confidentialité en vigueur et que sa réponse est effectivement documentée ?"))return;
+  inFlight.current=true;
   setBusy(true);
   try{
    const d=check.data;
-   const {error:e}=await (supabase as any).rpc("mvp_admin_create_inquiry",{
+   const {data:createdId,error:e}=await (supabase as any).rpc("mvp_admin_create_inquiry",{
     p_client_name:d.client_name,p_email:d.email,p_phone:d.phone,p_city:d.city,
     p_address_line1:d.address_line1,p_postal_code:d.postal_code,
     p_customer_kind:d.customer_kind,p_company_name:d.company_name,p_company_siret:d.company_siret,
     p_subject:d.subject,p_description:d.description,p_source:source,
     p_privacy_ack_confirmed:draft.consent_accepted,p_privacy_ack_reference:reference.trim()
    });
-   if(e)throw new Error("Rejected");
-   setDraft(empty);setReference("");
+   if(e){
+    // A structured policy / validation denial is not a successful write.
+    // Network/transport errors can arrive AFTER an actual DB commit.
+    if(["42501","22023","23514"].includes(String(e.code))){
+     setError("Demande refusée : vérifiez le compte administrateur, les documents publiés et les informations client.");
+    }else{
+     setUncertain(true);
+     setError("Résultat non confirmé : vérifiez si la demande existe déjà dans la liste avant toute nouvelle tentative.");
+     try{onCreated()}catch{/* A failed panel refresh must not resend the RPC. */}
+    }
+    return;
+   }
+   if(typeof createdId!=="string"||!createdId){
+    setUncertain(true);
+    setError("Résultat non confirmé : vérifiez la liste des demandes avant toute nouvelle tentative.");
+    try{onCreated()}catch{/* Never retry a possibly committed write. */}
+    return;
+   }
+   setDraft(empty);setReference("");setUncertain(false);
    setSuccess("Demande enregistrée dans l'administration. Vérifiez les informations avant attribution.");
-   onCreated();
+   try{onCreated()}catch{
+    setSuccess("Demande enregistrée. Actualisez la liste des dossiers pour voir la nouvelle demande.");
+   }
   }catch{
-   setError("Création impossible. Le compte administrateur, les documents de confidentialité publiés et la preuve d'information sont indispensables.");
-  }finally{setBusy(false);}
+   setUncertain(true);
+   setError("Connexion interrompue : la demande a peut-être été enregistrée. Vérifiez la liste avant toute nouvelle tentative.");
+   try{onCreated()}catch{/* The callback cannot establish write failure. */}
+  }finally{inFlight.current=false;setBusy(false);}
  }
  return <section aria-label="Saisie privée d'une intervention" className="mt-9 rounded-xl border bg-card p-5">
   <h2 className="text-xl font-semibold">Saisir une demande client reçue par téléphone</h2>
@@ -78,7 +102,13 @@ export function AdminPrivateIntake({onCreated}:{onCreated:()=>void}){
     <span>Je confirme que le client a effectivement reçu l'information de confidentialité publiée et que sa réponse est documentée. Ne pas cocher à la place du client sans preuve.</span>
    </label>
    <div className="md:col-span-2">
-    <Button type="submit" disabled={busy||!draft.consent_accepted||reference.trim().length<12}>{busy?"Enregistrement…":"Créer la demande d'intervention"}</Button>
+    <Button type="submit" disabled={busy||uncertain||!draft.consent_accepted||reference.trim().length<12}>{busy?"Enregistrement…":uncertain?"Vérification du dossier requise":"Créer la demande d'intervention"}</Button>
+    {uncertain&&<div className="mt-3 space-y-2" role="status">
+     <p className="text-sm">Consultez et actualisez la liste des demandes clients. N'enregistrez pas de doublon si le dossier existe déjà.</p>
+     <Button type="button" variant="outline" disabled={busy} onClick={()=>{
+      if(window.confirm("Avez-vous vérifié dans la liste que cette demande n'existe pas déjà ?"))setUncertain(false);
+     }}>J'ai vérifié : autoriser une nouvelle tentative</Button>
+    </div>
    </div>
   </form>
   {error&&<p className="mt-3 text-sm text-destructive" role="alert">{error}</p>}
