@@ -18,7 +18,10 @@ WITH facts AS (
        WHERE d.kind IN ('mentions-legales','confidentialite','cgu')
          AND c.legal_documents_published IS TRUE
     ) AS approved_current_legal_docs,
-    (SELECT count(*) FROM public.bpei_service_invoices) AS invoices,
+    (SELECT count(*) FROM public.bpei_service_invoices i
+      JOIN public.bpei_service_quotes q ON q.id=i.quote_id AND q.issuer_id=i.issuer_id
+      WHERE q.status='accepted' AND q.accepted_at IS NOT NULL
+        AND nullif(btrim(q.acceptance_reference),'') IS NOT NULL) AS invoices,
     (SELECT count(*) FROM public.bpei_service_quotes
       WHERE status='accepted' AND accepted_at IS NOT NULL
       AND nullif(btrim(acceptance_reference),'') IS NOT NULL) AS accepted_quotes,
@@ -39,6 +42,8 @@ WITH facts AS (
         AND q.status = 'accepted' AND q.accepted_at IS NOT NULL
         AND nullif(btrim(q.acceptance_reference),'') IS NOT NULL
     ) AS paid_test_attempts,
+    (SELECT count(*) FROM public.bpei_commercial_mail_outbox
+      WHERE status='sent') AS provider_accepted_mail,
     (SELECT count(*) FROM public.bpei_p0_attestations) AS attestation_count,
     (SELECT count(*) FROM public.bpei_p0_attestations WHERE check_key='smtp_auth_delivery') > 0 AS smtp_attested,
     (SELECT count(*) FROM public.bpei_p0_attestations WHERE check_key='legal_operator_review') > 0 AS legal_attested,
@@ -67,8 +72,9 @@ WITH facts AS (
       approved_current_legal_docs,coalesce(current_legal_version,'(aucune)'),legal_flag,legal_attested),
     'Faire approuver puis publier les textes et contrats vérifiés par le responsable légal' FROM facts
   UNION ALL SELECT 4,'Envoi devis / factures',
-    mail_flag AND mail_attested,
-    format('Expéditeur validé %s, preuve de réception %s',mail_flag,mail_attested),
+    mail_flag AND provider_accepted_mail > 0 AND mail_attested,
+    format('Expéditeur validé %s, envoi(s) fournisseur %s, preuve de réception %s',
+      mail_flag,provider_accepted_mail,mail_attested),
     'Vérifier l’expéditeur et la réception réelle du document par son destinataire' FROM facts
   UNION ALL SELECT 5,'Commissions / facturation électronique',
     contract_attested AND einvoice_attested,
@@ -80,9 +86,10 @@ WITH facts AS (
       stripe_flag,verified_test_merchants,paid_test_attempts,stripe_attested),
     'Compte marchand de test identifié, webhook signé et paiement de test réellement rapproché' FROM facts
   UNION ALL SELECT 7,'Pilote de bout en bout',
-    confirmed_auth_users >= 2 AND accepted_quotes > 0 AND invoices > 0 AND pilot_attested,
-    format('%s compte(s) confirmés, %s devis accepté(s), %s facture(s), preuve pilote %s',
-      confirmed_auth_users,accepted_quotes,invoices,pilot_attested),
+    confirmed_auth_users >= 2 AND accepted_quotes > 0 AND invoices > 0
+      AND paid_test_attempts > 0 AND pilot_attested,
+    format('%s compte(s) confirmés, %s devis accepté(s), %s facture(s), %s paiement(s) rapproché(s), preuve pilote %s',
+      confirmed_auth_users,accepted_quotes,invoices,paid_test_attempts,pilot_attested),
     'Tester un vrai partenaire et un vrai client autorisés, devis, facture et permissions' FROM facts
 )
 SELECT ordinal,checkpoint,
