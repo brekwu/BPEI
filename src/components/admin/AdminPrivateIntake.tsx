@@ -108,7 +108,7 @@ export function AdminPrivateIntake({onCreated}:{onCreated:()=>void}){
      <Button type="button" variant="outline" disabled={busy} onClick={()=>{
       if(window.confirm("Avez-vous vérifié dans la liste que cette demande n'existe pas déjà ?"))setUncertain(false);
      }}>J'ai vérifié : autoriser une nouvelle tentative</Button>
-    </div>
+    </div>}
    </div>
   </form>
   {error&&<p className="mt-3 text-sm text-destructive" role="alert">{error}</p>}
