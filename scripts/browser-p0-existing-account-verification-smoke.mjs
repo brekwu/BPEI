@@ -72,8 +72,11 @@ try{
   assert.equal(body.email,email);
   assert.equal(body.create_user,false,"Auth must NOT create user from magic link");
  }
- for(const redirect of redirects)
+ for(const redirect of redirects){
   assert.equal(new URL(redirect).pathname,"/espace-independant");
+  assert.equal(new URL(redirect).origin,"https://bpei-preview.vercel.app",
+   "The Auth email must not return to an ephemeral Vercel deployment");
+ }
  assert.equal(await page.getByRole("heading",{name:"Mon profil"}).count(),0,
   "A successful OTP request does not establish login or administrator status");
  assert.deepEqual(errors,[]);
