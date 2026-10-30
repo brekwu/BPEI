@@ -26,7 +26,15 @@ let failAllReads=false;
 let failedReadCount=0;
 let assignCalls=0;
 const errors=[];
-const json=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
+const json=(data,status=200)=>({
+ status,contentType:"application/json",
+ headers:{
+  "access-control-allow-origin":"*",
+  "access-control-allow-methods":"GET,POST,OPTIONS",
+  "access-control-allow-headers":"authorization,apikey,content-type,x-client-info"
+ },
+ body:JSON.stringify(data)
+});
 await context.route("https://placeholder.supabase.co/**",async route=>{
  const req=route.request(),u=new URL(req.url()),p=u.pathname;
  const single=(req.headers().accept??"").includes("application/vnd.pgrst.object+json");
