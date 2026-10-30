@@ -51,7 +51,8 @@ Deno.serve(async req=>{
  try{
   admin=createClient(url,secret,{auth:{persistSession:false,autoRefreshToken:false}});
   const {data:auth,error:authError}=await admin.auth.getUser(bearer);
-  if(authError||!auth.user||auth.user.is_anonymous)return response(401,{error:"login_required"},origin);
+  if(authError||!auth.user||auth.user.is_anonymous||!auth.user.email_confirmed_at)
+   return response(401,{error:"confirmed_identity_required"},origin);
   const [{data:role,error:roleError},{data:legal,error:legalError},{data:controls,error:controlsError}]=await Promise.all([
    admin.from("independent_admins").select("user_id").eq("user_id",auth.user.id).maybeSingle(),
    admin.from("bpei_launch_controls").select("legal_documents_published,legal_version").eq("id",true).maybeSingle(),
