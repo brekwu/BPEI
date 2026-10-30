@@ -20,7 +20,8 @@ test("Every applied Supabase migration is present exactly once in the repository
  assert.match(readme,new RegExp(expected+" fichiers SQL versionnés"));
  for(const latest of [
   "20261030080119_p0_admin_readiness_strict_reconciliation.sql",
-  "20261030085218_p0_quote_requires_current_partner_verification.sql"
+  "20261030085218_p0_quote_requires_current_partner_verification.sql",
+  "20261030100238_p0_validate_customer_contact_before_intake.sql"
  ])assert.ok(migrations.includes(latest),"Recent P0 migration missing: "+latest);
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
