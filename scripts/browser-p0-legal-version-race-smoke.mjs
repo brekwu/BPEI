@@ -40,7 +40,13 @@ async function expectRequested(promise,label){
 const errors=[];
 const context=await browser.newContext();
 const json=(data,status=200)=>({
- status,contentType:"application/json",body:JSON.stringify(data)
+ status,contentType:"application/json",
+ headers:{
+  "access-control-allow-origin":"*",
+  "access-control-allow-methods":"GET,POST,OPTIONS",
+  "access-control-allow-headers":"authorization,apikey,content-type,x-client-info"
+ },
+ body:JSON.stringify(data)
 });
 await context.route("https://placeholder.supabase.co/**",async route=>{
  const req=route.request(), url=new URL(req.url()), path=url.pathname;
