@@ -1,3 +1,4 @@
+import {stubMockInboxNotifications} from "./mock-hidden-inbox-notifications.mjs";
 import assert from "node:assert/strict";
 import {chromium,webkit} from "playwright";
 
@@ -9,6 +10,7 @@ const engine=process.env.BPEI_BROWSER_ENGINE??"chromium";
 assert.ok(["chromium","webkit"].includes(engine));
 const browser=await (engine==="webkit"?webkit:chromium).launch({headless:true});
 const context=await browser.newContext();
+await stubMockInboxNotifications(context);
 const base=process.env.BPEI_SMOKE_ORIGIN??"http://127.0.0.1:3000";
 const id="99999999-9999-4999-8999-999999999999";
 const techId="88888888-8888-4888-8888-888888888888";
