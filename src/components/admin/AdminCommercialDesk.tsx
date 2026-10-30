@@ -244,7 +244,9 @@ export function AdminCommercialDesk(){
     {!quotes.length&&<p className="text-sm text-muted-foreground">Aucun devis pour le moment.</p>}
     {quotes.map(q=>{
      const invoice=invoices.find(i=>i.quote_id===q.id);
-     const paidAttempt=invoice?.payment_status==="paid"
+     // Invoices are immutable: their original payment_status remains "unpaid".
+     // Only the provider-signed Stripe TEST ledger can establish test payment.
+     const paidAttempt=invoice
       ?payments.find(p=>p.invoice_id===invoice.id&&p.state==="paid"
         &&p.paid_at!==null&&p.amount_cents===q.gross_cents)
       :undefined;
