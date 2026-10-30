@@ -4,6 +4,7 @@ import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {euroToCents,formatCents,vatChoices} from "@/lib/bpei-commercial";
+import {findConfirmedTestPayment} from "@/lib/bpei-test-payment-evidence";
 import {AdminTestCheckoutReadiness} from "@/components/admin/AdminTestCheckoutReadiness";
 
 type Inquiry={id:string;client_name:string;email:string;phone:string|null;address_line1:string|null;postal_code:string|null;city:string|null;
@@ -244,10 +245,9 @@ export function AdminCommercialDesk(){
     {!quotes.length&&<p className="text-sm text-muted-foreground">Aucun devis pour le moment.</p>}
     {quotes.map(q=>{
      const invoice=invoices.find(i=>i.quote_id===q.id);
-     const paidAttempt=invoice?.payment_status==="paid"
-      ?payments.find(p=>p.invoice_id===invoice.id&&p.state==="paid"
-        &&p.paid_at!==null&&p.amount_cents===q.gross_cents)
-      :undefined;
+     // A numbered invoice is immutable: its payment_status remains "unpaid".
+     // The signed Stripe TEST event is recorded separately in the payment ledger.
+     const paidAttempt=findConfirmedTestPayment(invoice?.id,q.gross_cents,payments);
      const successfulRefunds=paidAttempt?refunds.filter(r=>r.attempt_id===paidAttempt.id&&r.status==="succeeded"):[];
      const refundedCents=successfulRefunds.reduce((total,r)=>total+r.amount_cents,0);
      const disputesForPayment=paidAttempt?disputes.filter(d=>d.attempt_id===paidAttempt.id):[];

@@ -64,8 +64,12 @@ test("Only the completing technician can enable the associated invoice action",(
 
 test("All commercial payment summaries reflect the reconciled TEST status",()=>{
  assert.match(src,/const testPaymentLabel=!invoice\?"Aucune facture émise"/);
- assert.match(src,/invoice\?\.payment_status==="paid"/);
- assert.match(src,/p\.paid_at!==null&&p\.amount_cents===q\.gross_cents/);
+ assert.match(src,/findConfirmedTestPayment\(invoice\?\.id,q\.gross_cents,payments\)/);
+ assert.doesNotMatch(src,/invoice\?\.payment_status==="paid"/);
+ const evidence=readFileSync(new URL("../src/lib/bpei-test-payment-evidence.ts",import.meta.url),"utf8");
+ assert.match(evidence,/p\.state==="paid"/);
+ assert.match(evidence,/p\.amount_cents===expectedGrossCents/);
+ assert.match(evidence,/p\.paid_at\.length>0/);
  assert.match(src,/paidAttempt\?"Paiement Stripe confirmé \(TEST uniquement\)":"Paiement non confirmé"/);
  assert.match(src,/Mission \{completed\?"terminée":"non terminée"\} · \{testPaymentLabel\}/);
  assert.match(src,/Facture \{invoice\.invoice_number\}[\s\S]*?<strong>\{testPaymentLabel\}<\/strong>/);

@@ -26,6 +26,10 @@ const invoice={id:invoiceId,quote_id:quoteId,invoice_number:"2026-000001",
  issuer_vat_number:"FR12345678901",payment_terms:"Règlement par carte bancaire sous dix jours",
  early_payment_discount:"Aucun escompte accordé pour paiement anticipé",late_payment_penalties:null,
  customer_order_reference:null,b2b_recovery_fee_cents:null};
+const stripeTestEvidence={id:"cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+ invoice_id:invoiceId,state:"paid",paid_at:"2026-10-30T11:00:00Z",
+ created_at:"2026-10-30T10:59:00Z",amount_cents:10800,application_fee_cents:0};
+let mockTestPaymentConfirmed=false;
 let step=0,rpcCreates=0,rpcAccepts=0,rpcInvoices=0;
 const errors=[];
 const json=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
@@ -45,6 +49,7 @@ await ctx.route("https://placeholder.supabase.co/**",async route=>{
  if(path==="/rest/v1/independent_requests")return route.fulfill(json([{inquiry_id:inquiryId,independent_id:id,status:"completed"}]));
  if(path==="/rest/v1/bpei_service_quotes")return route.fulfill(json(single?quote:step>0?[quote]:[]));
  if(path==="/rest/v1/bpei_service_invoices")return route.fulfill(json(single?invoice:step>2?[invoice]:[]));
+ if(path==="/rest/v1/bpei_payment_attempts")return route.fulfill(json(mockTestPaymentConfirmed?[stripeTestEvidence]:[]));
  if(path==="/rest/v1/rpc/mvp_create_quote"){rpcCreates++;step=1;return route.fulfill(json(quoteId));}
  if(path==="/rest/v1/rpc/mvp_accept_quote"){rpcAccepts++;step=2;quote.status="accepted";quote.accepted_at="2026-10-29T10:00:00Z";return route.fulfill(json(true));}
  if(path==="/rest/v1/rpc/mvp_issue_invoice_compliant"){
@@ -92,10 +97,18 @@ try{
  await page.getByText("Facture définitive enregistrée",{exact:false}).waitFor({timeout:15000});
  await page.getByText("Facture 2026-000001",{exact:false}).waitFor({timeout:15000});
  assert.equal(rpcInvoices,1);
+ // Invoicing is immutable: the paid TEST ledger must be the only display source.
+ assert.equal(invoice.payment_status,"unpaid");
+ mockTestPaymentConfirmed=true;
+ await page.locator('section[aria-label="Gestion commerciale BPEI"]')
+   .getByRole("button",{name:"Actualiser"}).click();
+ await page.getByText("Paiement Stripe confirmé (TEST uniquement)",{exact:false}).first()
+   .waitFor({timeout:15000});
  await page.getByRole("link",{name:"Consulter et imprimer la facture"}).click();
  await page.getByRole("heading",{name:"FACTURE",exact:true}).waitFor({timeout:15000});
  await page.getByText("2026-000001").first().waitFor();
- assert.equal(await page.getByText("Non confirmé / impayé",{exact:false}).count(),1);
+ await page.getByText("PAIEMENT SIMULÉ CONFIRMÉ (Stripe TEST)",{exact:false})
+  .waitFor({timeout:15000});
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({ok:true,mode:"mocked-mvp-commercial",created:rpcCreates,accepted:rpcAccepts,invoiced:rpcInvoices,paid:false,errors:0}));
+ console.log(JSON.stringify({ok:true,mode:"mocked-mvp-commercial",created:rpcCreates,accepted:rpcAccepts,invoiced:rpcInvoices,paidTestFromLedger:true,immutableInvoice:true,errors:0}));
 }finally{await ctx.close();await browser.close();}
