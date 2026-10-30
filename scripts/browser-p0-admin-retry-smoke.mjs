@@ -14,6 +14,7 @@ const user={id:"12345678-1234-4234-8234-123456789012",email:"admin-retry@example
   role:"authenticated",aud:"authenticated",email_confirmed_at:"2026-10-28T10:00:00Z",
   app_metadata:{provider:"email",providers:["email"]},user_metadata:{}};
 let adminChecks=0;
+let grantPermission=false;
 const errors=[];
 const json=(data,status=200)=>({status,contentType:"application/json",body:JSON.stringify(data)});
 const context=await browser.newContext();
@@ -27,7 +28,7 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
   if(path.startsWith("/auth/v1/"))return route.fulfill(json({message:"No session"},401));
   if(path==="/rest/v1/independent_admins"){
     adminChecks+=1;
-    if(adminChecks===1)return route.fulfill(json({code:"PGRST503",message:"Temporary database failure"},503));
+    if(!grantPermission)return route.fulfill(json({code:"PGRST503",message:"Temporary database failure"},503));
     return route.fulfill(json(single?{user_id:user.id}:[{user_id:user.id}]));
   }
   if(path==="/rest/v1/bpei_launch_controls")
@@ -47,10 +48,14 @@ try{
 
   await page.goto(base+"/gestion-independants",{waitUntil:"domcontentloaded"});
   await page.getByText("Accès administrateur non autorisé pour ce compte.").waitFor({timeout:15000});
-  assert.equal(adminChecks,1,"The first admin check must fail as intended");
+  assert.ok(adminChecks>=1,"At least one admin permission check must have failed");
+  const initialChecks=adminChecks;
+  // Keep every initial Auth / onAuthStateChange permission read failing.
+  // Allow access only AFTER the explicit user-facing Retry action.
+  grantPermission=true;
   await page.getByRole("button",{name:"Réessayer"}).click();
   await page.getByRole("heading",{name:"Candidatures (0)"}).waitFor({timeout:15000});
-  assert.ok(adminChecks>=3,"Retry must re-check permissions and allow a fresh admin data load");
+  assert.ok(adminChecks>initialChecks,"Retry must query permissions again rather than reuse an earlier result");
   assert.deepEqual(errors,[],"Unexpected JavaScript errors");
   console.log(JSON.stringify({ok:true,mode:"mocked-admin-permission-retry",
     adminChecks,permissionEscalation:false}));
