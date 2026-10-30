@@ -38,6 +38,16 @@ await context.route("https://placeholder.supabase.co/**",async route=>{
       req.headers()["access-control-request-headers"]??cors["access-control-allow-headers"]}
   });
   const single=(req.headers().accept??"").includes("application/vnd.pgrst.object+json");
+ if(path==="/rest/v1/bpei_notifications"){
+   // The inbox makes both GET list and HEAD exact-count requests.
+   // Match PostgREST's count headers; never leak to the real network.
+   return route.fulfill({
+     status:200,
+     headers:{...cors,"content-type":"application/json","content-range":"*/0"},
+     body:req.method()==="HEAD"?"":"[]"
+   });
+  }
+ 
   if(path==="/auth/v1/token")return route.fulfill(json({user,access_token:"mock-p0-admin.token.signature",
     refresh_token:"mock-p0-admin-refresh",expires_in:3600,token_type:"bearer"}));
   if(path==="/auth/v1/user")return route.fulfill(json(user));
