@@ -72,7 +72,7 @@ function ResetPasswordPage() {
     setError("");
     setNotice("");
     try {
-      const redirectTo = bpeiAuthRedirect(window.location.origin, "/reinitialiser-mot-de-passe");
+      const redirectTo = bpeiAuthRedirect(window.location.origin, "/reinitialiser-mot-de-passe", import.meta.env.VITE_BPEI_AUTH_ORIGIN);
       const { error: authError } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
       if (authError) {
         setError("La demande n'a pas pu être envoyée. Vérifiez le service e-mail et réessayez.");
