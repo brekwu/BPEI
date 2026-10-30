@@ -60,7 +60,7 @@ export function AdminCommercialDesk(){
   setInvoiceDrafts(prev=>({...prev,[id]:{...(prev[id]??emptyInvoiceDraft),...patch}}));
  }
 
- const refresh=useCallback(async()=>{
+ const refresh=useCallback(async():Promise<boolean>=>{
   setLoading(true);setFailure("");
   try{
    const db=supabase as any;
@@ -76,9 +76,11 @@ export function AdminCommercialDesk(){
    ]);
    if(i.error||q.error||n.error||m.error||pa.error||re.error||di.error||ma.error)throw new Error("Load failed");
    setInquiries(i.data??[]);setQuotes(q.data??[]);setInvoices(n.data??[]);setMissions(m.data??[]);setPayments(pa.data??[]);setRefunds(re.data??[]);setDisputes(di.data??[]);setDeliveries(ma.data??[]);
+   return true;
   }catch{
    setInquiries([]);setQuotes([]);setInvoices([]);setMissions([]);setPayments([]);setRefunds([]);setDisputes([]);setDeliveries([]);
    setFailure("Lecture de la gestion commerciale impossible. Vérifiez vos droits et recommencez.");
+   return false;
   }finally{setLoading(false);}
  },[]);
  useEffect(()=>{void refresh()},[refresh]);
@@ -99,9 +101,13 @@ export function AdminCommercialDesk(){
   try{
    const result=await task();
    if(result.error)throw new Error("Database action rejected");
-   setMessage(successMessage);
-   await refresh();
-  }catch{setFailure("Opération refusée. Vérifiez le dossier, l'accord du client, les droits et les informations légales, puis actualisez.");}
+   const refreshed=await refresh();
+   if(refreshed)setMessage(successMessage);
+   else{
+    setMessage("");
+    setFailure("Action potentiellement enregistrée, mais lecture de confirmation indisponible. Actualisez le dossier avant toute nouvelle tentative.");
+   }
+  }catch{setFailure("Opération non confirmée. Vérifiez le dossier, l'accord du client, les droits et les informations légales avant de réessayer.");}
   finally{setBusy(false);}
  }
 
