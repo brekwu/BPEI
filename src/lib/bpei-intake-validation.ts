@@ -42,8 +42,17 @@ export function validateBpeiInquiry(input: BpeiInquiryDraft): { ok: true; data: 
   const subject = input.subject.trim();
   const description = input.description.trim();
   if (name.length < 2 || name.length > 120) return {ok:false,error:"Le nom doit contenir entre 2 et 120 caractères."};
-  if (email.length < 5 || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return {ok:false,error:"Adresse e-mail invalide."};
-  if (phone.length > 40 || city.length > 120) return {ok:false,error:"Téléphone ou ville trop long."};
+  const [localPart,domainPart]=email.split("@");
+  if(email.length<5||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    ||email.includes("..")||localPart.startsWith(".")||localPart.endsWith(".")
+    ||domainPart.startsWith(".")||domainPart.endsWith("."))
+    return {ok:false,error:"Adresse e-mail invalide."};
+  if(phone.length>40||city.length>120)return {ok:false,error:"Téléphone ou ville trop long."};
+  if(phone){
+    const digits=phone.replace(/[^0-9]/g,"").length;
+    if(!/^\+?[0-9() ./-]+$/.test(phone)||digits<6||digits>15)
+      return {ok:false,error:"Numéro de téléphone invalide : utilisez 6 à 15 chiffres et des séparateurs usuels."};
+  }
   if (input.customer_kind !== "individual" && input.customer_kind !== "business") return {ok:false,error:"Type de client invalide."};
   if (address.length > 200 || postal.length > 5 || company.length > 160) return {ok:false,error:"Coordonnées de facturation trop longues."};
   if (siret && !/^[0-9]{14}$/.test(siret))return {ok:false,error:"Le SIRET doit comporter 14 chiffres."};
