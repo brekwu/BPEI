@@ -1,0 +1,105 @@
+import assert from "node:assert/strict";
+import { chromium, webkit } from "playwright";
+
+/**
+ * P0 mocked-browser legal version isolation regression.
+ * No real Auth, legal approval, PII, email, payment or Supabase mutation.
+ * Two in-flight document reads intentionally finish in reverse order.
+ */
+const engine=process.env.BPEI_BROWSER_ENGINE ?? "chromium";
+assert.ok(["chromium","webkit"].includes(engine));
+const browser=await (engine==="webkit"?webkit:chromium).launch({headless:true});
+const base=process.env.BPEI_SMOKE_ORIGIN??"http://127.0.0.1:3000";
+const user={id:"12345678-1234-4234-8234-123456789012",email:"admin-p0@example.invalid",
+ role:"authenticated",aud:"authenticated",email_confirmed_at:"2026-10-28T10:00:00Z",
+ app_metadata:{provider:"email",providers:["email"]},user_metadata:{}};
+const initialVersion="bpei-2026-v1";
+const nextVersion="bpei-mocked-v2";
+const firstDoc="Ancien document de test. "+"A".repeat(340);
+const secondDoc="Nouveau document de test. "+"B".repeat(340);
+const kinds=["mentions-legales","confidentialite","cgu"];
+const docs=(version,content)=>kinds.map(kind=>({
+ kind,version,content,approved_at:"2026-10-28T10:00:00Z"
+}));
+let releaseFirst;
+let releaseSecond;
+const firstGate=new Promise(resolve=>{releaseFirst=resolve;});
+const secondGate=new Promise(resolve=>{releaseSecond=resolve;});
+let firstReceived=false,secondReceived=false;
+const errors=[];
+const context=await browser.newContext();
+const json=(data,status=200)=>({
+ status,contentType:"application/json",body:JSON.stringify(data)
+});
+await context.route("https://placeholder.supabase.co/**",async route=>{
+ const req=route.request(), url=new URL(req.url()), path=url.pathname;
+ const single=(req.headers().accept??"").includes("application/vnd.pgrst.object+json");
+ if(path==="/auth/v1/token")return route.fulfill(json({
+  user,access_token:"mock-p0-admin.token.signature",
+  refresh_token:"mock-p0-admin-refresh",expires_in:3600,token_type:"bearer"
+ }));
+ if(path==="/auth/v1/user")return route.fulfill(json(user));
+ if(path==="/auth/v1/logout")return route.fulfill({status:204,body:""});
+ if(path.startsWith("/auth/v1/"))return route.fulfill(json({message:"No session"},401));
+ if(path==="/rest/v1/independent_admins")
+  return route.fulfill(json(single?{user_id:user.id}:[{user_id:user.id}]));
+ if(path==="/rest/v1/bpei_launch_controls")
+  return route.fulfill(json({id:true,legal_documents_published:false,
+   independent_registration_enabled:false,legal_version:null}));
+ if(path==="/rest/v1/bpei_legal_releases")return route.fulfill(json([]));
+ if(path==="/rest/v1/bpei_legal_documents"){
+  const selected=url.searchParams.get("version");
+  if(selected==="eq."+initialVersion){
+   firstReceived=true;
+   await firstGate;
+   return route.fulfill(json(docs(initialVersion,firstDoc)));
+  }
+  if(selected==="eq."+nextVersion){
+   secondReceived=true;
+   await secondGate;
+   return route.fulfill(json(docs(nextVersion,secondDoc)));
+  }
+  return route.fulfill(json([]));
+ }
+ if(path.startsWith("/rest/v1/rpc/"))return route.fulfill(json({message:"Not available"},403));
+ return route.fulfill(json(single?null:[]));
+});
+try{
+ const page=await context.newPage();
+ page.on("pageerror",e=>errors.push(e.message));
+ await page.goto(base+"/espace-independant",{waitUntil:"domcontentloaded"});
+ await page.getByPlaceholder("Adresse e-mail").fill(user.email);
+ await page.getByPlaceholder("Mot de passe",{exact:true}).fill("Mock-password-2026!");
+ await page.getByRole("button",{name:"Se connecter",exact:true}).click();
+ await page.getByRole("heading",{name:"Mon profil",exact:true}).waitFor({timeout:15000});
+ await page.goto(base+"/gestion-independants",{waitUntil:"domcontentloaded"});
+ const section=page.locator('[aria-label="Documents juridiques BPEI"]');
+ await section.waitFor({timeout:15000});
+ const version=section.getByLabel("Version juridique (3 à 90 caractères)");
+ const approve=section.getByRole("button",{name:"Valider ce document"}).first();
+ const firstText=section.locator("textarea").first();
+ await page.waitForFunction(()=>true);
+ await version.fill(nextVersion);
+ // The new version must remain locked while it is still loading.
+ assert.equal(await approve.isDisabled(),true);
+ await page.waitForTimeout(100);
+ assert.equal(secondReceived,true,"New version's request must be issued");
+ releaseSecond();
+ await page.waitForFunction(
+  ({prefix})=>document.querySelector('[aria-label="Documents juridiques BPEI"] textarea')?.value.startsWith(prefix),
+  {prefix:"Nouveau document de test."},{timeout:12000}
+ );
+ assert.ok((await firstText.inputValue()).startsWith("Nouveau document de test."));
+ releaseFirst();
+ await page.waitForTimeout(250);
+ assert.ok((await firstText.inputValue()).startsWith("Nouveau document de test."),
+  "Old async read replaced drafts for a different version");
+ assert.equal(await version.inputValue(),nextVersion);
+ assert.deepEqual(errors,[]);
+ console.log(JSON.stringify({ok:true,mode:"mocked-legal-race",firstReceived,secondReceived,staleDrafts:0}));
+} finally {
+ releaseFirst?.();
+ releaseSecond?.();
+ await context.close();
+ await browser.close();
+}
