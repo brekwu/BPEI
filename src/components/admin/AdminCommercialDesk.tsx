@@ -13,7 +13,7 @@ type Quote={id:string;inquiry_id:string;issuer_id:string;status:string;issuer_le
  unit_price_cents:number;vat_basis_points:number;net_cents:number;vat_cents:number;gross_cents:number;
  accepted_at:string|null};
 type Invoice={id:string;quote_id:string;invoice_number:string;issued_at:string;payment_status:string};
-type Mission={inquiry_id:string;status:string};
+type Mission={inquiry_id:string;independent_id:string;status:string};
 type PaymentAttempt={id:string;invoice_id:string;state:string;paid_at:string|null;created_at:string;amount_cents:number;application_fee_cents:number};
 type Refund={attempt_id:string;amount_cents:number;status:string};
 type Dispute={attempt_id:string;disputed_cents:number;status:string};
@@ -73,7 +73,7 @@ export function AdminCommercialDesk(){
     db.from("bpei_inquiries").select("id,client_name,email,phone,address_line1,postal_code,city,subject,status,assigned_to,customer_kind").eq("kind","intervention").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_quotes").select("id,inquiry_id,issuer_id,status,issuer_legal_name,issuer_siret,customer_name,customer_kind,service_description,quantity,unit_price_cents,vat_basis_points,net_cents,vat_cents,gross_cents,accepted_at").order("created_at",{ascending:false}).limit(200),
     db.from("bpei_service_invoices").select("id,quote_id,invoice_number,issued_at,payment_status").order("issued_at",{ascending:false}).limit(200),
-    db.from("independent_requests").select("inquiry_id,status").not("inquiry_id","is",null).limit(500),
+    db.from("independent_requests").select("inquiry_id,independent_id,status").not("inquiry_id","is",null).limit(500),
     db.from("bpei_payment_attempts") .select("id,invoice_id,state,paid_at,created_at,amount_cents,application_fee_cents").order("created_at",{ascending:false}).limit(500),
     db.from("bpei_payment_refunds").select("attempt_id,amount_cents,status").limit(500),
     db.from("bpei_payment_disputes").select("attempt_id,disputed_cents,status").limit(500),
@@ -113,7 +113,8 @@ export function AdminCommercialDesk(){
  const qty=Number(quantity);
  const isValidQty=Number.isInteger(qty)&&qty>=1&&qty<=100;
  const validVat=vatChoices.some(v=>v.basisPoints===Number(vat))&&vat!=="";
- const workDone=(id:string)=>missions.some(m=>m.inquiry_id===id&&m.status==="completed");
+ const workDone=(inquiryId:string,issuerId:string)=>missions.some(m=>
+  m.inquiry_id===inquiryId&&m.independent_id===issuerId&&m.status==="completed");
 
  async function run(task:()=>Promise<{error:unknown}|{error?:unknown}>,
   successMessage:string){
@@ -249,15 +250,21 @@ export function AdminCommercialDesk(){
      const disputesForPayment=paidAttempt?disputes.filter(d=>d.attempt_id===paidAttempt.id):[];
      const activeDispute=disputesForPayment.some(d=>d.status==="open");
      const lostDispute=disputesForPayment.some(d=>d.status==="lost");
+     const testPaymentLabel=!invoice?"Aucune facture émise":
+      lostDispute?"Contestation perdue (TEST)":
+      activeDispute?"Contestation bancaire active (TEST)":
+      paidAttempt&&refundedCents>=paidAttempt.amount_cents?"Remboursement total (TEST)":
+      refundedCents>0?"Remboursement partiel de "+formatCents(refundedCents)+" (TEST)":
+      paidAttempt?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé";
      const source=inquiries.find(i=>i.id===q.inquiry_id);
-     const completed=workDone(q.inquiry_id);
+     const completed=workDone(q.inquiry_id,q.issuer_id);
      const acceptanceDraft=acceptanceDrafts[q.id]??{method:"email",reference:""};
      const invoiceDraft=invoiceDrafts[q.id]??emptyInvoiceDraft;
      return <article key={q.id} className="rounded-lg border p-4 space-y-3 text-sm">
       <p><strong>{q.customer_name}</strong> · {q.service_description}</p>
       <p>Prestataire : {q.issuer_legal_name} (SIRET {q.issuer_siret})</p>
       <p>Montant HT {formatCents(q.net_cents)} · TVA {formatCents(q.vat_cents)} · <strong>Total TTC {formatCents(q.gross_cents)}</strong></p>
-      <p>Statut : {q.status==="accepted"?"Devis accepté":"Devis proposé"} · Mission {completed?"terminée":"non terminée"} · Paiement non confirmé</p>
+      <p>Statut : {q.status==="accepted"?"Devis accepté":"Devis proposé"} · Mission {completed?"terminée":"non terminée"} · {testPaymentLabel}</p>
       <Link to="/devis/$quoteId" params={{quoteId:q.id}} className="inline-block underline">Consulter et imprimer le devis</Link>
       {deliveries.some(d=>d.kind==="quote"&&d.document_id===q.id)&&
        <p>Envoi du devis : {deliveries.find(d=>d.kind==="quote"&&d.document_id===q.id)?.status==="sent"?"accepté par le fournisseur e-mail":"à vérifier manuellement"}</p>}
@@ -302,13 +309,7 @@ export function AdminCommercialDesk(){
         onClick={()=>issue(q)}>Émettre la facture définitive</Button>
       </div>}
       {invoice&&<div className="border-t pt-3">
-       <p>Facture {invoice.invoice_number} · {new Date(invoice.issued_at).toLocaleDateString("fr-FR")} · <strong>{
-        lostDispute?"Contestation perdue (TEST)":
-        activeDispute?"Contestation bancaire active (TEST)":
-        paidAttempt&&refundedCents>=paidAttempt.amount_cents?"Remboursement total (TEST)":
-        refundedCents>0?"Remboursement partiel de "+formatCents(refundedCents)+" (TEST)":
-        paidAttempt?"Paiement Stripe confirmé (TEST uniquement)":"Paiement non confirmé"
-       }</strong></p>
+       <p>Facture {invoice.invoice_number} · {new Date(invoice.issued_at).toLocaleDateString("fr-FR")} · <strong>{testPaymentLabel}</strong></p>
        {activeDispute&&<p role="alert">Contestation du paiement : vérifier la demande dans le Dashboard Stripe du prestataire indépendant.</p>}
        {paidAttempt&&<p>Commission plateforme convenue (TEST) : {formatCents(paidAttempt.application_fee_cents)}. Le total facturé au client reste inchangé.</p>}
        {refundedCents>0&&<p>Remboursements confirmés par Stripe TEST : {formatCents(refundedCents)}. Vérifier la nécessité d'un avoir comptable.</p>}
