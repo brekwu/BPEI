@@ -1,3 +1,4 @@
+import {stubMockInboxNotifications} from "./mock-hidden-inbox-notifications.mjs";
 import assert from "node:assert/strict";
 import { chromium, webkit } from "playwright";
 
@@ -30,6 +31,7 @@ const json=(data,status=200)=>({
  status,contentType:"application/json",headers:cors,body:JSON.stringify(data)
 });
 const context=await browser.newContext();
+await stubMockInboxNotifications(context);
 await context.route("https://placeholder.supabase.co/**",async route=>{
   const req=route.request(),url=new URL(req.url()),path=url.pathname;
   if(req.method()==="OPTIONS")return route.fulfill({
