@@ -24,5 +24,5 @@ test("P0 rejects all eight privileged workflows for an unauthorised actor",()=>{
   "assign_bpei_inquiry"
  ])assert.ok(sql.includes("public."+functionName+"("),"Missing non-admin boundary: "+functionName);
  assert.match(sql,/WHEN insufficient_privilege THEN denied:=denied\+1/);
- assert.match(sql,/RAlSE EXCEPTION/imu.test(sql)?/AUTH FAILURE: unauthorized caller reached/:/AUTH FAILURE: unauthorized caller reached/);
+ assert.match(sql,/AUTH FAILURE: unauthorized caller reached/);
 });
