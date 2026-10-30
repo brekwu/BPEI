@@ -36,6 +36,9 @@ test("P0 owner report covers every real-world release dependency without fabrica
     "p.checkout_session_id LIKE 'cs_test_%'",
     "q.id = i.quote_id AND q.issuer_id = i.issuer_id",
     "p.amount_cents = q.gross_cents",
+    "provider_accepted_mail > 0",
+    "paid_test_attempts > 0 AND pilot_attested",
+    "q.id=i.quote_id AND q.issuer_id=i.issuer_id",
   ]) assert.ok(sql.includes(term), "Missing P0 requirement: " + term);
   assert.match(sql, /CONDITIONS SQL PRESENTES/);
   assert.match(sql, /NON PRET/);
