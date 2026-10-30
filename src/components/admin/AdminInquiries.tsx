@@ -99,7 +99,7 @@ export function AdminInquiries() {
   <p className="text-sm text-muted-foreground">Ces coordonnées personnelles sont réservées à l'équipe BPEI. Seuls les indépendants approuvés et vérifiés peuvent recevoir une mission.</p>
   {loading&&<p role="status">Chargement…</p>}
   {error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
-  {!loading&&inquiries.length===0&&<p className="text-sm text-muted-foreground">Aucun message ou demande d'intervention.</p>}
+  {!loading&&!error&&inquiries.length===0&&<p className="text-sm text-muted-foreground">Aucun message ou demande d'intervention.</p>}
   {!loading&&inquiries.map(i=><article key={i.id} className="space-y-3 rounded-xl border bg-card p-5">
     <div className="flex flex-wrap justify-between gap-2"><strong>{i.kind==="contact"?"Contact":"Intervention"} : {i.subject}</strong><span className="text-sm">{i.status}</span></div>
     <p className="text-sm">{i.customer_kind==="business"&&i.company_name?i.company_name+" · ":""}{i.client_name} · {i.email} {i.phone?"· "+i.phone:""}</p>
