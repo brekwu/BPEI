@@ -26,6 +26,14 @@ test("Every applied Supabase migration is present exactly once in the repository
  assert.ok(migrations.some(name=>name==="20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql"),
   "Admin roster RLS fix is required for other-admin assignment");
 });
+test("The technician authorization foreign key has an applied and tracked covering index",()=>{
+ const file="20261030111826_index_technician_level_authorizer.sql";
+ assert.ok(migrations.includes(file),"Applied index migration must match Supabase version");
+ const sql=readFileSync(new URL("../supabase/migrations/"+file,import.meta.url),"utf8");
+ assert.match(sql,/CREATE INDEX IF NOT EXISTS bpei_technician_levels_authorized_by_idx/i);
+ assert.match(sql,/ON public\.bpei_technician_levels \(authorized_by\)/i);
+});
+
 test("The admin roster migration enforces administrator isolation",()=>{
  const sql=readFileSync(new URL("../supabase/migrations/20261028175736_p1_admin_roster_secure_cross_admin_visibility.sql",import.meta.url),"utf8");
  assert.match(sql,/bpei_private\.is_bpei_admin/);
