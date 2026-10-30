@@ -64,6 +64,8 @@ test("Only the completing technician can enable the associated invoice action",(
 
 test("All commercial payment summaries reflect the reconciled TEST status",()=>{
  assert.match(src,/const testPaymentLabel=!invoice\?"Aucune facture émise"/);
+ assert.match(src,/invoice\?\.payment_status==="paid"/);
+ assert.match(src,/p\.paid_at!==null&&p\.amount_cents===q\.gross_cents/);
  assert.match(src,/paidAttempt\?"Paiement Stripe confirmé \(TEST uniquement\)":"Paiement non confirmé"/);
  assert.match(src,/Mission \{completed\?"terminée":"non terminée"\} · \{testPaymentLabel\}/);
  assert.match(src,/Facture \{invoice\.invoice_number\}[\s\S]*?<strong>\{testPaymentLabel\}<\/strong>/);
