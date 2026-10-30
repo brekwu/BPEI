@@ -260,7 +260,7 @@ function IndependentSpace() {
     setLoading(true);
     setNotice("");
     try {
-      const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant"), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
+      const result = registration ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant", import.meta.env.VITE_BPEI_AUTH_ORIGIN), data: { bpei_legal_version_acknowledged: launch?.legal_version ?? null } } }) : await supabase.auth.signInWithPassword({ email, password });
       if (result.error || !result.data.user) {
         if (!registration && result.error?.code === "email_not_confirmed") {
           setPendingConfirmationEmail(email.trim().toLowerCase());
@@ -297,7 +297,7 @@ function IndependentSpace() {
       const {error: resendError} = await supabase.auth.resend({
         type: "signup",
         email: pendingConfirmationEmail,
-        options: {emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant")}
+        options: {emailRedirectTo: bpeiAuthRedirect(window.location.origin, "/espace-independant", import.meta.env.VITE_BPEI_AUTH_ORIGIN)}
       });
       if (resendError) {
         setError("Renvoi impossible pour le moment. Vérifiez votre boîte e-mail ou réessayez plus tard.");
@@ -323,7 +323,7 @@ function IndependentSpace() {
         email:pendingConfirmationEmail,
         options:{
           shouldCreateUser:false,
-          emailRedirectTo:bpeiAuthRedirect(window.location.origin,"/espace-independant")
+          emailRedirectTo:bpeiAuthRedirect(window.location.origin,"/espace-independant", import.meta.env.VITE_BPEI_AUTH_ORIGIN)
         }
       });
       if(linkError) {
