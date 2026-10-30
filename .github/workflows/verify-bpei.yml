@@ -9,6 +9,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/mvp-commercial-foundation
 # Keep the latest run for each workflow/branch; previous commits are superseded.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
