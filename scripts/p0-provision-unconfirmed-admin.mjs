@@ -51,7 +51,10 @@ if(!execute){
   if(roleError||role)throw Error("SECURITY ERROR: unverified account received an admin role.");
   console.log("Created one UNCONFIRMED Auth identity; no administrator privilege granted.");
   console.log("Auth user ID (not a secret):",data.user.id);
-  console.log("Operator must confirm actual email via configured Auth provider BEFORE promotion.");
+  console.log("Supabase Auth admin.createUser does NOT send a confirmation email.");
+  console.log("After configuring real SMTP, the operator must sign in with their password");
+  console.log("at /espace-independant and select the existing-account verification link.");
+  console.log("The real received link must be opened BEFORE administrator promotion.");
   console.log("Do not set email_confirm=true or edit email_confirmed_at manually.");
  }catch(e){fail(e instanceof Error?e.message:"Unspecified account provisioning failure");}
 }
