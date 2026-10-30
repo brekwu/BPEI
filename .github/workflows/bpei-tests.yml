@@ -5,7 +5,6 @@ on:
       - feat/bpei-independent-release-clean
       - feat/p1-mission-operations
       - feat/mvp-commercial-foundation
-      - 'fix/**'
   pull_request:
     branches:
       - main
