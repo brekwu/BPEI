@@ -26,3 +26,11 @@ test("Immutable invoice tax data and conditions are scoped per quote",()=>{
  assert.doesNotMatch(src,/setPaymentTerms\(e\.target\.value\)/);
  assert.doesNotMatch(src,/setIssuerVatNumber\(e\.target\.value/);
 });
+
+test("The admin must not see a confirmed invoice/quote when post-write readback fails",()=>{
+ assert.match(src,/const refresh=useCallback\(async\(\):Promise<boolean>=>\{/);
+ assert.match(src,/const refreshed=await refresh\(\)/);
+ assert.match(src,/if\(refreshed\)setMessage\(successMessage\)/);
+ assert.match(src,/Action potentiellement enregistrée, mais lecture de confirmation indisponible/);
+ assert.match(src,/Actualisez le dossier avant toute nouvelle tentative/);
+});
