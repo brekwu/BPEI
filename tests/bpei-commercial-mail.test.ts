@@ -6,7 +6,8 @@ const pdf=readFileSync(new URL("../supabase/functions/bpei-commercial-mail/pdf.t
 test("Commercial mail is explicitly disabled without legal publication, verified sender and operator authorization",()=>{
  for(const term of ["BPEI_COMMERCIAL_MAIL_ENABLED","BPEI_COMMERCIAL_MAIL_ORIGIN","RESEND_API_KEY",
   "BPEI_COMMERCIAL_MAIL_FROM","BPEI_COMMERCIAL_MAIL_LEGAL_FOOTER","legal_documents_published",
-  "validated_legal_sender","independent_admins","auth.getUser","bpei_commercial_mail_outbox"])
+  "validated_legal_sender","independent_admins","auth.getUser","bpei_commercial_mail_outbox",
+  "auth.user.is_anonymous","!auth.user.email_confirmed_at","confirmed_identity_required"])
   assert.ok(edge.includes(term),term);
  assert.doesNotMatch(edge,/VITE_RESEND|sk_live_/);
 });
