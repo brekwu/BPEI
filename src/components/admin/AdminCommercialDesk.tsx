@@ -244,7 +244,10 @@ export function AdminCommercialDesk(){
     {!quotes.length&&<p className="text-sm text-muted-foreground">Aucun devis pour le moment.</p>}
     {quotes.map(q=>{
      const invoice=invoices.find(i=>i.quote_id===q.id);
-     const paidAttempt=invoice?payments.find(p=>p.invoice_id===invoice.id&&p.state==="paid"):undefined;
+     const paidAttempt=invoice?.payment_status==="paid"
+      ?payments.find(p=>p.invoice_id===invoice.id&&p.state==="paid"
+        &&p.paid_at!==null&&p.amount_cents===q.gross_cents)
+      :undefined;
      const successfulRefunds=paidAttempt?refunds.filter(r=>r.attempt_id===paidAttempt.id&&r.status==="succeeded"):[];
      const refundedCents=successfulRefunds.reduce((total,r)=>total+r.amount_cents,0);
      const disputesForPayment=paidAttempt?disputes.filter(d=>d.attempt_id===paidAttempt.id):[];
