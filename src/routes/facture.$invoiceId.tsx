@@ -4,6 +4,7 @@ import {supabase} from "@/integrations/supabase/client";
 import {PublicShell} from "@/components/public/PublicShell";
 import {Button} from "@/components/ui/button";
 import {formatCents} from "@/lib/bpei-commercial";
+import {findConfirmedTestPayment} from "@/lib/bpei-test-payment-evidence";
 
 type Invoice={id:string;invoice_number:string;quote_id:string;issued_at:string;service_date:string;due_date:string;payment_status:string;
  issuer_vat_number:string|null;payment_terms:string|null;early_payment_discount:string|null;late_payment_penalties:string|null;
@@ -52,15 +53,20 @@ function InvoiceView(){
      .eq("id",i.quote_id).maybeSingle();
     if(!current())return;
     if(quoteError||!q)throw new Error("Quote not available");
-    const {data:verified,error:paymentError}=await db.from("bpei_payment_attempts")
-     .select("id,state,amount_cents").eq("invoice_id",i.id).eq("state","paid").limit(1);
+    // The invoice is immutable. TEST payment confirmation lives in the
+    // server-verified Stripe ledger, never in the invoice's initial status.
+    const {data:paymentRows,error:paymentError}=await db.from("bpei_payment_attempts")
+     .select("id,invoice_id,state,paid_at,amount_cents,created_at")
+     .eq("invoice_id",i.id).eq("state","paid")
+     .order("created_at",{ascending:false}).limit(50);
     if(!current())return;
     if(paymentError)throw new Error("Payment status unavailable");
+    const confirmed=findConfirmedTestPayment(i.id,q.gross_cents,paymentRows??[]);
     let refunded=0;let dispute:"open"|"won"|"lost"|null=null;
-    if(verified?.[0]){
+    if(confirmed){
      const [refundResponse,disputeResponse]=await Promise.all([
-      db.from("bpei_payment_refunds").select("amount_cents,status").eq("attempt_id",verified[0].id),
-      db.from("bpei_payment_disputes").select("status").eq("attempt_id",verified[0].id)
+      db.from("bpei_payment_refunds").select("amount_cents,status").eq("attempt_id",confirmed.id),
+      db.from("bpei_payment_disputes").select("status").eq("attempt_id",confirmed.id)
      ]);
      if(!current())return;
      if(refundResponse.error||disputeResponse.error)throw new Error("Payment adjustments unavailable");
@@ -72,7 +78,7 @@ function InvoiceView(){
        statuses.some(d=>d.status==="won")?"won":null;
     }
     if(current()){
-     setInvoice(i);setQuote(q);setTestPaymentConfirmed((verified??[]).length>0);
+     setInvoice(i);setQuote(q);setTestPaymentConfirmed(!!confirmed);
      setTestRefundedCents(refunded);setTestDisputeStatus(dispute);
     }
    }catch{
