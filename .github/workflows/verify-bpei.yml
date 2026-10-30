@@ -62,3 +62,4 @@ jobs:
           node scripts/browser-mvp-manual-intake-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p0-readiness-recheck-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
           node scripts/browser-p1-auth-prelaunch-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-existing-account-verification-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
