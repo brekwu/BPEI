@@ -13,6 +13,8 @@ test("Test-only Stripe integration cannot accidentally accept live keys or publi
  for(const flag of ["BPEI_TEST_CHECKOUT_ENABLED","sk_test_","mvp_test_checkout_prepare","mvp_test_checkout_attach","mvp_test_checkout_abort","Stripe-Account"])assert.ok(checkout.includes(flag),flag);
  assert.equal(checkout.includes("sk_live_"),false);
  assert.ok(checkout.includes("invoice_id"));
+ assert.match(checkout,/auth\.user\.is_anonymous\|\|!auth\.user\.email_confirmed_at/);
+ assert.ok(checkout.indexOf("!auth.user.email_confirmed_at")<checkout.indexOf('mvp_test_checkout_prepare'));
  assert.equal(checkout.includes("payload.amount"),false);
  for(const flag of ["BPEI_STRIPE_CONNECT_WEBHOOK_SECRET","verifyStripeSignature","parseStripeCheckoutSignal","mvp_test_checkout_webhook"])assert.ok(webhook.includes(flag),flag);
 });
