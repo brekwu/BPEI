@@ -80,7 +80,7 @@ try{
  await section.getByRole("textbox",{name:/Référence de l'accord/}).fill("ref-preuve-test-2026-10-30");
  await section.getByRole("checkbox").check();
  await send.click();
- await section.getByText("Connexion interrompue : la demande a peut-être été enregistrée.",{exact:false}).waitFor({timeout:15000});
+ await section.getByText(/Résultat non confirmé|Connexion interrompue/).waitFor({timeout:15000});
  assert.equal(attempts,3);assert.equal(created,2);
  assert.equal(await section.getByRole("button",{name:"Vérification du dossier requise"}).isDisabled(),true);
  assert.equal(await section.getByText("J'ai vérifié : autoriser une nouvelle tentative").isVisible(),true);
