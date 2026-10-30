@@ -75,6 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      VITE_BPEI_AUTH_ORIGIN: https://bpei-preview.vercel.app
       VITE_SUPABASE_URL: https://placeholder.supabase.co
       VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
       SUPABASE_URL: https://placeholder.supabase.co
