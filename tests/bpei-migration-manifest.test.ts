@@ -7,7 +7,7 @@ const migrations=readdirSync(new URL("../supabase/migrations/",import.meta.url))
 const readme=readFileSync(new URL("../supabase/README.md",import.meta.url),"utf8");
 
 test("Every applied Supabase migration is present exactly once in the repository",()=>{
- const declared=readme.match(/\\*\\*(\\d+) migrations appliquées\\*\\*/);
+ const declared=readme.match(/\*\*(\d+) migrations appliquées\*\*/);
  assert.ok(declared,"README must declare the exact number of applied migrations");
  const expected=Number(declared[1]);
  assert.ok(expected>0,"Declared migration count must be positive");
