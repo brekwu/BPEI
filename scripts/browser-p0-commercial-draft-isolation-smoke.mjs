@@ -11,6 +11,7 @@ const user={id,email:"commercial-isolation@example.invalid",role:"authenticated"
  email_confirmed_at:"2026-10-28T10:00:00Z",user_metadata:{},app_metadata:{provider:"email",providers:["email"]}};
 const inquiryIds=["eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee","ffffffff-ffff-4fff-8fff-ffffffffffff"];
 const quoteIds=["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"];
+const anotherIssuer="99999999-9999-4999-8999-999999999999";
 const inquiries=inquiryIds.map((inquiryId,i)=>({
  id:inquiryId,client_name:i===0?"Client Alpha Privé":"Client Beta Privé",
  email:i===0?"alpha@example.invalid":"beta@example.invalid",
@@ -18,7 +19,7 @@ const inquiries=inquiryIds.map((inquiryId,i)=>({
  subject:"Dépannage informatique",status:"assigned",assigned_to:id,customer_kind:"individual"
 }));
 const quotes=quoteIds.map((quoteId,i)=>({
- id:quoteId,inquiry_id:inquiryIds[i],issuer_id:id,status:"proposed",
+ id:quoteId,inquiry_id:inquiryIds[i],issuer_id:i===0?id:anotherIssuer,status:"proposed",
  issuer_legal_name:"Professionnel fictif EI",issuer_siret:"12345678901234",
  customer_kind:"individual",customer_name:inquiries[i].client_name,
  service_description:"Intervention informatique domicile",quantity:1,unit_price_cents:9000,
@@ -56,7 +57,7 @@ await ctx.route("https://placeholder.supabase.co/**",async route=>{
  if(p==="/rest/v1/independent_admins")return route.fulfill(json(single?{user_id:id}:[{user_id:id}]));
  if(p==="/rest/v1/bpei_inquiries")return route.fulfill(json(inquiries));
  if(p==="/rest/v1/independent_requests")return route.fulfill(json(
-  inquiryIds.map(x=>({inquiry_id:x,status:"completed"}))
+  inquiryIds.map(x=>({inquiry_id:x,independent_id:id,status:"completed"}))
  ));
  if(p==="/rest/v1/bpei_service_quotes")return route.fulfill(json(quotes));
  if(p.startsWith("/rest/v1/rpc/"))return route.fulfill(json({message:"Not permitted in mock"},403));
@@ -103,6 +104,18 @@ try{
  assert.equal(await beta.getByRole("button",{name:"Émettre la facture définitive"}).isDisabled(),true);
  assert.equal(await alpha.getByRole("textbox",{name:/Conditions de règlement exactes/}).inputValue(),
   "Paiement par carte sous sept jours pour Alpha");
+ assert.equal(await alpha.getByRole("button",{name:"Émettre la facture définitive"}).isEnabled(),true,
+  "A's quote belongs to the technician who completed A's intervention");
+
+ // Fully specified B terms still cannot invoice work performed by A's technician.
+ await beta.getByLabel("Date réelle de prestation").fill("2026-10-29");
+ await beta.getByLabel("Date limite de paiement").fill("2026-11-05");
+ await beta.getByRole("textbox",{name:/Conditions de règlement exactes/}).fill("Paiement par carte sous sept jours pour Beta");
+ await beta.getByRole("textbox",{name:/Conditions d'escompte/}).fill("Aucun escompte accordé à Beta");
+ assert.equal(await beta.getByRole("button",{name:"Émettre la facture définitive"}).isDisabled(),true,
+  "B's quote must not invoice a mission completed by another issuer");
+ await beta.getByText("Mission non terminée",{exact:false}).waitFor();
+ await alpha.getByText("Mission terminée",{exact:false}).waitFor();
  assert.deepEqual(errors,[]);
  console.log(JSON.stringify({ok:true,mode:"mocked-two-customer-commercial-drafts",
   clients:2,crossCustomerEvidence:0,crossCustomerInvoiceTerms:0,realWrites:0}));
