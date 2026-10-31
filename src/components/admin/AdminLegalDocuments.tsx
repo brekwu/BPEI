@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
+import {hasUnresolvedLegalMarkers} from "@/lib/bpei-legal-document-guards";
 
 type Kind="mentions-legales"|"confidentialite"|"cgu";
 type Doc={kind:Kind;version:string;content:string;approved_at:string};
@@ -68,7 +69,7 @@ export function AdminLegalDocuments(){
  },[version]);
  async function approve(kind:Kind){
    const content=drafts[kind]?.trim();
-   if(busy||loadedVersion!==version||lockedVersions.includes(version)||!content||content.length<300||content.length>50000)return;
+   if(busy||loadedVersion!==version||lockedVersions.includes(version)||!content||content.length<300||content.length>50000||hasUnresolvedLegalMarkers(content))return;
    if(!window.confirm("Confirmez-vous avoir vérifié les informations juridiques et validé personnellement ce document ?"))return;
    setBusy(true);setNotice("");
    try{
@@ -80,7 +81,7 @@ export function AdminLegalDocuments(){
    finally{setBusy(false);}
  }
  async function publish(){
-   if(busy||loadedVersion!==version||docs.length!==3||lockedVersions.includes(version)||DOCS.some(({kind})=>docs.find(d=>d.kind===kind)?.content!==drafts[kind].trim()))return;
+   if(busy||loadedVersion!==version||docs.length!==3||lockedVersions.includes(version)||DOCS.some(({kind})=>docs.find(d=>d.kind===kind)?.content!==drafts[kind].trim())||docs.some(d=>hasUnresolvedLegalMarkers(d.content)))return;
    if(!window.confirm("CONFIRMATION : publier les trois documents juridiques de cette version ? Les inscriptions resteront fermées. Les documents publiés deviendront non modifiables."))return;
    setBusy(true);setNotice("");
    try{
@@ -114,12 +115,13 @@ export function AdminLegalDocuments(){
     <div key={kind} className="rounded-lg border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{label}</h3><span className="text-sm text-muted-foreground">{docs.some(d=>d.kind===kind)?"Validé pour cette version":"Non validé"}</span></div>
       <textarea className="mt-3 block w-full rounded-md border bg-background p-3 text-sm" rows={10} maxLength={50000} disabled={busy||loadedVersion!==version||lockedVersions.includes(version)} value={drafts[kind]} onChange={e=>setDrafts(old=>({...old,[kind]:e.target.value}))} placeholder="Insérez le document complet et juridiquement vérifié. Aucun texte provisoire ne doit être publié." />
+      {hasUnresolvedLegalMarkers(drafts[kind])&&<p className="mt-2 text-sm text-destructive" role="alert">Brouillon incomplet : remplacez toutes les mentions provisoires avant de demander une validation juridique.</p>}
       <div className="mt-3 flex justify-between gap-3 text-xs text-muted-foreground"><span>{drafts[kind].trim().length} caractères (minimum 300)</span>
-        <Button size="sm" variant="outline" disabled={busy||loadedVersion!==version||lockedVersions.includes(version)||drafts[kind].trim().length<300||drafts[kind].trim().length>50000||version.length<3} onClick={()=>void approve(kind)}>Valider ce document</Button>
+        <Button size="sm" variant="outline" disabled={busy||loadedVersion!==version||lockedVersions.includes(version)||drafts[kind].trim().length<300||drafts[kind].trim().length>50000||version.length<3||hasUnresolvedLegalMarkers(drafts[kind])} onClick={()=>void approve(kind)}>Valider ce document</Button>
       </div>
     </div>
    ))}
-   <Button disabled={busy||loadedVersion!==version||docs.length!==3||lockedVersions.includes(version)||DOCS.some(({kind})=>docs.find(d=>d.kind===kind)?.content!==drafts[kind].trim())} onClick={()=>void publish()}>Publier les 3 documents validés</Button>
+   <Button disabled={busy||loadedVersion!==version||docs.length!==3||lockedVersions.includes(version)||DOCS.some(({kind})=>docs.find(d=>d.kind===kind)?.content!==drafts[kind].trim())||docs.some(d=>hasUnresolvedLegalMarkers(d.content))} onClick={()=>void publish()}>Publier les 3 documents validés</Button>
    <p className="text-xs text-muted-foreground">Publication juridique ≠ ouverture du recrutement. Les inscriptions et demandes clients resteront fermées jusqu'au contrôle SMTP et à la recette utilisateur.</p>
    {notice&&<p className="text-sm" role="status">{notice}</p>}
  </section>;
