@@ -136,6 +136,12 @@ try{
   {prefix:"Nouveau document de test."},{timeout:12000}
  );
  assert.ok((await firstText.inputValue()).startsWith("Nouveau document de test."));
+ // 350+ characters with an unresolved legal placeholder must NEVER be approved.
+ await firstText.fill("[À COMPLÉTER : exploitant juridique] "+"X".repeat(350));
+ await section.getByText("Brouillon incomplet : remplacez toutes les mentions provisoires",{exact:false}).waitFor({timeout:15000});
+ assert.equal(await approve.isDisabled(),true,"Unfinished legal draft was offered for approval");
+ await firstText.fill(secondDoc);
+ assert.equal(await approve.isEnabled(),true,"Completed-length document should remain editable");
  releaseFirst();
  await page.waitForTimeout(250);
  assert.ok((await firstText.inputValue()).startsWith("Nouveau document de test."),
