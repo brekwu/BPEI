@@ -1,0 +1,39 @@
+BPEI — MENTIONS LÉGALES — BROUILLON NON PUBLIABLE
+Version de travail : 2026-11-01
+ATTENTION : NE PAS VALIDER NI PUBLIER CE TEXTE AVEC DES CHAMPS [À COMPLÉTER].
+
+Éditeur du site
+Nom commercial : BPEI — Bureau des Partenaires et Entrepreneurs de l'Informatique.
+Exploitant juridique : [À COMPLÉTER : nom et prénom exacts ou dénomination de société].
+Forme juridique : [À COMPLÉTER : entreprise individuelle/micro-entreprise/société].
+Adresse professionnelle de l'éditeur : [À COMPLÉTER : adresse conforme aux obligations d'identification et de publicité].
+SIREN/SIRET : [À COMPLÉTER ET VÉRIFIER].
+RNE/RCS et greffe, le cas échéant : [À COMPLÉTER OU PRÉCISER NON APPLICABLE].
+Numéro de TVA intracommunautaire, le cas échéant : [À COMPLÉTER OU PRÉCISER LE RÉGIME].
+Adresse électronique de contact et de réclamation : [À COMPLÉTER : boîte opérationnelle sur le domaine].
+Téléphone de contact : [À COMPLÉTER : numéro professionnel].
+Directeur de publication : [À COMPLÉTER].
+
+Hébergement technique
+Service de déploiement : Vercel. Entité juridique, adresse de l'hébergeur et coordonnées exigées par la réglementation : [À CONFIRMER SUR LE CONTRAT VERCEL ET À COMPLÉTER].
+Base de données et authentification : Supabase ; projet de préproduction situé en région Paris. Les caractéristiques contractuelles et lieux effectifs de traitement doivent être vérifiés avant publication.
+Nom de domaine : bpei.fr (acheminement vers le service en production à confirmer).
+
+Activité et responsabilités
+BPEI présente un réseau de techniciens informatiques indépendants. Le rôle contractuel exact de l'exploitant de la plateforme, les règles de mise en relation, les responsabilités envers le client, les interventions au domicile et les modalités d'encaissement doivent correspondre aux contrats réels et aux CGU/CGV validées. Les prestataires ne doivent pas être annoncés comme des salariés si ce n'est pas le cas.
+Les services et les zones d'intervention sont soumis à disponibilité réelle, validation des professionnels et accord contractuel. Aucun partenaire ni délai d'intervention ne doit être présenté comme garanti sans preuve.
+
+Propriété intellectuelle
+Sauf indications contraires, les contenus originaux, la structure et les éléments visuels du site sont protégés par les droits applicables. Toute réutilisation non autorisée peut faire l'objet d'une demande de retrait ou de mesures légalement prévues. Les signes et contenus appartenant à des tiers restent leur propriété.
+
+Réclamations et médiation des consommateurs
+Adresse de réclamation préalable : [À COMPLÉTER].
+Médiateur de la consommation compétent, conventionné et référencé : [À DÉSIGNER, PUIS INSCRIRE SON NOM, SON ADRESSE ET L'URL DE SON SITE].
+Ce champ ne peut pas être remplacé par un médiateur inventé ou choisi sans convention applicable. Confirmer également quel professionnel est responsable de la médiation pour chaque contrat conclu avec un client consommateur.
+
+Données personnelles
+Les informations sur les traitements, leurs fondements et les droits des personnes figurent dans la politique de confidentialité publiée. En phase de préparation, les formulaires de collecte restent fermés.
+
+Dernière révision : [À COMPLÉTER après validation].
+
+VÉRIFICATIONS AVANT PUBLICATION : statut de l'exploitant ; immatriculation ; TVA ; adresse ; contact ; hébergement ; médiation de consommation ; contrats prestataires ; validation expresse du représentant habilité.
