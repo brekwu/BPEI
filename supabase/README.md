@@ -1,6 +1,6 @@
 # BPEI — Schéma Supabase versionné
 
-Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **75 migrations appliquées** au 30 octobre 2026, et la branche contient **75 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
+Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **76 migrations appliquées** au 30 octobre 2026, et la branche contient **76 fichiers SQL versionnés**. Les migrations `20261028175736_p1_admin_roster_secure_cross_admin_visibility` et `20261028233020_p1_cover_mission_foreign_keys` sont synchronisées. L'égalité des décomptes ne remplace pas un essai de restauration sur une base vierge.
 
 - Ne pas réappliquer sans préparation ces migrations à la base existante : elles y sont déjà enregistrées.
 - Sur une nouvelle base, suivre l'ordre numérique avec les outils officiels de migration Supabase après sauvegarde et contrôle de l'environnement.
@@ -16,7 +16,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **75
 
 ## MVP commercial (29 octobre 2026)
 
-75 migrations versionnées et appliquées. Le socle commercial comprend les coordonnées client, des devis privés avec acceptation documentée, la vérification professionnelle actualisée et des factures numérotées atomiquement par indépendant. Les migrations P0 du 30 octobre renforcent le diagnostic d'ouverture, exigent une vérification SIRET, identité, entreprise et RC Pro récente avant tout nouveau devis, et rejettent les coordonnées client invalides lors de la saisie administrative. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
+76 migrations versionnées et appliquées. Le socle commercial comprend les coordonnées client, des devis privés avec acceptation documentée, la vérification professionnelle actualisée et des factures numérotées atomiquement par indépendant. Les migrations P0 du 30 octobre renforcent le diagnostic d'ouverture, exigent une vérification SIRET, identité, entreprise et RC Pro récente avant tout nouveau devis, et rejettent les coordonnées client invalides lors de la saisie administrative. Les accès sont contrôlés par RLS et des RPC administratifs. L'encaissement Stripe, les factures électroniques structurées et la recette réelle restent à faire ; aucune ouverture publique.
 
 ## Stripe Connect — pré-intégration contrôlée
 
@@ -96,3 +96,7 @@ Le code prend en charge `VITE_BPEI_AUTH_ORIGIN` pour un domaine HTTPS fixe de re
 3. configuré le SMTP réel et vérifié réception, clic, retour, session et `email_confirmed_at` pour un titulaire consentant.
 
 L'URL de préproduction Vercel marquée `READY` ne prouve ni l'accessibilité publique, ni l'envoi d'e-mails, ni la confirmation d'une adresse.
+
+## P0 — Refus des marqueurs juridiques non résolus (1er novembre 2026)
+
+Migration 76 : `20261101003701_p0_reject_unresolved_legal_document_markers.sql`. Une contrainte validée sur `bpei_legal_documents` empêche le stockage d'un document contenant des marqueurs explicites de brouillon (par exemple `[À COMPLÉTER]`, `[À VALIDER]`, `BROUILLON NON PUBLIABLE`). Le formulaire d'administration refuse lui aussi l'approbation ou la publication de ces textes. Cette protection technique **ne remplace pas** la vérification humaine de l'identité de l'exploitant, des coordonnées de médiation ni des obligations contractuelles. Aucun document juridique n'a été publié par cette migration.
