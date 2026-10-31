@@ -35,7 +35,7 @@ test("database independently prevents storage of placeholder documents",()=>{
 test("admin UI refuses approval and publication of known unfinished drafts",()=>{
  assert.match(admin,/hasUnresolvedLegalMarkers\(content\)\)return/);
  assert.match(admin,/docs\.some\(d=>hasUnresolvedLegalMarkers\(d\.content\)\)\)return/);
- assert.ok((admin.match(/\|\|hasUnresolvedLegalMarkers\(/g)||[]).length>=3);
+ assert.ok((admin.match(/hasUnresolvedLegalMarkers\(/g)||[]).length>=5);
  assert.match(admin,/Brouillon incomplet : remplacez toutes les mentions provisoires/);
 });
 
