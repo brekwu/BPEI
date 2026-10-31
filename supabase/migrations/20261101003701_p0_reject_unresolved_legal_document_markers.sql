@@ -7,8 +7,8 @@ LANGUAGE sql IMMUTABLE STRICT
 SET search_path TO ''
 AS $function$
  SELECT
-  p_content ~* '\\[[^]]{0,200}(à|a)[[:space:]]+(compléter|completer|valider|désigner|designer|confirmer|vérifier|verifier)[^]]{0,200}\\]'
-  OR p_content ~* '\\[[^]]{0,200}(TODO|TBD|placeholder|to[[:space:]]+complete|to[[:space:]]+verify)[^]]{0,200}\\]'
+  p_content ~* '\[[^]]{0,200}(à|a)[[:space:]]+(compléter|completer|valider|désigner|designer|confirmer|vérifier|verifier)[^]]{0,200}\]'
+  OR p_content ~* '\[[^]]{0,200}(TODO|TBD|placeholder|to[[:space:]]+complete|to[[:space:]]+verify)[^]]{0,200}\]'
   OR p_content ~* '(brouillon[[:space:]]+non[[:space:]]+publiable|ne[[:space:]]+pas[[:space:]]+publier|texte[[:space:]]+provisoire)';
 $function$;
 
