@@ -1,0 +1,41 @@
+BPEI — POLITIQUE DE CONFIDENTIALITÉ — BROUILLON NON PUBLIABLE
+Version de travail : 2026-11-01
+ATTENTION : LES CHAMPS [À COMPLÉTER] ET LES DURÉES DE CONSERVATION DOIVENT ÊTRE VÉRIFIÉS AVANT TOUTE COLLECTE.
+
+1. Responsable de traitement
+Le responsable des traitements opérés pour la plateforme BPEI est [À COMPLÉTER : exploitant juridique, adresse professionnelle, e-mail dédié à la protection des données]. Délégué à la protection des données, si désigné : [À COMPLÉTER OU NON DÉSIGNÉ].
+
+2. Personnes concernées et données
+BPEI peut traiter, uniquement lorsque le service correspondant est ouvert, les coordonnées des particuliers et entreprises demandeurs d'interventions : nom, e-mail, téléphone, adresse et ville d'intervention, description de la demande et échanges de suivi. Ne jamais transmettre de mot de passe, de donnée de santé ou de moyen de paiement complet dans un texte libre.
+Pour les indépendants candidats et partenaires : données de compte (identifiant et e-mail), profil professionnel, statut, SIRET, compétences, attestations d'activité, références de vérification et justificatifs strictement nécessaires, candidature, progression, disponibilité, demandes de mission et rémunération contractuelle. Les mots de passe sont gérés par le fournisseur d'authentification et ne doivent jamais être enregistrés en clair par BPEI.
+Pour les devis et factures : identité du client et du prestataire, mentions contractuelles, montant, TVA, échéances et références de paiement. Les informations bancaires de carte sont prises en charge par le prestataire de paiement habilité, et non saisies directement dans les formulaires BPEI.
+Pour les avis éventuels : référence de mission, note, commentaire et preuves de rattachement à une prestation réellement réalisée.
+
+3. Finalités et fondements juridiques à valider
+— Répondre à une demande client ou préparer une intervention : mesures précontractuelles et, selon le cas, exécution du contrat.
+— Ouvrir et sécuriser un compte indépendant, gérer sa candidature, ses missions et ses documents contractuels : mesures précontractuelles ou exécution du contrat.
+— Vérifier le statut professionnel, la prévention des fraudes et la sécurité du réseau : obligation légale lorsqu'elle existe et/ou intérêt légitime à documenter, sous réserve des garanties appropriées.
+— Émettre, conserver et rapprocher les documents commerciaux et comptables : exécution du contrat et obligations légales applicables.
+— Envoyer des messages nécessaires à la prestation ou à la sécurité du compte : exécution du contrat ou intérêt légitime selon la nature du message.
+— Publier le profil professionnel dans un annuaire ou diffuser un avis : uniquement selon les paramètres, informations, bases légales et choix effectivement prévus par la plateforme.
+— Mesure d'audience et cookies non essentiels, le cas échéant : [À DÉCRIRE avec les consentements requis ; ne pas affirmer qu'un outil est installé sans preuve].
+
+4. Destinataires
+Accès limité aux personnes habilitées au sein de BPEI et aux prestataires indépendants concernés, uniquement lorsque la mission ou le contrat l'autorise. Sous-traitants techniques possibles : Supabase (authentification et base de données), Vercel (hébergement applicatif), Stripe (paiement en cas d'activation), fournisseur d'e-mails [À COMPLÉTER]. Vérifier les contrats, lieux de traitement, sous-traitants ultérieurs et garanties de transferts internationaux avant publication. Aucune vente des données à des annonceurs n'est prévue dans le modèle fonctionnel décrit.
+
+5. Durées de conservation et suppression
+[À COMPLÉTER PAR CATÉGORIE ET FAIRE CORRESPONDRE AUX RÈGLES TECHNIQUES EFFECTIVES] : demandes sans prestation ; comptes non retenus ; comptes actifs ; missions ; pièces contractuelles et factures ; vérifications d'identité et assurances ; journaux de sécurité ; messages ; avis. Les obligations légales de conservation et la nécessité de preuve peuvent justifier des durées distinctes. L'absence de durée réelle vérifiée interdit la publication définitive.
+
+6. Sécurité
+BPEI limite l'accès aux données métier selon les rôles et les missions. Les comptes sont protégés par une authentification gérée par Supabase. Les contrôles d'accès côté base sont distincts de ceux de l'interface. En cas d'incident de sécurité, l'exploitant applique les obligations légales de documentation et, le cas échéant, de notification.
+
+7. Droits des personnes
+Selon les conditions du RGPD, chacun peut demander l'accès, la rectification, l'effacement, la limitation, l'opposition et la portabilité lorsque le droit s'applique, ou retirer un consentement sans effet rétroactif. Les demandes sont adressées à [À COMPLÉTER : contact RGPD opérationnel] ; la procédure d'identification doit être proportionnée. Une réclamation peut être adressée à la CNIL (cnil.fr).
+
+8. Cookies et traceurs
+Les cookies strictement nécessaires à l'authentification ou au fonctionnement peuvent relever des règles correspondantes. Pour les éventuels traceurs non essentiels : préciser l'inventaire technique, l'information, le choix et les durées avant activation. Ne pas annoncer l'absence de traceurs sans vérification de l'application et de ses sous-traitants.
+
+9. Mise à jour
+Cette politique doit être publiée avec une version datée et refléter les flux réellement déployés. Toute modification substantielle doit être portée à la connaissance des personnes concernées selon le contexte.
+
+À VALIDER : identité responsable ; prestataires et transferts ; durées réelles ; cookies ; référent RGPD ; contrats avec techniciens ; exactitude des traitements ; versions des formulaires et historique des consentements.
