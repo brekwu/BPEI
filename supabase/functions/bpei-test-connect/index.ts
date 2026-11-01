@@ -38,14 +38,12 @@ async function stripe(
  return data;
 }
 async function providerReady(accountId:string,key:string):Promise<boolean>{
- // A v2 account may be inspected through v1's compatibility API, but never changed through v1.
- const response=await fetch("https://api.stripe.com/v1/accounts/"+accountId,
-  {headers:{Authorization:"Bearer "+key}});
- const account=await response.json().catch(()=>null);
- if(!response.ok||!account||account.id!==accountId||account.livemode!==false
-   ||account.country!=="FR")throw new Error("Unexpected Stripe merchant");
- return account.charges_enabled===true&&account.payouts_enabled===true
-   &&account.details_submitted===true;
+ // Accounts v2 must be evaluated using v2 merchant capability status.
+ // Legacy v1 booleans are not the authoritative readiness gate.
+ const account=await stripe("/v2/core/accounts/"+encodeURIComponent(accountId),key);
+ if(!account||account.id!==accountId||account.livemode!==false
+   ||account.identity?.country!=="FR")throw new Error("Unexpected Stripe merchant");
+ return account.configuration?.merchant?.capabilities?.card_payments?.status==="active";
 }
 Deno.serve(async req=>{
  const e=getEnv(),origin=trustedOrigin(e.origin);
