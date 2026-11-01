@@ -6,7 +6,7 @@ ATTENTION : NE PAS UTILISER COMME CONTRAT OPPOSABLE AVANT VALIDATION DE L'EXPLOI
 BPEI est une plateforme en préparation destinée à mettre en relation des demandeurs de dépannage informatique et des professionnels indépendants ayant accepté les règles du réseau. L'inscription ou la demande d'intervention ne garantit ni la disponibilité d'un prestataire dans une zone donnée, ni l'acceptation d'une mission, ni un résultat technique particulier.
 
 2. Exploitant
-L'exploitant légal de BPEI est [À COMPLÉTER : identité, forme, immatriculation, coordonnées]. Les coordonnées obligatoires figurent dans les mentions légales publiées. Si BPEI est exploité sous une autre entité que HP Informatique, la réalité juridique doit être distinguée expressément.
+Pour son lancement, BPEI est exploité par le titulaire de l'entreprise individuelle (EI) au régime micro-entrepreneur qui exerce déjà l'activité HP Informatique, sous un nom commercial BPEI à vérifier et déclarer si nécessaire. Il ne s'agit pas d'une seconde personne morale. Identité civile, SIREN, établissement, adresse et contact : [À COMPLÉTER ET VÉRIFIER]. Les coordonnées obligatoires figureront dans les mentions légales après validation. Tout transfert futur à une société ou un autre exploitant impose des formalités et un examen des contrats, responsabilités, données et paiements, non un simple changement de logo.
 
 3. Public et accès
 La consultation des pages d'information peut être ouverte sans compte. Les espaces candidats, partenaires et administrateurs nécessitent une authentification personnelle. Il est interdit de partager les accès, de présenter des informations volontairement trompeuses, d'usurper une identité ou d'utiliser les formulaires pour des sollicitations abusives.

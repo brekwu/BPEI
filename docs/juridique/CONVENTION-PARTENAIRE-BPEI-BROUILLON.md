@@ -2,7 +2,7 @@
 **PROJET CONTRACTUEL NON SIGNÉ, NE PAS PUBLIER NI FAIRE ACCEPTER AUTOMATIQUEMENT.** Version proposée pour relecture professionnelle.
 
 ## Parties
-**Enseigne / opérateur du réseau :** [IDENTITÉ, FORME, SIREN, SIÈGE, REPRÉSENTANT, TVA].
+**Enseigne / opérateur du réseau :** BPEI, nom commercial envisagé de l'entreprise individuelle existante exploitant également HP Informatique. **Titulaire légal :** [IDENTITÉ CIVILE EI, SIREN, SIRET DE L'ÉTABLISSEMENT, ADRESSE PUBLIQUE, SITUATION TVA À VÉRIFIER]. Vérifier la déclaration au RNE de l'activité BPEI et du nom commercial. Le titulaire EI est contractuellement l'opérateur, BPEI n'étant pas une société autonome.
 **Entrepreneur partenaire :** [IDENTITÉ, SIRET, ADRESSE PROFESSIONNELLE, STATUT TVA, RC PRO, DATE DE VALIDITÉ].
 
 ## Objet et autonomie
