@@ -68,6 +68,13 @@ async function testPage(path) {
 
 try {
   {
+    const {context,page}=await testPage("/devenir-partenaire");
+    await page.getByRole("link",{name:/Déposer ma candidature/}).first().waitFor({timeout:15000});
+    assert.equal(await page.getByRole("link",{name:/Accéder à l'espace indépendant/}).count(),0,
+      "Open registration must not show a closed-signup call to action");
+    await context.close();
+  }
+  {
     const { context, page } = await testPage("/espace-independant");
     await page.getByRole("heading", { name: "Espace technicien indépendant" }).waitFor();
     await page.getByRole("button", { name: "Créer un compte" }).click();
