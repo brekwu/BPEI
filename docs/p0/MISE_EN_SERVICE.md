@@ -2,8 +2,8 @@
 État contrôlé le 1er novembre 2026. **Ceci n'est pas une attestation de lancement.**
 
 ## Déjà réalisé
-- Code de l'application : branche `feat/mvp-commercial-foundation`, tests unitaires, build TypeScript, tests navigateur Chromium/WebKit GitHub réussis au commit `164d2f6988a7e8597ae1878dab7d81ac13197589` (avant le présent dossier).
-- Vercel : préversion du commit `164d2f6` READY, mais **protégée par Vercel Authentication pour toutes les cibles**. Un déploiement READY n'est pas un site public accessible.
+- Code de l'application : la branche principale est maintenant **`main`**. Les tests unitaires, TypeScript, Chromium et WebKit sont tous réussis au commit `acd22faf1e1054fe5addf8420404214b353224ef` ; les PR #16, #17 et #18 sont intégrées. Les changements de code ultérieurs doivent être revalidés avant mise en service.
+- Vercel : déploiement de production technique du commit `acd22faf1e1054fe5addf8420404214b353224ef` **READY**, mais protégé par Vercel Authentication pour toutes les cibles. La production technique n'est pas une ouverture publique commerciale.
 - Supabase : projet `qmbsfmcotnsxsvbigynz` sain, 5 Edge Functions actives ; aucune alerte de sécurité dans l'advisor consulté.
 - Base au contrôle : 0 utilisateur Auth, 0 admin, 0 document juridique, 0 version publiée, 0 marchand Stripe, 0 devis, 0 facture.
 - Indicateurs d'ouverture `independent_registration_enabled=false`, `legal_documents_published=false`, `test_checkout_enabled=false`.
@@ -28,9 +28,18 @@ Seulement ensuite, depuis un environnement privé : `node scripts/p0-bootstrap-a
 Ne jamais : mettre `email_confirm=true` artificiellement, modifier `email_confirmed_at` en SQL, créer une identité avec une adresse fictive, élever le premier inscrit automatiquement.
 
 ### 4. S'assurer que le domaine est réellement public et contrôlé
-Le dépôt GitHub `brekwu/BPEI` était **public** au contrôle, et `main` ne contient pas le site déployable. Confirmer la visibilité désirée dans GitHub → Settings → General → Danger Zone, puis la stratégie de branche et de déploiement. La branche déployable est `feat/mvp-commercial-foundation`.
-Le domaine `bpei.fr` est géré hors du projet Vercel actuel, auprès de l'hébergeur DNS du propriétaire. Ne pas rediriger DNS sans déploiement de production correct, certificat HTTPS, pages légales vérifiées et contrôle de l'hôte. La protection SSO de la préversion Vercel ne doit pas être désactivée simplement pour faire passer un test automatisé.
-Valider publiquement `/`, `/health`, `/mentions-legales`, `/confidentialite`, `/cgu`, `/espace-independant`, y compris sur un navigateur sans session Vercel. Vérifier que les formulaires ne collectent rien si les verrous restent fermés.
+Le dépôt GitHub `brekwu/BPEI` est encore **public** au contrôle. Le code déployable se trouve désormais sur `main` et les deux workflows GitHub Actions se déclenchent automatiquement à chaque push. Changer la visibilité GitHub → Settings → General → Danger Zone → Change visibility → Private avant d'y stocker du contenu non public. **Ne jamais mettre les clés Supabase service-role, SMTP ni Stripe dans le dépôt.**
+
+Le domaine `bpei.fr` est déjà **attaché** au projet Vercel ; `www.bpei.fr` l'est également, avec une redirection 308 vers `bpei.fr`. Les serveurs DNS restent ceux d'OVH : `dns106.ovh.net` et `ns106.ovh.net`. **État DNS constaté le 1er novembre 2026 : les deux hôtes renvoient `185.158.133.1`, la configuration Vercel est marquée incorrecte.**
+
+### Bascule DNS OVH — à préparer, mais NE PAS exécuter avant validation du lancement
+Après validation des informations légales, de la disponibilité réelle du service, du certificat HTTPS, de la formule Vercel adaptée à l'activité et de la stratégie d'accès public :
+1. Dans la zone DNS OVH de `bpei.fr`, identifier les enregistrements existants `A`, `AAAA` ou `CNAME` pour l'apex (`@`) et `www` ; sauvegarder l'état initial, vérifier l'absence de services annexes dépendant de ces entrées. **Ne pas modifier MX, SPF, DKIM, DMARC ou les autres enregistrements d'e-mail.**
+2. Pour l'apex `bpei.fr`, Vercel recommande actuellement deux enregistrements `A` vers **`216.198.79.1`** et **`64.29.17.1`** (priorité 1). L'ancienne valeur `185.158.133.1` devra être remplacée uniquement après contrôle de la configuration demandée dans le tableau Vercel.
+3. Pour `www.bpei.fr`, Vercel recommande actuellement un `CNAME` pointant vers **`8f417ad9fddb1a3a.vercel-dns-017.com.`** (priorité 1). Éviter qu'un `A` ou `AAAA` concurrent ne reste actif sur `www`. Les valeurs fournies par le tableau Vercel le jour de la modification prévalent si elles ont changé.
+4. Attendre la propagation réelle, refaire `Domains → Check DNS Configuration` chez Vercel et confirmer le certificat HTTPS sur les deux noms. Réaliser une visite sans connexion Vercel, vérifier `/`, `/health`, `/mentions-legales`, `/confidentialite`, `/cgu` et `/espace-independant`. **Ne pas désactiver Vercel Authentication pour contourner la recette ni ouvrir les formulaires sans les conditions juridiques.**
+
+Le réglage des DNS ne prouve pas la livraison SMTP, la validation du premier administrateur ou un paiement Stripe TEST. Les indicateurs d'ouverture dans Supabase restent indépendants et fermés jusqu'à preuve réelle.
 
 ### 5. Stripe TEST et parcours commercial authentique
 Configurer les secrets nécessaires directement dans Supabase Edge Functions, **jamais** avec une clé Stripe LIVE pendant la recette TEST. Les Edge Functions `bpei-test-connect`, `bpei-test-checkout`, `bpei-test-webhook`, `bpei-commercial-mail` et `bpei-customer-review` sont déjà déployées, mais le statut ACTIVE ne prouve pas leur configuration opérationnelle.
@@ -49,3 +58,7 @@ Conserver les inscriptions publiques, le formulaire client et le paiement TEST f
 
 ## Limites d'automatisation de cette conversation
 Les connecteurs autorisent le code GitHub, les déploiements Vercel et des opérations Supabase contrôlées. Ils ne donnent pas accès à la boîte de réception du futur opérateur via un prestataire SMTP configuré dans Supabase, aux informations juridiques manquantes, à un compte Stripe marchand réellement vérifié, à la zone DNS OVH, ni au changement de visibilité GitHub. Une personne habilitée doit satisfaire ces étapes : ne jamais enregistrer de fausses preuves pour forcer l'indicateur « tout vert ».
+
+## Contrôle de cohérence GitHub (1er novembre 2026)
+
+Les anciennes PR #3 et #4 ont été fermées comme intégralement reprises dans `main` (comparaison GitHub : aucun commit de leurs branches source en retard sur `main`). Les PR #1 et #2 restent ouvertes, car leurs historiques divergent de `main`. Elles ne doivent pas être fusionnées automatiquement sans analyse de leurs différences. Le chemin canonique de livraison est maintenant `main` → tests GitHub Actions → déploiement automatique Vercel protégé.
