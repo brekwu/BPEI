@@ -5,15 +5,15 @@ ATTENTION : NE PAS VALIDER NI PUBLIER CE TEXTE AVEC DES CHAMPS [À COMPLÉTER].
 Éditeur du site
 Nom commercial envisagé pour l'activité plateforme : BPEI — Bureau des Partenaires et Entrepreneurs de l'Informatique. Disponibilité et déclaration au RNE à vérifier : [À CONFIRMER].
 Activité existante de l'entrepreneur individuel : HP Informatique (utilisation du nom commercial et inscription au registre à vérifier). BPEI n'est pas une personne morale distincte de l'entreprise individuelle.
-Exploitant juridique : [À COMPLÉTER : nom et prénom exacts du titulaire de l'entreprise individuelle].
+Exploitant déclaré sur le site HP Informatique : Hugo Pavio. [À VÉRIFIER : identité civile telle qu'elle figure sur le justificatif RNE et qualité d'exploitant BPEI].
 Forme juridique retenue pour le lancement : entreprise individuelle (EI), régime micro-entrepreneur — [À VÉRIFIER : situation administrative actuelle et activité BPEI déclarée].
 Adresse professionnelle de l'éditeur : [À COMPLÉTER : adresse conforme aux obligations d'identification et de publicité].
-SIREN de l'entreprise individuelle : [À COMPLÉTER ET VÉRIFIER]. SIRET de l'établissement opérateur : [À COMPLÉTER ET VÉRIFIER]. L'ajout de l'activité n'implique pas la création d'une deuxième entreprise individuelle ; un nouvel établissement peut, selon le cas, disposer d'un SIRET différent.
+SIREN 105 370 001 et SIRET 105 370 001 00015 : numéros affichés sur le site HP Informatique, NON VÉRIFIÉS auprès de l'INSEE / du RNE et NON validés pour BPEI. [À VÉRIFIER : immatriculation officielle, activité déclarée et établissement opérateur]. L'ajout de l'activité n'implique pas la création d'une deuxième entreprise individuelle ; un nouvel établissement peut, selon le cas, disposer d'un SIRET différent.
 RNE/RCS et greffe, le cas échéant : [À COMPLÉTER OU PRÉCISER NON APPLICABLE].
 Situation TVA du titulaire EI et numéro de TVA intracommunautaire s'il est requis : [À VÉRIFIER ET COMPLÉTER]. Ne pas présumer de la franchise en base de TVA à partir du seul statut micro-entrepreneur.
-Adresse électronique de contact et de réclamation : [À COMPLÉTER : boîte opérationnelle sur le domaine].
-Téléphone de contact : [À COMPLÉTER : numéro professionnel].
-Directeur de publication : [À COMPLÉTER].
+Adresse actuellement affichée sur HP Informatique : hugopavio11@gmail.com. [À CONFIRMER : contact opérationnel BPEI et adresse de réclamation à publier].
+Téléphone actuellement affiché sur HP Informatique : 06 67 69 92 89. [À CONFIRMER : numéro réellement utilisé pour BPEI].
+Responsable de publication indiqué sur le site HP Informatique : Hugo Pavio. [À CONFIRMER : directeur de publication de BPEI].
 
 Hébergement technique
 Service de déploiement : Vercel. Entité juridique, adresse de l'hébergeur et coordonnées exigées par la réglementation : [À CONFIRMER SUR LE CONTRAT VERCEL ET À COMPLÉTER].
