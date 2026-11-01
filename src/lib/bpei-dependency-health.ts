@@ -21,7 +21,7 @@ export async function bpeiSupabaseDependencyAvailable(
   origin=u.origin;
  }catch{return false;}
  // Never use an admin/service key or an arbitrary header token here.
- if(!key.startsWith("sb_publishable_") && !/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(key))
+ if(!/^sb_publishable_[A-Za-z0-9_-]{10,}$/.test(key))
   return false;
  try{
   const response=await requester(
