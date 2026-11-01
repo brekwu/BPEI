@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {hasUnresolvedLegalMarkers} from "../src/lib/bpei-legal-document-guards.ts";
 
-const migration=readFileSync(new URL("../supabase/migrations/20261101003701_p0_reject_unresolved_legal_document_markers.sql",import.meta.url),"utf8");
+const migration=readFileSync(new URL("../supabase/migrations/20261031235123_p0_reject_unresolved_legal_document_markers.sql",import.meta.url),"utf8");
 const admin=readFileSync(new URL("../src/components/admin/AdminLegalDocuments.tsx",import.meta.url),"utf8");
 
 test("draft markers and legal placeholders are blocked locally",()=>{
