@@ -16,8 +16,8 @@ test("Netlify commercial hosting is configured for Nitro SSR and staging-only by
  assert.match(config,/VITE_BPEI_PUBLIC_FORMS_ENABLED = "false"/);
  assert.match(vite,/nitro\(\{ preset: process\.env\.NITRO_PRESET/);
  assert.match(workflow,/netlify-nitro-build:/);
- assert.match(workflow,/test -f \.netlify\/v1\/config\.json/);
- assert.match(workflow,/test -d \.netlify\/v1\/functions/);
+ assert.match(workflow,/test -f \.netlify\/functions-internal\/nitro\.json/);
+ assert.match(workflow,/test -f \.netlify\/functions-internal\/server\/main\.mjs/);
 });
 test("Netlify migration guard requires private repository and OVH DNS preservation",()=>{
  const readme=read("docs/p0/HEBERGEMENT-COMMERCIAL-NETLIFY.md");
