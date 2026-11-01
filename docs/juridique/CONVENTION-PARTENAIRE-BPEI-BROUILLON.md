@@ -2,7 +2,7 @@
 **PROJET CONTRACTUEL NON SIGNÉ, NE PAS PUBLIER NI FAIRE ACCEPTER AUTOMATIQUEMENT.** Version proposée pour relecture professionnelle.
 
 ## Parties
-**Enseigne / opérateur du réseau :** BPEI, nom commercial envisagé de l'entreprise individuelle existante exploitant également HP Informatique. **Titulaire légal :** [IDENTITÉ CIVILE EI, SIREN, SIRET DE L'ÉTABLISSEMENT, ADRESSE PUBLIQUE, SITUATION TVA À VÉRIFIER]. Vérifier la déclaration au RNE de l'activité BPEI et du nom commercial. Le titulaire EI est contractuellement l'opérateur, BPEI n'étant pas une société autonome.
+**Enseigne / opérateur du réseau :** BPEI, nom commercial envisagé de l'entreprise individuelle existante exploitant également HP Informatique. **Titulaire légal identifié dans les justificatifs datés :** Hugo PAVIO, entrepreneur individuel, SIREN 105370001 (synthèse INPI mai 2026), SIRET 10537000100015 (URSSAF août 2026), domiciliation professionnelle déclarée 142 rue de Rivoli, 75001 Paris. **[À VÉRIFIER : situation RNE et domiciliation actuelles, activité BPEI déclarée, TVA actuelle, contractant effectif et contact professionnel].** L'activité initiale de vente de matériel informatique ne prouve pas la déclaration du rôle d'intermédiaire BPEI. Le titulaire EI est contractuellement l'opérateur sous réserve de vérification, BPEI n'étant pas une société autonome.
 **Entrepreneur partenaire :** [IDENTITÉ, SIRET, ADRESSE PROFESSIONNELLE, STATUT TVA, RC PRO, DATE DE VALIDITÉ].
 
 ## Objet et autonomie

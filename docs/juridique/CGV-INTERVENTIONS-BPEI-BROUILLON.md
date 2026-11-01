@@ -2,7 +2,7 @@
 **TRAME NON PUBLIÉE :** ces conditions doivent être adaptées et validées par le **vendeur réel** de l'intervention et ne remplacent pas un contrat client signé.
 
 ## Identité du vendeur
-Vendeur de la prestation et émetteur de la facture : [DÉNOMINATION RÉELLE], [STATUT, SIREN/SIRET, ADRESSE, CONTACT, TVA]. Rôle exact du réseau BPEI : [MISE EN RELATION / MANDAT / PRESTATION À QUALIFIER].
+Vendeur de la prestation et émetteur de la facture : **[À DÉTERMINER SELON LE VRAI CONTRAT CLIENT : PRESTATAIRE INDÉPENDANT OU AUTRE]**, [STATUT, SIREN/SIRET, ADRESSE, CONTACT, TVA]. L'opérateur envisagé du réseau est l'EI exploitant HP Informatique, identifiée dans des justificatifs INPI/URSSAF 2026 sous le SIREN 105370001 ; **ces identifiants ne désignent pas automatiquement BPEI comme vendeur d'une intervention réalisée par un partenaire.** Rôle exact du réseau BPEI : [MISE EN RELATION / MANDAT / PRESTATION À QUALIFIER].
 
 ## Information et devis précontractuels
 Nature de la prestation, caractéristiques essentielles, prix HT/TTC et TVA ou exonération, pièces et déplacements, disponibilité, délai d'intervention, mode de règlement, droit de rétractation éventuel, garanties légales et modalités de réclamation doivent être présentés avant tout engagement. Le client accepte le devis de manière documentée ; aucun supplément n'est facturé sans accord préalable.
