@@ -19,6 +19,15 @@ test("Test-only Stripe integration cannot accidentally accept live keys or publi
  for(const flag of ["BPEI_STRIPE_CONNECT_WEBHOOK_SECRET","verifyStripeSignature","parseStripeCheckoutSignal","mvp_test_checkout_webhook"])assert.ok(webhook.includes(flag),flag);
 });
 
+test("Stripe Checkout TEST uses a payment-method allow-list accepted by API 2026-09-30+",()=>{
+ const checkout=readFileSync(new URL("../supabase/functions/bpei-test-checkout/index.ts",import.meta.url),"utf8");
+ assert.ok(checkout.includes('form.set("allowed_payment_method_types[0]","card")'));
+ assert.doesNotMatch(checkout,/form\.set\(["']payment_method_types\[/,
+  "Obsolete Checkout payment_method_types parameter must not be sent to Stripe");
+ assert.ok(checkout.includes('form.set("mode","payment")'));
+ assert.ok(checkout.includes('form.set("metadata[bpei_attempt_id]",attemptId)'));
+});
+
 test("A Stripe test link is presented to the operator, never auto-paid by redirecting the administrator",()=>{
  const component=readFileSync(new URL("../src/components/admin/AdminCommercialDesk.tsx",import.meta.url),"utf8");
  assert.doesNotMatch(component,/window\.location\.assign\(/);
