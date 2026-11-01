@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from "react";
 import {supabase} from "@/integrations/supabase/client";
 import {Button} from "@/components/ui/button";
+import {isConfirmedTestMerchantApproval} from "@/lib/bpei-stripe-connect-readback";
 
 const enabled=import.meta.env.VITE_BPEI_TEST_CONNECT_ENABLED==="true";
 type Technician={id:string;name:string;siret:string|null;connected:boolean;approved:boolean;providerChecked:boolean};
@@ -60,8 +61,7 @@ export function AdminConnectPanel(){
    accepted=true;
    const list=await readVerifiedTestMerchants();
    if(request!==epoch.current)return;
-   const observed=list.find(p=>p.id===id);
-   if(!observed?.connected||!observed.providerChecked||!observed.approved)
+   if(!isConfirmedTestMerchantApproval(list,id))
     throw new Error("approval readback mismatch");
    setPeople(list);setLoaded(true);
    setNotice("Approbation Stripe TEST confirmée par une nouvelle lecture serveur. Le verrou global de paiement reste indépendant.");
