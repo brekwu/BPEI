@@ -29,7 +29,7 @@ test("Admin Connect confirms approval only after an authenticated server re-list
 });
 
 test("Failed Connect list/write hides previously authorized merchant identities",()=>{
- const clear=panel.match(/setPeople\(\[\]\);setLoaded\(false\)/g)??[];
+ const clear=[...(panel.matchAll(/setPeople\(\[\]\);setLoaded\(false\)|setLoaded\(false\);setPeople\(\[\]\)/g))];
  assert.ok(clear.length>=4,"Both list and approval must clear old values before/after failure");
  assert.match(panel,/readVerifiedTestMerchants\(\)/);
  assert.match(panel,/Lecture Stripe TEST non confirmée : anciens statuts masqués/);
