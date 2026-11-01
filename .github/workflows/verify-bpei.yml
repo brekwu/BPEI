@@ -2,6 +2,7 @@ name: BPEI independent preview checks
 on:
   push:
     branches:
+      - main
       - feat/bpei-independent-release-clean
       - feat/p1-mission-operations
       - feat/mvp-commercial-foundation
