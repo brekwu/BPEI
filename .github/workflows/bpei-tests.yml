@@ -98,9 +98,9 @@ jobs:
         shell: bash
         run: |
           test -d dist
-          test -f .netlify/v1/config.json
-          test -d .netlify/v1/functions
-          echo "Netlify target artifacts found; no external deployment was attempted."
+          test -f .netlify/functions-internal/nitro.json
+          test -f .netlify/functions-internal/server/main.mjs
+          echo "Netlify Nitro SSR target generated; no external deployment was attempted."
 
   webkit-ubuntu-smoke:
     # WebKit browser engine on an available Linux runner; real macOS/Safari acceptance remains separate.
