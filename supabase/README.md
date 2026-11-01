@@ -10,7 +10,7 @@ Le projet de préproduction Supabase BPEI (`qmbsfmcotnsxsvbigynz`) comporte **77
 
 - P1 : une migration ajoute le suivi des incidents de mission et les notifications internes. Les formulaires publics restent fermés tant que les critères d'ouverture P0 ne sont pas vérifiés.
 
-- Un test automatisé vérifie désormais que chaque migration appliquée est représentée une seule fois dans le dépôt, avec son numéro attendu ; vérifier une restauration intégrale reste nécessaire avant publication.
+- Le manifeste `supabase/applied-migrations.json` reprend les **77 versions et noms réellement enregistrés dans Supabase** au 1er novembre 2026. Le test CI compare maintenant chaque fichier SQL à cette liste exacte, pas uniquement leur nombre. Les horodatages des deux dernières migrations ont été alignés sur la base distante (`20261031235123` et `20261101070730`). Pour chaque future migration, actualiser ce manifeste **à partir de la base** et ne jamais simuler une application en changeant seulement le nombre de fichiers. Une restauration intégrale sur base vierge reste nécessaire avant ouverture.
 
 - Performance P1 : six index B-tree simples couvrent les clés étrangères des événements, incidents et notifications. Le contrôle Supabase `unindexed_foreign_keys` ne remonte plus de résultat ; les alertes `unused_index` sont attendues tant que la base est sans trafic réel et ne justifient pas leur suppression.
 
