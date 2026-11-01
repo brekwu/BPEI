@@ -1,0 +1,315 @@
+{
+  "source": "Supabase BPEI migration history",
+  "project_id": "qmbsfmcotnsxsvbigynz",
+  "checked_at": "2026-11-01",
+  "migrations": [
+    {
+      "version": "20261028125244",
+      "name": "independent_only_foundation"
+    },
+    {
+      "version": "20261028130033",
+      "name": "independent_applications_and_verification_guard"
+    },
+    {
+      "version": "20261028130222",
+      "name": "restrict_independent_mutations"
+    },
+    {
+      "version": "20261028130302",
+      "name": "close_independent_requests_direct_inserts"
+    },
+    {
+      "version": "20261028135131",
+      "name": "secure_grants_and_admin_application_review"
+    },
+    {
+      "version": "20261028142706",
+      "name": "bpei_secure_inquiry_and_assignment_foundation"
+    },
+    {
+      "version": "20261028143709",
+      "name": "harden_bpei_inquiry_validation_and_rls_policies"
+    },
+    {
+      "version": "20261028150801",
+      "name": "bpei_accepted_assignment_client_contact_rls"
+    },
+    {
+      "version": "20261028150845",
+      "name": "bpei_technician_mission_status_transitions"
+    },
+    {
+      "version": "20261028151346",
+      "name": "bpei_admin_can_track_assigned_missions"
+    },
+    {
+      "version": "20261028151819",
+      "name": "move_privileged_workflows_to_private_schema"
+    },
+    {
+      "version": "20261028151905",
+      "name": "merge_rls_read_policies_inquiries_and_missions"
+    },
+    {
+      "version": "20261028151947",
+      "name": "require_documented_business_identity_verification_before_approval"
+    },
+    {
+      "version": "20261028152758",
+      "name": "bpei_launch_gate_and_versioned_legal_acceptances"
+    },
+    {
+      "version": "20261028152820",
+      "name": "enforce_legal_publication_and_acceptance_on_all_intake"
+    },
+    {
+      "version": "20261028153528",
+      "name": "block_profile_creation_before_legal_acceptance"
+    },
+    {
+      "version": "20261028154050",
+      "name": "gate_publication_on_three_actual_approved_legal_documents"
+    },
+    {
+      "version": "20261028155042",
+      "name": "prepare_before_user_created_gate_for_auth_signup"
+    },
+    {
+      "version": "20261028161017",
+      "name": "index_approved_legal_document_reviewer"
+    },
+    {
+      "version": "20261028162443",
+      "name": "admin_legal_document_approval_publication_workflow"
+    },
+    {
+      "version": "20261028162604",
+      "name": "preserve_immutable_historical_bpei_legal_releases"
+    },
+    {
+      "version": "20261028163000",
+      "name": "require_current_legal_version_acceptance_on_candidate_approval"
+    },
+    {
+      "version": "20261028163025",
+      "name": "stamp_customer_legal_version_and_require_current_technician_terms"
+    },
+    {
+      "version": "20261028163057",
+      "name": "require_recorded_legal_version_for_every_client_inquiry"
+    },
+    {
+      "version": "20261028163201",
+      "name": "fix_legal_publication_rls_and_reviewer_fk_index"
+    },
+    {
+      "version": "20261028164109",
+      "name": "allow_privileged_first_admin_bootstrap_in_signup_hook"
+    },
+    {
+      "version": "20261028165013",
+      "name": "require_legal_ack_in_auth_signup_hook"
+    },
+    {
+      "version": "20261028165057",
+      "name": "reject_null_or_missing_signup_legal_ack"
+    },
+    {
+      "version": "20261028165635",
+      "name": "require_documented_current_rc_pro_before_approval_and_assignment"
+    },
+    {
+      "version": "20261028170430",
+      "name": "enforce_current_professional_status_at_mission_acceptance_start"
+    },
+    {
+      "version": "20261028171731",
+      "name": "p1_mission_incidents_and_inapp_notifications"
+    },
+    {
+      "version": "20261028172500",
+      "name": "p1_guard_public_inquiry_duplicates_and_daily_rate"
+    },
+    {
+      "version": "20261028172750",
+      "name": "p1_record_mission_status_events"
+    },
+    {
+      "version": "20261028173402",
+      "name": "p1_admin_mission_server_search_and_supervision"
+    },
+    {
+      "version": "20261028174135",
+      "name": "p1_admin_incident_priorities_assignment_and_audit"
+    },
+    {
+      "version": "20261028175007",
+      "name": "p1_incident_administration_statistics"
+    },
+    {
+      "version": "20261028175736",
+      "name": "p1_admin_roster_secure_cross_admin_visibility"
+    },
+    {
+      "version": "20261028233020",
+      "name": "p1_cover_mission_foreign_keys"
+    },
+    {
+      "version": "20261029071010",
+      "name": "mvp_customer_billing_contact_details"
+    },
+    {
+      "version": "20261029071146",
+      "name": "mvp_quotes_accepted_invoices_atomic_numbering"
+    },
+    {
+      "version": "20261029071946",
+      "name": "mvp_invoice_immutability_and_counter_privacy"
+    },
+    {
+      "version": "20261029072951",
+      "name": "mvp_test_stripe_connect_webhook_ledger_disabled"
+    },
+    {
+      "version": "20261029073330",
+      "name": "mvp_private_stripe_configuration_explicit_denial"
+    },
+    {
+      "version": "20261029074253",
+      "name": "mvp_private_administrator_phone_intake_with_consent_reference"
+    },
+    {
+      "version": "20261029074651",
+      "name": "mvp_private_schema_for_privileged_manual_intake"
+    },
+    {
+      "version": "20261029075543",
+      "name": "mvp_test_stripe_refund_dispute_reconciliation"
+    },
+    {
+      "version": "20261029080151",
+      "name": "mvp_unique_payment_intent_and_immutable_adjustment_identity"
+    },
+    {
+      "version": "20261029123512",
+      "name": "mvp_optional_documented_connect_test_commission"
+    },
+    {
+      "version": "20261029123952",
+      "name": "mvp_commercial_email_outbox_disabled_by_default"
+    },
+    {
+      "version": "20261029125501",
+      "name": "mvp_invoice_real_issuer_tax_and_payment_terms_without_legacy_bypass"
+    },
+    {
+      "version": "20261029131257",
+      "name": "national_partner_profiles_assessments_and_authorization"
+    },
+    {
+      "version": "20261029131348",
+      "name": "network_assessment_level_1_question_bank"
+    },
+    {
+      "version": "20261029131401",
+      "name": "network_assessment_level_2_question_bank"
+    },
+    {
+      "version": "20261029131455",
+      "name": "network_assessment_level_3_question_bank"
+    },
+    {
+      "version": "20261029131503",
+      "name": "network_assessment_level_4_question_bank"
+    },
+    {
+      "version": "20261029131827",
+      "name": "national_partner_prospect_registry_and_mission_compensation_offer"
+    },
+    {
+      "version": "20261029132434",
+      "name": "national_lead_trusted_origin_and_client_category_immutability"
+    },
+    {
+      "version": "20261029132619",
+      "name": "national_public_partner_discovery_opt_in_verified_capabilities"
+    },
+    {
+      "version": "20261029132717",
+      "name": "national_search_safe_public_definer_without_private_schema_usage"
+    },
+    {
+      "version": "20261029132803",
+      "name": "national_discovery_invoker_scoped_private_schema_access"
+    },
+    {
+      "version": "20261029133526",
+      "name": "national_partner_private_cashflow_and_expense_journal"
+    },
+    {
+      "version": "20261029134501",
+      "name": "national_partner_availability_appointments_atomic_booking"
+    },
+    {
+      "version": "20261029134842",
+      "name": "national_verified_customer_feedback_one_time_code_and_moderation"
+    },
+    {
+      "version": "20261029135034",
+      "name": "national_review_public_attribution_collision_and_withdrawal"
+    },
+    {
+      "version": "20261029135505",
+      "name": "national_cross_region_partner_referrals_contractual_payment_terms"
+    },
+    {
+      "version": "20261029140639",
+      "name": "strict_stripe_test_checkout_invoice_compensation_reconciliation"
+    },
+    {
+      "version": "20261029140800",
+      "name": "admin_test_checkout_readiness_reconciliation_explanations"
+    },
+    {
+      "version": "20261029140847",
+      "name": "checkout_readiness_typed_optional_rows"
+    },
+    {
+      "version": "20261029141155",
+      "name": "guard_immutable_invoice_against_partner_compensation_mismatch"
+    },
+    {
+      "version": "20261029142524",
+      "name": "p0_verified_release_evidence_and_private_readiness_diagnostics"
+    },
+    {
+      "version": "20261030080119",
+      "name": "p0_admin_readiness_strict_reconciliation"
+    },
+    {
+      "version": "20261030085218",
+      "name": "p0_quote_requires_current_partner_verification"
+    },
+    {
+      "version": "20261030100238",
+      "name": "p0_validate_customer_contact_before_intake"
+    },
+    {
+      "version": "20261030111826",
+      "name": "index_technician_level_authorizer"
+    },
+    {
+      "version": "20261030114150",
+      "name": "p0_refuse_stale_public_legal_consent"
+    },
+    {
+      "version": "20261031235123",
+      "name": "p0_reject_unresolved_legal_document_markers"
+    },
+    {
+      "version": "20261101070730",
+      "name": "p0_signup_requires_verified_smtp_admin_legal"
+    }
+  ]
+}

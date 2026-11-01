@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 
-const sql=readFileSync(new URL("../supabase/migrations/20261101080000_p0_signup_requires_verified_smtp_admin_legal.sql",import.meta.url),"utf8");
+const sql=readFileSync(new URL("../supabase/migrations/20261101070730_p0_signup_requires_verified_smtp_admin_legal.sql",import.meta.url),"utf8");
 
 test("Opening public signup requires evidenced SMTP, confirmed administrators and reviewed legal release",()=>{
  for(const must of [
