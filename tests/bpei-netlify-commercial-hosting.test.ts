@@ -21,7 +21,7 @@ test("Netlify commercial hosting is configured for Nitro SSR and staging-only by
 });
 test("Netlify migration guard requires private repository and OVH DNS preservation",()=>{
  const readme=read("docs/p0/HEBERGEMENT-COMMERCIAL-NETLIFY.md");
- for(const phrase of ["GitHub","Private","MX","SPF","DKIM","DMARC","Netlify Free","VITE_SUPABASE_PUBLISHABLE_KEY","pas une URL fictive"]){
+ for(const phrase of ["GitHub","Private","MX","SPF","DKIM","DMARC","Netlify Free","VITE_SUPABASE_PUBLISHABLE_KEY","jamais une URL fictive"]){
   assert.ok(readme.includes(phrase),phrase);
  }
  assert.doesNotMatch(readme,/sk_live_[A-Za-z0-9]+|whsec_[A-Za-z0-9]+/);
