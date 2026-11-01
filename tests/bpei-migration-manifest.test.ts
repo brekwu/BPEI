@@ -18,6 +18,14 @@ test("Every applied Supabase migration is present exactly once in the repository
  assert.ok(migrations.every((name,index)=>index===0||name>migrations[index-1]),
   "Migration files must have monotonic names");
  assert.match(readme,new RegExp(expected+" fichiers SQL versionnés"));
+ const recorded=JSON.parse(readFileSync(new URL("../supabase/applied-migrations.json",import.meta.url),"utf8"));
+ assert.equal(recorded.project_id,"qmbsfmcotnsxsvbigynz");
+ assert.equal(recorded.migrations.length,expected,
+   "Database migration snapshot must have exactly the declared count");
+ const recordedFiles=recorded.migrations.map(({version,name}:{version:string;name:string})=>version+"_"+name+".sql").sort();
+ assert.deepEqual(migrations,recordedFiles,
+   "GitHub migration files must match the ACTUAL applied Supabase versions and names, not only their count");
+
  for(const latest of [
   "20261030080119_p0_admin_readiness_strict_reconciliation.sql",
   "20261030085218_p0_quote_requires_current_partner_verification.sql",
