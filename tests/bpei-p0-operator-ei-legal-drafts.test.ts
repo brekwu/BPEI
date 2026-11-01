@@ -41,3 +41,23 @@ test("Future conversion to a company is documented, not silently assumed",()=>{
  assert.match(launch,/micro-entreprise existante/);
  assert.match(launch,/EVOLUTION-OPERATEUR-EI.md/);
 });
+
+test("Dated INPI/URSSAF evidence fills only operator facts and never silently validates the BPEI activity",()=>{
+ const mentions=read(files[0]);
+ const confidentiality=read(files[1]);
+ const cgu=read(files[2]);
+ const provenance=read("docs/p0/IDENTITE-SOURCES-2026-11-01.md");
+ for(const txt of [mentions,confidentiality,cgu]){
+  assert.match(txt,/105\s?370\s?001/);
+  assert.match(txt,/2026/);
+  assert.match(txt,/\[À VÉRIFIER/);
+  assert.equal(hasUnresolvedLegalMarkers(txt),true);
+ }
+ assert.match(mentions,/142 rue de Rivoli/i);
+ assert.match(mentions,/URSSAF d'août 2026/);
+ assert.match(mentions,/4791B/);
+ assert.match(mentions,/franchise en base de TVA/);
+ assert.match(provenance,/activité initiale/i);
+ assert.match(provenance,/n'est pas attesté comme déclaré/i);
+ assert.match(provenance,/ne jamais les copier dans ce dépôt/i);
+});
