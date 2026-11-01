@@ -1,0 +1,11 @@
+# Local/dev configuration for BPEI Supabase Auth.
+# Mirrors the intended hosted before-user-created hook.
+# IMPORTANT: a committed config.toml does NOT enable hooks on an existing
+# hosted Supabase project. The operator MUST verify the corresponding
+# Authentication > Hooks setting in the hosted dashboard before launch.
+# This file contains no credentials.
+project_id = "BPEI"
+
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/bpei_private/before_bpei_user_created"

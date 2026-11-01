@@ -1,0 +1,66 @@
+name: BPEI independent preview checks
+on:
+  push:
+    branches:
+      - feat/bpei-independent-release-clean
+      - feat/p1-mission-operations
+      - feat/mvp-commercial-foundation
+      - feat/independants-sans-boutiques-2026-10
+  pull_request:
+    branches:
+      - main
+      - feat/mvp-commercial-foundation
+# Keep the latest run for each workflow/branch; previous commits are superseded.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    env:
+      VITE_BPEI_AUTH_ORIGIN: https://bpei-preview.vercel.app
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      NITRO_PRESET: node-server
+      BPEI_STAGING: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install pinned dependencies
+        run: bun install --frozen-lockfile
+      - name: Build independent website
+        run: bun run build
+      - name: Verify Nitro server output
+        run: test -f .output/server/index.mjs
+      - name: Install Chromium smoke test tooling
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Public SSR smoke tests
+        run: |
+          PORT=3000 HOST=127.0.0.1 node .output/server/index.mjs > /tmp/bpei-ssr.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 25); do
+            if curl -sf http://127.0.0.1:3000/health >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/smoke-http.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-open-flow-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-admin-missions-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-role-isolation-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-profile-resilience-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-quote-signout-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-admin-session-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-inbox-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-mvp-commercial-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-mvp-manual-intake-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-readiness-recheck-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p1-auth-prelaunch-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }
+          node scripts/browser-p0-existing-account-verification-smoke.mjs || { tail -80 /tmp/bpei-ssr.log; exit 1; }

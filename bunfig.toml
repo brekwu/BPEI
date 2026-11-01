@@ -1,0 +1,5 @@
+[install]
+saveTextLockfile = true
+# Bloque les versions publiées depuis moins de 24 heures lors d'une
+# mise à jour des dépendances. Aucune exception liée à Lovable.
+minimumReleaseAge = 86400

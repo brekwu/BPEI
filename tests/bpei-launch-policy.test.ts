@@ -1,0 +1,13 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {canRegisterIndependent,canSubmitIndependentApplication,isPublishedLegalVersion} from "../src/lib/bpei-launch-policy.ts";
+const ready={legal_documents_published:true,independent_registration_enabled:true,legal_version:"2026-10-v1"};
+test("inscription bloquée sans configuration juridique",()=>assert.equal(canRegisterIndependent(null),false));
+test("inscription bloquée par défaut si non publié",()=>assert.equal(canRegisterIndependent({legal_documents_published:false,independent_registration_enabled:true,legal_version:"2026-10-v1"}),false));
+test("inscription bloquée sans version juridique",()=>assert.equal(canRegisterIndependent({...ready,legal_version:null}),false));
+test("inscription bloquée si désactivée",()=>assert.equal(canRegisterIndependent({...ready,independent_registration_enabled:false}),false));
+test("inscription autorisée uniquement avec publication et activation",()=>assert.equal(canRegisterIndependent(ready),true));
+test("candidature bloquée sans acceptation",()=>assert.equal(canSubmitIndependentApplication(ready,false),false));
+test("candidature autorisée si publication et acceptation",()=>assert.equal(canSubmitIndependentApplication(ready,true),true));
+test("candidature bloquée si documents non publiés même avec acceptation",()=>assert.equal(canSubmitIndependentApplication({...ready,legal_documents_published:false},true),false));
+test("une version vide ne constitue pas une publication",()=>assert.equal(isPublishedLegalVersion({...ready,legal_version:"  "}),false));

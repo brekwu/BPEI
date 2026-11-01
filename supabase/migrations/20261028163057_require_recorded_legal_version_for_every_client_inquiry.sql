@@ -1,0 +1,1 @@
+ALTER TABLE public.bpei_inquiries ALTER COLUMN legal_version SET NOT NULL; ALTER TABLE public.bpei_inquiries ADD CONSTRAINT bpei_inquiry_legal_version_valid CHECK (char_length(legal_version) BETWEEN 3 AND 90);

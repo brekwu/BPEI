@@ -1,0 +1,195 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * BPEI — Premium SaaS Design System
+ * Palette : bleu nuit, blanc, bleu électrique, gris anthracite.
+ * Semantic tokens only — never hardcode colors in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-navy-muted: var(--navy-muted);
+  --color-electric: var(--electric);
+  --color-electric-foreground: var(--electric-foreground);
+  --color-electric-soft: var(--electric-soft);
+  --color-anthracite: var(--anthracite);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --shadow-xs: 0 1px 2px 0 oklch(0.22 0.06 265 / 0.04);
+  --shadow-sm: 0 1px 2px 0 oklch(0.22 0.06 265 / 0.05), 0 1px 3px 0 oklch(0.22 0.06 265 / 0.06);
+  --shadow-md: 0 4px 6px -1px oklch(0.22 0.06 265 / 0.07), 0 2px 4px -2px oklch(0.22 0.06 265 / 0.05);
+  --shadow-lg: 0 10px 20px -6px oklch(0.22 0.06 265 / 0.10), 0 4px 8px -4px oklch(0.22 0.06 265 / 0.06);
+  --shadow-elevated: 0 24px 48px -12px oklch(0.22 0.06 265 / 0.18);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Neutrals — off-white surfaces for premium feel */
+  --background: oklch(0.985 0.003 255);
+  --foreground: oklch(0.20 0.03 262);
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.975 0.005 255);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.03 262);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.03 262);
+
+  /* Brand — bleu nuit profond */
+  --navy: oklch(0.22 0.06 265);
+  --navy-foreground: oklch(0.985 0.005 250);
+  --navy-muted: oklch(0.30 0.07 265);
+
+  /* Bleu électrique — accent, CTA, focus */
+  --electric: oklch(0.52 0.19 258);
+  --electric-foreground: oklch(0.99 0.005 250);
+  --electric-soft: oklch(0.94 0.04 258);
+
+
+  /* Anthracite — texte secondaire */
+  --anthracite: oklch(0.44 0.02 260);
+
+  --primary: var(--navy);
+  --primary-foreground: var(--navy-foreground);
+  --secondary: oklch(0.965 0.008 255);
+  --secondary-foreground: var(--navy);
+  --muted: oklch(0.965 0.008 255);
+  --muted-foreground: var(--anthracite);
+  --accent: var(--electric);
+  --accent-foreground: var(--electric-foreground);
+
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.99 0.005 250);
+  --success: oklch(0.60 0.14 155);
+  --success-foreground: oklch(0.99 0.005 250);
+  --warning: oklch(0.72 0.16 65);
+  --warning-foreground: oklch(0.20 0.03 262);
+  --info: oklch(0.62 0.14 240);
+  --info-foreground: oklch(0.99 0.005 250);
+
+  --border: oklch(0.92 0.008 255);
+  --border-strong: oklch(0.85 0.01 255);
+  --input: oklch(0.92 0.008 255);
+  --ring: var(--electric);
+}
+
+.dark {
+  --background: oklch(0.14 0.03 265);
+  --foreground: oklch(0.985 0.005 250);
+  --surface: oklch(0.19 0.035 265);
+  --surface-muted: oklch(0.16 0.03 265);
+  --card: oklch(0.19 0.035 265);
+  --card-foreground: oklch(0.985 0.005 250);
+  --popover: oklch(0.19 0.035 265);
+  --popover-foreground: oklch(0.985 0.005 250);
+  --primary: oklch(0.985 0.005 250);
+  --primary-foreground: oklch(0.22 0.06 265);
+  --secondary: oklch(0.24 0.04 265);
+  --secondary-foreground: oklch(0.985 0.005 250);
+  --muted: oklch(0.24 0.04 265);
+  --muted-foreground: oklch(0.72 0.02 260);
+  --accent: var(--electric);
+  --accent-foreground: var(--electric-foreground);
+  --electric-soft: oklch(0.30 0.10 258);
+  --border: oklch(1 0 0 / 10%);
+  --border-strong: oklch(1 0 0 / 18%);
+  --input: oklch(1 0 0 / 14%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  ::selection {
+    background: var(--electric-soft);
+    color: var(--navy);
+  }
+}
+
+@utility bpei-hero-bg {
+  background:
+    radial-gradient(ellipse at top right, oklch(0.35 0.14 260 / 0.5), transparent 60%),
+    radial-gradient(ellipse at bottom left, oklch(0.28 0.10 265 / 0.4), transparent 55%),
+    linear-gradient(180deg, oklch(0.20 0.05 265), oklch(0.14 0.04 265));
+}
+
+@utility bpei-surface {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+@utility bpei-surface-elevated {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+@utility bpei-grid-bg {
+  background-image:
+    linear-gradient(to right, oklch(0.92 0.008 255 / 0.6) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.92 0.008 255 / 0.6) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+@utility bpei-focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-background), 0 0 0 4px var(--color-ring);
+}

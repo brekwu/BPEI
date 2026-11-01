@@ -1,0 +1,44 @@
+BPEI — CONDITIONS GÉNÉRALES D'UTILISATION — BROUILLON NON PUBLIABLE
+Version de travail : 2026-11-01
+ATTENTION : NE PAS UTILISER COMME CONTRAT OPPOSABLE AVANT VALIDATION DE L'EXPLOITANT ET DE LA RÉPARTITION DES RESPONSABILITÉS.
+
+1. Objet
+BPEI est une plateforme en préparation destinée à mettre en relation des demandeurs de dépannage informatique et des professionnels indépendants ayant accepté les règles du réseau. L'inscription ou la demande d'intervention ne garantit ni la disponibilité d'un prestataire dans une zone donnée, ni l'acceptation d'une mission, ni un résultat technique particulier.
+
+2. Exploitant
+L'exploitant légal de BPEI est [À COMPLÉTER : identité, forme, immatriculation, coordonnées]. Les coordonnées obligatoires figurent dans les mentions légales publiées. Si BPEI est exploité sous une autre entité que HP Informatique, la réalité juridique doit être distinguée expressément.
+
+3. Public et accès
+La consultation des pages d'information peut être ouverte sans compte. Les espaces candidats, partenaires et administrateurs nécessitent une authentification personnelle. Il est interdit de partager les accès, de présenter des informations volontairement trompeuses, d'usurper une identité ou d'utiliser les formulaires pour des sollicitations abusives.
+
+4. Candidature des indépendants
+Une candidature n'entraîne ni emploi salarié, ni rémunération minimale, ni attribution automatique de clients. Les candidats déclarent leur activité, leur SIRET lorsqu'il est requis pour intervenir, leurs compétences et les garanties qu'ils détiennent. BPEI peut demander des justificatifs et effectuer une vérification professionnelle avant de permettre une mission. Les conditions exactes de sélection, de niveau, de refus, de suspension et de recours doivent être conformes à une convention partenaire distincte, validée et acceptée.
+
+5. Clients et demandes
+Le demandeur fournit des coordonnées exactes et décrit son besoin sans divulguer d'information confidentielle inutile. La disponibilité, le prix, le diagnostic, le délai et le périmètre de l'intervention sont à confirmer au cas par cas. Toute intervention exige les informations précontractuelles et l'accord nécessaires. Le professionnel chargé de la prestation doit être clairement identifié avant engagement contractuel.
+
+6. Devis, prestations, tarifs et paiements
+[À VALIDER : déterminer précisément qui conclut le contrat avec le client, qui encaisse, émet le devis et la facture, supporte les garanties et assure le service après-vente.]
+Lorsque le modèle direct est confirmé, le devis et la facture sont émis par le prestataire indépendant identifié, sur la base des conditions acceptées par le client. BPEI peut percevoir une rémunération contractuelle du professionnel uniquement selon une convention préalable claire.
+La préproduction informatique utilise exclusivement des parcours de paiement Stripe TEST lorsque ceux-ci sont activés : ils ne constituent pas un paiement réel ni une preuve d'encaissement. Aucun résultat de simulation ne vaut reçu définitif.
+Les informations tarifaires, conditions de paiement, frais, pénalités éventuelles et remboursement doivent être communiqués avant tout engagement, dans les documents adaptés (CGV/contrat/devis).
+
+7. Consommateurs, rétractation et assistance
+Les droits d'information précontractuelle, de rétractation pour les contrats conclus à distance ou hors établissement, les exceptions et demandes d'exécution anticipée doivent être examinés selon les circonstances précises de chaque contrat et du professionnel cocontractant. [À COMPLÉTER : procédure et formulaire adaptés au modèle, règles d'urgence et de démarrage de service.] Les présentes CGU ne suppriment aucun droit légal du consommateur.
+
+8. Rôle et responsabilité des parties
+BPEI ne doit pas se présenter comme l'employeur des indépendants ni comme le prestataire direct si les contrats réels ne le prévoient pas. Les engagements, obligations, assurances et limites de responsabilité doivent être définis en fonction de l'identité du cocontractant. Aucune clause ne peut écarter les responsabilités légales impératives. Les garanties liées aux interventions et au matériel dépendent des contrats et lois applicables.
+
+9. Acceptation, modification, désactivation
+Les règles opposables doivent être communiquées au moment pertinent et acceptées dans une version identifiable. Les modifications substantielles nécessitent une information adaptée. La suppression ou la suspension d'accès ne prive pas les utilisateurs des droits légaux déjà acquis.
+
+10. Données personnelles et confidentialité
+La politique de confidentialité décrit les données traitées, les finalités et les droits des utilisateurs. Un professionnel ne peut utiliser les coordonnées d'un client communiquées pour une mission que dans le cadre autorisé et ne doit pas les détourner pour du démarchage non consenti.
+
+11. Réclamations et médiation
+Une réclamation peut être adressée à [À COMPLÉTER : contact opérationnel et délais de traitement]. Pour les litiges de consommation, les coordonnées du médiateur compétent du professionnel concerné doivent être fournies dans les documents applicables. [À DÉSIGNER ET CONFIRMER : médiateur de l'exploitant et articulation avec celui des partenaires indépendants.]
+
+12. Droit applicable et litiges
+Le droit français s'applique sous réserve des règles impératives applicables au consommateur et de toute règle de compétence obligatoire. Avant toute action judiciaire, une réclamation amiable peut être engagée sans priver les parties de leurs droits.
+
+IMPORTANT AVANT VALIDATION : finaliser la convention partenaire, les CGV destinées aux clients, le rôle d'intermédiaire, les commissions, la TVA, les garanties, la médiation et les procédures de rétractation. Seul l'exploitant habilité peut approuver la version définitive.
