@@ -38,6 +38,12 @@ async function open(path, heading) {
 
 try {
   await open("/", /BPEI|informatique|indépendant/i);
+  await open("/devenir-partenaire", /Technicien informatique indépendant/);
+  await page.getByText("Les nouvelles candidatures ne sont pas encore ouvertes.",{exact:false}).first().waitFor({timeout:15000});
+  assert.equal(await page.getByRole("link",{name:/Déposer ma candidature/}).count(),0,
+   "Closed signup must not be advertised as open");
+  assert.equal(await page.getByRole("link",{name:/Accéder à l'espace indépendant/}).count(),2,
+   "Existing members must retain access to their space");
   await open("/espace-independant", "Espace technicien indépendant");
   await page.getByRole("button", { name: "Créer un compte" }).click();
   await page.getByText(/Les nouvelles inscriptions sont suspendues/).waitFor({ timeout: 10000 });
