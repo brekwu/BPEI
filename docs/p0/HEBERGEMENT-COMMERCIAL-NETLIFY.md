@@ -5,7 +5,7 @@
 ## Choix et limites
 - Netlify Free autorise les projets commerciaux. Offre vérifiée le 1er novembre 2026 : **0 $**, **300 crédits par mois** avec plafond strict ; si le solde est épuisé, Netlify met les sites en pause jusqu'au cycle suivant ou une montée de gamme. Aucun SLA/garantie de disponibilité n'est présumé.
 - TanStack Start est officiellement supporté, SSR et fonctions incluses ; le projet utilise déjà **Nitro v3**, capable de générer le preset **`netlify`** sans dépendance supplémentaire.
-- `netlify.toml` : build Bun verrouillé, sortie statique `dist` et fonctions `.netlify/v1/functions`, préproduction conservée par défaut (`BPEI_STAGING=true`, formulaires désactivés).
+- `netlify.toml` : build Bun verrouillé, sortie statique `dist` et fonctions `.netlify/functions-internal`, préproduction conservée par défaut (`BPEI_STAGING=true`, formulaires désactivés).
 - Les Edge Functions Stripe / SMTP restent sur **Supabase**, pas dans les fonctions hébergées par Netlify. Les webhooks Stripe doivent utiliser leur URL Supabase vérifiée et leur signature, jamais une URL fictive de Netlify.
 - Les paramètres `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY` doivent être configurés dans le **tableau Netlify** pour l'environnement voulu, jamais inscrits dans Git ; vérifier le moment d'injection des clés et les routes SSR.
 - Netlify Free peut héberger le projet commercial **après** la recette en production, mais ne résout ni l'identité de l'opérateur, ni la conformité du traitement des données, ni les paiements.
@@ -19,7 +19,7 @@
 6. Enregistrer/valider `bpei.fr` et `www.bpei.fr` dans Netlify, vérifier certificat HTTPS puis tests réels ; seulement ensuite envisager la coupure de la préproduction Vercel. Aucun DNS OVH n'a été modifié ici.
 
 ## Contrôle de compilation
-Le workflow `.github/workflows/bpei-tests.yml` comprend un job `netlify-nitro-build` qui génère et vérifie les artefacts `dist`, `.netlify/v1/config.json` et `.netlify/v1/functions` sans publier le site.
+Le workflow `.github/workflows/bpei-tests.yml` comprend un job `netlify-nitro-build` qui génère et vérifie les artefacts `dist`, `.netlify/functions-internal/nitro.json` et `.netlify/functions-internal/server/main.mjs` sans publier le site.
 Pour démarrer ensuite une vraie recette Netlify, le connecteur ou l'accès au compte Netlify est indispensable.
 
 ## Documentation
