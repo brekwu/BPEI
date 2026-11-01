@@ -5,4 +5,14 @@ for (const path of ["/","/devenir-partenaire","/comment-ca-marche","/espace-inde
  console.log(path, response.status);
  assert.equal(response.status, 200, path + " must return HTTP 200");
 }
-console.log("Public SSR smoke tests passed.");
+// CI intentionally points to placeholder Supabase credentials.
+// Liveness must succeed, but the separate dependency probe must fail closed.
+const dependencyResponse=await fetch(base+"/health/dependencies",{
+ redirect:"manual",signal:AbortSignal.timeout(10000)
+});
+assert.equal(dependencyResponse.status,503,
+ "Unconfigured Supabase dependencies must not be reported as healthy");
+assert.deepEqual(await dependencyResponse.json(),
+ {status:"unavailable",scope:"dependency_only"});
+assert.match(dependencyResponse.headers.get("cache-control")??"",/no-store/);
+console.log("Public SSR liveness and fail-closed dependency checks passed.");
