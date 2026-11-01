@@ -1,0 +1,23 @@
+# Commercial-compatible hosting candidate for BPEI on Netlify.
+# This does NOT deploy, publish bpei.fr, or enable legal/payment gates.
+# The pinned Nitro v3 Netlify preset emits dist/ assets and .netlify/functions-internal SSR server.
+[build]
+  command = "bun install --frozen-lockfile && bun run build"
+  publish = "dist"
+
+[build.environment]
+  NITRO_PRESET = "netlify"
+  BUN_VERSION = "1.4.4"
+  BPEI_STAGING = "true"
+  BPEI_FORMS_ENABLED = "false"
+  VITE_BPEI_PUBLIC_FORMS_ENABLED = "false"
+
+[context.deploy-preview.environment]
+  BPEI_STAGING = "true"
+  BPEI_FORMS_ENABLED = "false"
+  VITE_BPEI_PUBLIC_FORMS_ENABLED = "false"
+
+[context.branch-deploy.environment]
+  BPEI_STAGING = "true"
+  BPEI_FORMS_ENABLED = "false"
+  VITE_BPEI_PUBLIC_FORMS_ENABLED = "false"

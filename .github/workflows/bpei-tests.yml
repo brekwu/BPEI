@@ -71,6 +71,37 @@ jobs:
           BPEI_STAGING: "true"
           VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
 
+  netlify-nitro-build:
+    # Exercises alternative hosting without connecting or deploying a Netlify account.
+    runs-on: ubuntu-latest
+    env:
+      NITRO_PRESET: netlify
+      BPEI_STAGING: "true"
+      BPEI_FORMS_ENABLED: "false"
+      VITE_BPEI_PUBLIC_FORMS_ENABLED: "false"
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_PUBLISHABLE_KEY: ci-not-a-real-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+      - name: Install frozen packages
+        run: bun install --frozen-lockfile
+      - name: Build Nitro with Netlify preset
+        run: bun run build
+      - name: Assert Netlify serverless and static artifacts
+        shell: bash
+        run: |
+          test -d dist
+          test -f .netlify/functions-internal/nitro.json
+          test -f .netlify/functions-internal/server/main.mjs
+          echo "Netlify Nitro SSR target generated; no external deployment was attempted."
+
   webkit-ubuntu-smoke:
     # WebKit browser engine on an available Linux runner; real macOS/Safari acceptance remains separate.
     runs-on: ubuntu-latest
