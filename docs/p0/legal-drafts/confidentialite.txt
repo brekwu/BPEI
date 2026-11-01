@@ -3,7 +3,7 @@ Version de travail : 2026-11-01
 ATTENTION : LES CHAMPS [À COMPLÉTER] ET LES DURÉES DE CONSERVATION DOIVENT ÊTRE VÉRIFIÉS AVANT TOUTE COLLECTE.
 
 1. Responsable de traitement
-Le responsable des traitements opérés pour la plateforme BPEI est l'entrepreneur individuel exploitant également l'activité HP Informatique, sous le nom commercial envisagé BPEI : [À COMPLÉTER : identité civile exacte du titulaire EI, adresse professionnelle publiée et e-mail dédié à la protection des données]. L'existence et la déclaration du nom commercial BPEI sont [À VÉRIFIER]. Délégué à la protection des données, si désigné : [À COMPLÉTER OU NON DÉSIGNÉ].
+Le responsable des traitements opérés pour la plateforme BPEI serait l'entrepreneur individuel exploitant également HP Informatique : ce site indique publiquement le nom Hugo Pavio, le SIRET 105 370 001 00015 et l'e-mail hugopavio11@gmail.com. Ces mentions sont des DÉCLARATIONS DU SITE HP et non une preuve d'immatriculation pour BPEI. [À COMPLÉTER : identité officiellement vérifiée au RNE, adresse professionnelle publiable et e-mail opérationnel de contact RGPD BPEI]. L'existence et la déclaration du nom commercial BPEI sont [À VÉRIFIER]. Délégué à la protection des données, si désigné : [À COMPLÉTER OU NON DÉSIGNÉ].
 
 2. Personnes concernées et données
 BPEI peut traiter, uniquement lorsque le service correspondant est ouvert, les coordonnées des particuliers et entreprises demandeurs d'interventions : nom, e-mail, téléphone, adresse et ville d'intervention, description de la demande et échanges de suivi. Ne jamais transmettre de mot de passe, de donnée de santé ou de moyen de paiement complet dans un texte libre.
