@@ -62,3 +62,11 @@ Les connecteurs autorisent le code GitHub, les déploiements Vercel et des opér
 ## Contrôle de cohérence GitHub (1er novembre 2026)
 
 Les anciennes PR #3 et #4 ont été fermées comme intégralement reprises dans `main` (comparaison GitHub : aucun commit de leurs branches source en retard sur `main`). Les PR #1 et #2 restent ouvertes, car leurs historiques divergent de `main`. Elles ne doivent pas être fusionnées automatiquement sans analyse de leurs différences. Le chemin canonique de livraison est maintenant `main` → tests GitHub Actions → déploiement automatique Vercel protégé.
+
+## Exploitation — séparer Vercel « READY » du bon fonctionnement de Supabase (1er novembre 2026)
+
+- `GET /health` : **liveness**, retourne 200 si le serveur répond. Il n'inspecte pas la base et ne constitue pas une autorisation de lancement.
+- `GET /health/dependencies` : contrôle technique de la connectivité Supabase, côté serveur, à partir des variables `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY` de l'environnement Vercel. Une lecture valide, par la clé **publique**, du verrou `bpei_launch_controls` donne `HTTP 200` et `{"status":"ok","scope":"dependency_only"}`, **même si** inscriptions et paiements sont fermés. Toute erreur de configuration, de réseau, de permissions ou de réponse donne `HTTP 503` et `{"status":"unavailable","scope":"dependency_only"}`.
+- Ce contrôle ne teste **ni** les envois SMTP, **ni** le premier administrateur, **ni** l'éligibilité des partenaires, **ni** les documents juridiques, **ni** les flux Stripe, **ni** l'accès public sans SSO. Ne jamais l'interpréter comme un feu vert commercial.
+- Les deux chemins doivent être testés après déploiement dans un environnement où le propriétaire est autorisé à passer la protection Vercel. Dans la CI, la clé Supabase est volontairement factice : `/health` doit répondre 200 et `/health/dependencies` doit répondre **503**. Cela vérifie que le contrôle ne prétend pas à tort que les dépendances sont opérationnelles.
+- Ne pas stocker de clé `service_role` ou `sb_secret_...` dans les variables publiques Vite, le code source, les journaux du contrôle ou des requêtes HTTP de test. L'URL de production doit être le domaine Supabase réellement autorisé ; le test refuse les autres hôtes.
