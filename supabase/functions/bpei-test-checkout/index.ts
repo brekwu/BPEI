@@ -68,7 +68,9 @@ Deno.serve(async req=>{
   const form=new URLSearchParams();
   form.set("mode","payment");
   if(fee>0)form.set("payment_intent_data[application_fee_amount]",String(fee));
-  form.set("payment_method_types[0]","card");
+  // Stripe API 2026-09-30+ rejects payment_method_types on Checkout creation.
+  // Preserve the tested card-only sandbox flow via the supported allow-list.
+  form.set("allowed_payment_method_types[0]","card");
   form.set("success_url",allowedOrigin+"/paiement/retour?session_id={CHECKOUT_SESSION_ID}");
   form.set("cancel_url",allowedOrigin+"/paiement/retour?annule=1");
   form.set("line_items[0][price_data][currency]","eur");
