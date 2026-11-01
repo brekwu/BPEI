@@ -8,7 +8,7 @@ test("Accounts v2 Connect integration cannot run without TEST credentials and pr
   "/v2/core/account_links","2026-09-30.endive","legal_documents_published",
   "independent_verification_checks","insurance_confirmed","insurance_expires_on",
   "bpei_legal_acceptances","independent_applications","email_confirmed_at",
-  "providerReady","charges_enabled","payouts_enabled","details_submitted","test_enabled:false"])
+  "providerReady","/v2/core/accounts/","card_payments?.status","active","test_enabled:false"])
   assert.ok(src.includes(guard),guard);
  assert.doesNotMatch(src,/sk_live_/);
  assert.doesNotMatch(src,/type:\s*["']express["']/,"New Stripe account creation should use Accounts v2");
@@ -42,4 +42,22 @@ test("Draft legal documents are not marked as approved, published or legally ver
   assert.match(text,/PROJET|BROUILLON|NE PAS PUBLIER|NON PUBLIÉ/);
   assert.match(text,/\[.*\]/);
  }
+});
+
+test("Stripe TEST merchant validation is derived from Accounts v2 card payment capability, never legacy v1 booleans",()=>{
+ const src=readFileSync(new URL("../supabase/functions/bpei-test-connect/index.ts",import.meta.url),"utf8");
+ const start=src.indexOf("async function providerReady(");
+ const end=src.indexOf("\nDeno.serve(",start);
+ assert.ok(start>=0&&end>start,"Provider gate exists");
+ const gate=src.slice(start,end);
+ assert.ok(gate.includes('stripe("/v2/core/accounts/"+encodeURIComponent(accountId),key)'),
+  "Check merchant capability in Stripe Accounts v2");
+ assert.match(gate,/account\.identity\?\.country!=="FR"/);
+ assert.match(gate,/account\.livemode!==false/);
+ assert.match(gate,/merchant\?\.capabilities\?\.card_payments\?\.status==="active"/);
+ for(const legacy of ["charges_enabled","payouts_enabled","details_submitted","/v1/accounts/"]){
+  assert.ok(!gate.includes(legacy),"Legacy approval field or route must not be trusted: "+legacy);
+ }
+ assert.match(src,/!ready\)return answer\(409,\{error:"merchant_not_ready"\}/,
+  "Admin must refuse approval of inactive merchant");
 });
